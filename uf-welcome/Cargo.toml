@@ -1,0 +1,84 @@
+[package]
+name = "uf-welcome"
+version = "0.3.0"
+edition = "2021"
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+description = "Signed-in welcome landing at /welcome for Unified Field product hosts"
+
+[lints]
+workspace = true
+
+[dependencies]
+leptos = { workspace = true }
+leptos_meta = { workspace = true }
+leptos_router = { workspace = true }
+leptos_axum = { workspace = true, optional = true }
+icondata = { workspace = true }
+icondata_core = { workspace = true }
+turf = { workspace = true }
+uf-product = { workspace = true, default-features = false }
+uf-integrations = { workspace = true, default-features = false }
+uf-help = { workspace = true, default-features = false }
+uf-help-macros = { workspace = true }
+orbital-macros = { workspace = true }
+uf-product-macros = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true, optional = true }
+inventory = { workspace = true, optional = true }
+
+valence = { workspace = true, optional = true }
+higgs = { workspace = true, optional = true }
+chrono = { workspace = true, optional = true }
+uuid = { workspace = true, optional = true }
+anyhow = { workspace = true, optional = true }
+async-trait = { workspace = true, optional = true }
+quark = { workspace = true, optional = true }
+spectra = { workspace = true, optional = true }
+tower-sessions = { workspace = true, optional = true }
+
+[build-dependencies]
+valence-codegen = { workspace = true }
+
+[features]
+# Lazy welcome page is the host default (`cargo leptos --split`). Disable only for
+# single-bundle hosts (e.g. uf-product-ui-e2e).
+default = ["lazy-routes"]
+lazy-routes = []
+db-sqlite = ["valence/sqlite"]
+db-mem = ["valence/mem"]
+hydrate = ["leptos/hydrate", "uf-integrations/hydrate", "uf-product/hydrate", "uf-help/hydrate"]
+# Marker: host wired `PermissionBackend` (Gauge) at bootstrap; no compile-time gauge dep.
+admin-permissions = []
+ssr = [
+    "leptos/ssr",
+    "leptos_meta/ssr",
+    "leptos_router/ssr",
+    "dep:leptos_axum",
+    "uf-product/ssr",
+    "uf-integrations/ssr",
+    "uf-help/ssr",
+    "dep:inventory",
+    "dep:valence",
+    "db-mem",
+    "dep:higgs",
+    "higgs/ssr",
+    "dep:chrono",
+    "dep:uuid",
+    "dep:anyhow",
+    "dep:async-trait",
+    "dep:serde_json",
+    "dep:quark",
+    "dep:spectra",
+    "dep:tower-sessions"]
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }
+valence = { workspace = true }
+
+[[test]]
+name = "featured_service_integ"
+required-features = ["ssr"]

@@ -1,0 +1,25 @@
+[package]
+name = "uf-appearance"
+version = "0.3.0"
+edition = "2021"
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+description = "Optional Appearance product offering — app-bar appearance control for Unified Field shells."
+
+[lints]
+workspace = true
+
+[dependencies]
+icondata = { workspace = true }
+inventory = { workspace = true }
+leptos = { workspace = true }
+leptos_router = { workspace = true }
+uf-product = { workspace = true, default-features = false }
+
+[features]
+default = []
+hydrate = ["leptos/hydrate", "uf-product/hydrate"]
+ssr = ["leptos/ssr", "leptos_router/ssr", "uf-product/ssr"]

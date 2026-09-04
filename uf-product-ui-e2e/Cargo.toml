@@ -1,0 +1,113 @@
+[package]
+name = "uf-product-ui-e2e"
+version = "0.3.0"
+edition = "2021"
+publish = false
+license.workspace = true
+description = "Library-owned Leptos host + Playwright for uf-integrations / uf-apps / uf-welcome / uf-notifications product UI."
+
+[lints]
+workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+anyhow = { workspace = true, optional = true }
+axum = { workspace = true, optional = true }
+console_error_panic_hook = { version = "0.1", optional = true }
+console_log = { version = "1", optional = true }
+leptos = { workspace = true }
+leptos_axum = { workspace = true, optional = true }
+leptos_meta = { workspace = true }
+leptos_router = { workspace = true }
+log = { workspace = true, optional = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+simple_logger = { version = "5", optional = true }
+tokio = { workspace = true, optional = true }
+tower-http = { version = "0.6", features = ["fs"], optional = true }
+tower-sessions = { workspace = true, optional = true }
+any_spawner = { version = "0.3", features = ["tokio"], optional = true }
+uf-appearance = { workspace = true, default-features = false }
+uf-apps = { workspace = true, default-features = false }
+uf-help = { workspace = true, default-features = false }
+uf-help-macros = { workspace = true }
+uf-integrations = { workspace = true, default-features = false }
+uf-notifications = { workspace = true, default-features = false }
+uf-notifications-core = { workspace = true, optional = true }
+uf-product = { workspace = true, default-features = false }
+uf-search-core = { workspace = true, default-features = false }
+uf-welcome = { workspace = true, default-features = false }
+icondata = { workspace = true }
+wasm-bindgen = { workspace = true, optional = true }
+async-trait = { workspace = true, optional = true }
+chrono = { workspace = true, optional = true }
+spectra = { workspace = true, optional = true, features = ["mem"] }
+spectra-core = { workspace = true, optional = true }
+valence = { workspace = true, optional = true }
+higgs = { workspace = true, optional = true }
+higgs-identity = { workspace = true, optional = true }
+lepton-identity = { workspace = true, optional = true }
+photon = { workspace = true, optional = true }
+photon-axum = { workspace = true, optional = true }
+
+[features]
+default = []
+hydrate = [
+    "leptos/hydrate",
+    "uf-product/hydrate",
+    "uf-integrations/hydrate",
+    "uf-integrations/full",
+    "uf-help/hydrate",
+    "uf-appearance/hydrate",
+    "uf-apps/hydrate",
+    "uf-welcome/hydrate",
+    "uf-notifications/hydrate",
+    "dep:console_error_panic_hook",
+    "dep:console_log",
+    "dep:wasm-bindgen",
+    "dep:log",
+]
+ssr = [
+    "leptos/ssr",
+    "leptos_meta/ssr",
+    "leptos_router/ssr",
+    "uf-product/ssr",
+    "uf-integrations/ssr",
+    "uf-integrations/full",
+    "uf-help/ssr",
+    "uf-appearance/ssr",
+    "uf-search-core/ssr",
+    "uf-apps/ssr",
+    "uf-welcome/ssr",
+    "uf-notifications/ssr",
+    "dep:axum",
+    "dep:leptos_axum",
+    "dep:tokio",
+    "dep:tower-http",
+    "dep:tower-sessions",
+    "dep:anyhow",
+    "dep:simple_logger",
+    "dep:log",
+    "dep:any_spawner",
+    "dep:chrono",
+    "dep:async-trait",
+    "dep:spectra",
+    "dep:spectra-core",
+    "dep:valence",
+    "dep:uf-notifications-core",
+    "dep:higgs",
+    "higgs/ssr",
+    "dep:higgs-identity",
+    "dep:lepton-identity",
+    "dep:photon",
+    "photon/runtime",
+    "dep:photon-axum",
+    "photon-axum/runtime",
+]
+
+[[bin]]
+name = "uf-product-ui-e2e"
+path = "src/main.rs"
+required-features = ["ssr"]

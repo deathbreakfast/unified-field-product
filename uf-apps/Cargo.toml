@@ -1,0 +1,57 @@
+[package]
+name = "uf-apps"
+version = "0.3.0"
+edition = "2021"
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+description = "Apps directory UI at /apps for Unified Field product hosts"
+
+[lints]
+workspace = true
+
+[dependencies]
+inventory = { workspace = true }
+leptos = { workspace = true }
+leptos_meta = { workspace = true }
+leptos_router = { workspace = true }
+leptos_axum = { workspace = true, optional = true }
+icondata = { workspace = true }
+icondata_core = { workspace = true }
+serde = { workspace = true }
+tokio = { workspace = true, optional = true }
+turf = { workspace = true }
+uf-product = { workspace = true, default-features = false }
+uf-integrations = { workspace = true, default-features = false }
+uf-help = { workspace = true, default-features = false }
+uf-help-macros = { workspace = true }
+orbital-macros = { workspace = true }
+uf-product-macros = { workspace = true }
+orbital-paging = { workspace = true }
+# Force crc32fast 1.5.0 through the hydrate/dylint graph (see workspace pin).
+crc32fast = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros"] }
+
+[[test]]
+name = "app_discovery_contract"
+required-features = ["ssr"]
+
+[features]
+# Lazy route views are the host default (`cargo leptos --split`). Disable only for
+# hosts that intentionally ship a single WASM (e.g. uf-product-ui-e2e).
+default = ["lazy-routes"]
+lazy-routes = []
+hydrate = ["leptos/hydrate", "uf-integrations/hydrate", "uf-help/hydrate"]
+ssr = [
+    "leptos/ssr",
+    "leptos_meta/ssr",
+    "leptos_router/ssr",
+    "dep:leptos_axum",
+    "uf-product/ssr",
+    "uf-integrations/ssr",
+    "uf-help/ssr",
+    "dep:tokio"]

@@ -1,0 +1,106 @@
+[package]
+name = "uf-component-preview"
+version = "0.3.0"
+edition = "2021"
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+description = "Component library preview catalog for Unified Field product UI."
+
+[lib]
+name = "uf_component_preview"
+path = "src/lib.rs"
+
+[lints]
+workspace = true
+
+[dependencies]
+leptos.workspace = true
+leptos_meta.workspace = true
+leptos_router.workspace = true
+
+icondata.workspace = true
+icondata_core.workspace = true
+
+turf.workspace = true
+
+serde.workspace = true
+
+uf-product = { workspace = true, default-features = false, features = ["preview"] }
+orbital-shell = { workspace = true, default-features = false }
+orbital-base-components = { workspace = true, default-features = false }
+orbital-theme = { workspace = true, default-features = false }
+uf-integrations = { workspace = true, default-features = false }
+orbital-core-components = { workspace = true, default-features = false, features = ["preview"] }
+orbital-primitives = { workspace = true, default-features = false, features = ["preview"] }
+orbital-datatable = { workspace = true, default-features = false, features = ["preview"] }
+orbital-date-pickers = { workspace = true, default-features = false, features = ["preview"] }
+orbital-charts = { workspace = true, default-features = false, features = ["preview"] }
+orbital-tree = { workspace = true, default-features = false, features = ["preview"] }
+orbital-scheduler = { workspace = true, default-features = false, features = ["preview"] }
+uf-search-core = { workspace = true, default-features = false }
+orbital-paging = { workspace = true, default-features = false }
+
+orbital-macros = { workspace = true }
+uf-product-macros = { workspace = true }
+
+higgs = { workspace = true, default-features = false, optional = true }
+valence = { workspace = true, default-features = false, optional = true }
+
+inventory = { workspace = true, optional = true }
+
+[features]
+default = []
+preview = []
+hydrate = [
+    "preview",
+    "dep:inventory",
+    "leptos/hydrate",
+    "uf-product/hydrate",
+    "uf-product/preview",
+    "orbital-theme/hydrate",
+    "uf-integrations/hydrate",
+    "orbital-core-components/hydrate",
+    "orbital-primitives/hydrate",
+    "orbital-datatable/hydrate",
+    "orbital-date-pickers/hydrate",
+    "orbital-charts/hydrate",
+    "orbital-tree/hydrate",
+    "orbital-scheduler/hydrate",
+    # Zone previews are host-merged via extend_registrations — not in hydrate graph.
+    "orbital-base-components/hydrate",
+]
+ssr = [
+    "preview",
+    "leptos/ssr",
+    "leptos_meta/ssr",
+    "leptos_router/ssr",
+    "uf-product/ssr",
+    "uf-product/preview",
+    "orbital-theme/ssr",
+    "uf-integrations/ssr",
+    "orbital-core-components/ssr",
+    "orbital-primitives/ssr",
+    "orbital-datatable/ssr",
+    "orbital-date-pickers/ssr",
+    "orbital-charts/ssr",
+    "orbital-tree/ssr",
+    "orbital-scheduler/ssr",
+    "dep:inventory",
+    "uf-search-core/ssr",
+    "dep:higgs",
+    "higgs/ssr",
+    "orbital-base-components/ssr",
+]
+[package.metadata.turf]
+minify = true
+load_paths = ["src/styles"]
+
+[package.metadata.turf.class_names]
+template = "<original_name>-<name_hash_short>"
+excludes = ["thaw-.*"]
+
+[package.metadata.turf-dev]
+minify = false

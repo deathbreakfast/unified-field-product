@@ -1,0 +1,109 @@
+#![allow(missing_docs)]
+#[cfg(feature = "ssr")]
+extern crate counter_app;
+#[cfg(feature = "ssr")]
+extern crate orbital_apps;
+#[cfg(feature = "ssr")]
+extern crate orbital_app;
+#[cfg(feature = "ssr")]
+extern crate orbital_welcome;
+#[cfg(feature = "ssr")]
+extern crate unified_field_marketing;
+
+#[cfg(test)]
+#[cfg(feature = "ssr")]
+mod tests {
+    use orbital::AppRegistry;
+
+    #[test]
+    fn test_app_registration_inventory_collection() {
+        let registry = AppRegistry::auto_discover();
+
+        assert!(
+            registry.len() >= 5,
+            "Expected at least 5 registered apps, found {}",
+            registry.len()
+        );
+    }
+
+    #[test]
+    fn test_expected_apps_are_registered() {
+        let registry = AppRegistry::auto_discover();
+
+        let app_ids: Vec<&str> = registry.iter().map(|r| r.id).collect();
+
+        assert!(
+            app_ids.contains(&"counter"),
+            "Counter app should be registered"
+        );
+        assert!(app_ids.contains(&"apps"), "Apps app should be registered");
+        assert!(
+            app_ids.contains(&"welcome"),
+            "Welcome app should be registered"
+        );
+        assert!(
+            app_ids.contains(&"orbital"),
+            "Orbital app should be registered"
+        );
+        assert!(
+            app_ids.contains(&"unified-field-marketing"),
+            "Unified Field Marketing app should be registered"
+        );
+    }
+
+    #[test]
+    fn test_app_registration_has_all_fields() {
+        let registry = AppRegistry::auto_discover();
+
+        for registration in registry.iter() {
+            assert!(!registration.id.is_empty(), "App ID should not be empty");
+            assert!(
+                !registration.name.is_empty(),
+                "App name should not be empty"
+            );
+            assert!(
+                !registration.description.is_empty(),
+                "App description should not be empty"
+            );
+            assert!(
+                !registration.icon.is_empty(),
+                "App icon should not be empty"
+            );
+        }
+    }
+
+    #[test]
+    fn test_app_ids_are_unique() {
+        let registry = AppRegistry::auto_discover();
+        let mut seen_ids = std::collections::HashSet::new();
+
+        for registration in registry.iter() {
+            assert!(
+                seen_ids.insert(registration.id),
+                "Duplicate app ID found: {}",
+                registration.id
+            );
+        }
+    }
+
+    #[test]
+    fn test_specific_app_metadata() {
+        let registry = AppRegistry::auto_discover();
+
+        let counter = registry
+            .get("counter")
+            .expect("Counter app should be registered");
+
+        assert_eq!(counter.name, "Counter");
+        assert_eq!(counter.id, "counter");
+        assert!(
+            counter.description.contains("counter"),
+            "Counter description should mention counter"
+        );
+
+        let apps = registry.get("apps").expect("Apps app should be registered");
+
+        assert_eq!(apps.name, "Apps");
+        assert_eq!(apps.id, "apps");
+    }
+}

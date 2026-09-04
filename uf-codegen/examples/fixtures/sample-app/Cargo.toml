@@ -1,0 +1,6 @@
+[package]
+name = "sample-app"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "Fixture package scanned by the emit_routes_table example (source-only; not compiled by the main workspace)."

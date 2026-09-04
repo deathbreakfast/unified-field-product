@@ -1,0 +1,110 @@
+[package]
+name = "uf-product"
+version = "0.3.0"
+edition = "2021"
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+description = "Product shell APIs for Unified Field hosts: session, routes, permissions, appearance, search, and design-system primitives"
+
+[lib]
+doctest = false
+
+[[example]]
+name = "uf_app_registration"
+required-features = ["ssr"]
+
+[[example]]
+name = "app_route_paths"
+required-features = ["ssr"]
+
+[[example]]
+name = "auth_shell_host"
+required-features = ["ssr"]
+
+[lints]
+workspace = true
+
+[dependencies]
+uf-product-macros = { workspace = true }
+orbital-zone-a = { workspace = true, default-features = false }
+leptos = { workspace = true }
+leptos_meta = { workspace = true, optional = true }
+leptos_router = { workspace = true }
+leptos_axum = { workspace = true, optional = true }
+axum = { workspace = true, optional = true }
+dashmap = "5"
+
+url = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true, optional = true }
+tokio = { workspace = true, optional = true }
+anyhow = { workspace = true, optional = true }
+async-trait = { workspace = true, optional = true }
+chrono = { workspace = true, optional = true }
+
+valence = { workspace = true, optional = true }
+lepton-identity = { workspace = true, optional = true }
+lepton-host-adapter = { workspace = true, optional = true }
+axum-login = { workspace = true, optional = true }
+tower-sessions = { workspace = true, optional = true }
+quark = { workspace = true, optional = true }
+inventory = { workspace = true }
+higgs = { workspace = true, optional = true }
+higgs-host = { workspace = true, optional = true }
+uf-search-core = { workspace = true, default-features = false }
+orbital-theme = { workspace = true, default-features = false }
+orbital-shell = { workspace = true, default-features = false }
+spectra = { workspace = true, optional = true, features = ["mem"] }
+spectra-core = { workspace = true, optional = true }
+turf = { workspace = true }
+
+[features]
+default = ["preview"]
+db-sqlite = ["valence/sqlite"]
+db-hybrid = ["valence/hybrid"]
+preview = ["orbital-zone-a/preview"]
+# Placeholder until gauge is git-standalone; gates stay fail-closed.
+permissions = []
+spectra-telemetry = ["dep:spectra", "dep:spectra-core"]
+hydrate = [
+    "orbital-zone-a/hydrate",
+    "leptos/hydrate",
+    "dep:serde_json"]
+ssr = [
+    "orbital-zone-a/ssr",
+    "dep:leptos_axum",
+    "dep:tokio",
+    "dep:axum",
+    "dep:axum-login",
+    "dep:tower-sessions",
+    "dep:anyhow",
+    "dep:serde_json",
+    "dep:chrono",
+    "dep:async-trait",
+    "dep:valence",
+    "dep:lepton-identity",
+    "dep:lepton-host-adapter",
+    "lepton-host-adapter/ssr",
+    "db-sqlite",
+    "dep:quark",
+    "dep:higgs",
+    "higgs/ssr",
+    "dep:higgs-host",
+    "higgs-host/ssr",
+    "uf-search-core/ssr",
+    "preview",
+    "spectra-telemetry"]
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }
+axum = { workspace = true, default-features = false, features = ["tokio", "http1", "json"] }
+http-body-util = "0.1"
+tower = { version = "0.5", features = ["util"] }
+serde_json = { workspace = true }
+
+[build-dependencies]
+valence-codegen = { workspace = true }
+

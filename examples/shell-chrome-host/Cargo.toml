@@ -1,0 +1,82 @@
+[package]
+name = "shell-chrome-host"
+version = "0.1.0"
+edition = "2021"
+publish = false
+license.workspace = true
+description = "Teaching host for uf-integrations shell chrome (layout, app bar, search, coming-soon, 404)."
+
+[lints]
+workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+leptos = { workspace = true }
+leptos_meta = { workspace = true }
+leptos_router = { workspace = true }
+uf-product = { workspace = true, default-features = false }
+uf-integrations = { workspace = true, default-features = false }
+uf-help = { workspace = true, default-features = false }
+uf-appearance = { workspace = true, default-features = false }
+uf-search-core = { workspace = true, default-features = false }
+uf-apps = { workspace = true, default-features = false }
+uf-welcome = { workspace = true, default-features = false }
+icondata = { workspace = true }
+
+axum = { workspace = true, optional = true }
+leptos_axum = { workspace = true, optional = true }
+tokio = { workspace = true, optional = true }
+tower-http = { version = "0.6", features = ["fs"], optional = true }
+simple_logger = { version = "5", optional = true }
+log = { workspace = true, optional = true }
+any_spawner = { version = "0.3", features = ["futures-executor"], optional = true }
+
+console_error_panic_hook = { version = "0.1", optional = true }
+console_log = { version = "1", optional = true }
+wasm-bindgen = { workspace = true, optional = true }
+
+[features]
+default = []
+hydrate = [
+    "leptos/hydrate",
+    "uf-product/hydrate",
+    "uf-integrations/hydrate",
+    "uf-help/hydrate",
+    "uf-appearance/hydrate",
+    "uf-apps/hydrate",
+    "uf-apps/lazy-routes",
+    "uf-welcome/hydrate",
+    "uf-welcome/lazy-routes",
+    "dep:console_error_panic_hook",
+    "dep:console_log",
+    "dep:wasm-bindgen",
+    "dep:log",
+]
+ssr = [
+    "leptos/ssr",
+    "leptos_meta/ssr",
+    "leptos_router/ssr",
+    "uf-product/ssr",
+    "uf-integrations/ssr",
+    "uf-help/ssr",
+    "uf-appearance/ssr",
+    "uf-search-core/ssr",
+    "uf-apps/ssr",
+    "uf-apps/lazy-routes",
+    "uf-welcome/ssr",
+    "uf-welcome/lazy-routes",
+    "dep:axum",
+    "dep:leptos_axum",
+    "dep:tokio",
+    "dep:tower-http",
+    "dep:simple_logger",
+    "dep:log",
+    "dep:any_spawner",
+]
+
+[[bin]]
+name = "shell-chrome-host"
+path = "src/main.rs"
+required-features = ["ssr"]

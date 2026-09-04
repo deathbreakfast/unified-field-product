@@ -1,0 +1,59 @@
+#![allow(missing_docs)]
+//! Code generation tests
+//!
+//! Verifies that the build-time code generation system works correctly:
+//! - Schema files are found and parsed
+//! - Schema DSL content is valid
+//! - Generated code is created by build.rs
+
+#[cfg(test)]
+mod tests {
+    use std::fs;
+    use std::path::PathBuf;
+
+    #[test]
+    fn test_generated_models_exist() {
+        // Check that the build script generated the models file
+        let manifest_dir = env!("CARGO_MANIFEST_DIR");
+        let _target_dir = PathBuf::from(manifest_dir).join("../target");
+
+        // The exact path varies by build, but we can verify the build ran
+        // by checking that build.rs exists
+        let build_script = PathBuf::from(manifest_dir).join("build.rs");
+        assert!(build_script.exists(), "build.rs should exist");
+    }
+
+    /// Path to the `User` Valence schema, owned by `lepton-identity` (the crate that
+    /// superseded the old `orbital-auth-core` identity crate).
+    fn core_user_schema_path() -> PathBuf {
+        let manifest_dir = env!("CARGO_MANIFEST_DIR");
+        PathBuf::from(manifest_dir)
+            .join("../../fleet/repos/valence-platform/lepton-identity/schemas/user_valence_schema.rs")
+    }
+
+    #[test]
+    fn test_core_schema_exists() {
+        let schema_file = core_user_schema_path();
+
+        assert!(schema_file.exists(), "Core user schema should exist");
+
+        let content = fs::read_to_string(&schema_file).expect("Should be able to read schema file");
+
+        // Verify it contains the valence_schema! macro with new DSL syntax
+        assert!(content.contains("valence_schema!"));
+        // Check for DSL syntax, not TOML
+        assert!(content.contains("table:") || content.contains("table_properties"));
+        assert!(content.contains("user"));
+    }
+
+    #[test]
+    fn test_no_toml_literals() {
+        let schema_file = core_user_schema_path();
+
+        let content = fs::read_to_string(&schema_file).expect("Should be able to read schema file");
+        assert!(
+            !content.contains("r#\""),
+            "Schema files should use DSL syntax, not TOML literals"
+        );
+    }
+}

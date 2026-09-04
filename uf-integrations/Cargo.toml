@@ -1,0 +1,82 @@
+[package]
+name = "uf-integrations"
+version = "0.3.0"
+edition = "2021"
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+description = "Shell chrome for Unified Field: app bar, layout slots, search picker, 404 and coming-soon"
+
+[lib]
+doctest = false
+
+[lints]
+workspace = true
+
+[dependencies]
+leptos = { workspace = true }
+leptos_router = { workspace = true }
+icondata = { workspace = true }
+turf = { workspace = true }
+wasm-bindgen = { workspace = true }
+web-sys = { workspace = true }
+
+uf-product = { workspace = true, default-features = false, features = ["preview"] }
+uf-help = { workspace = true, default-features = false, optional = true }
+uf-appearance = { workspace = true, default-features = false, optional = true }
+orbital-base-components = { workspace = true }
+orbital-core-components = { workspace = true }
+orbital-macros = { workspace = true }
+orbital-shell = { workspace = true, default-features = false }
+orbital-primitives = { workspace = true, default-features = false }
+orbital-theme = { workspace = true, default-features = false }
+uf-search-core = { workspace = true, default-features = false }
+orbital-paging = { workspace = true, default-features = false, features = ["leptos"] }
+inventory = { workspace = true }
+
+[features]
+default = ["full"]
+# Optional product offerings for default app-bar utilities.
+offering-help = ["dep:uf-help"]
+# Marker: expect the host to link `uf-apps` so its inventory Apps button appears.
+# Not a direct dep (would cycle with `uf-apps` → `uf-integrations`).
+offering-apps = []
+offering-appearance = ["dep:uf-appearance"]
+# Marker: expect the host to link `uf-notifications` so its inventory bell appears.
+# Not a direct dep (would cycle with `uf-notifications` → `uf-integrations`).
+offering-notifications = []
+full = ["offering-help", "offering-apps", "offering-appearance", "offering-notifications"]
+# Placeholder until gauge is git-standalone; shell stays fail-closed.
+permissions = []
+hydrate = [
+    "leptos/hydrate",
+    "uf-product/hydrate",
+    "orbital-base-components/hydrate",
+    "orbital-core-components/hydrate",
+    "orbital-shell/hydrate",
+    "orbital-primitives/hydrate",
+    "orbital-paging/hydrate",
+    "uf-help?/hydrate",
+    "uf-appearance?/hydrate",
+]
+ssr = [
+    "leptos/ssr",
+    "leptos_router/ssr",
+    "uf-product/ssr",
+    "orbital-base-components/ssr",
+    "orbital-core-components/ssr",
+    "orbital-shell/ssr",
+    "orbital-primitives/ssr",
+    "uf-search-core/ssr",
+    "orbital-paging/ssr",
+    "uf-help?/ssr",
+    "uf-appearance?/ssr",
+]
+
+[package.metadata.turf]
+minify = true
+
+[package.metadata.turf-dev]
+minify = false

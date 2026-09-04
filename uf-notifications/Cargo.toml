@@ -1,0 +1,70 @@
+[package]
+name = "uf-notifications"
+version = "0.3.0"
+edition = "2021"
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+description = "Orbital notifications app: bell, inbox page, and /notifications routes"
+
+[lints]
+workspace = true
+
+[dependencies]
+leptos.workspace = true
+leptos_meta.workspace = true
+leptos_router.workspace = true
+leptos_axum = { workspace = true, optional = true }
+
+icondata.workspace = true
+icondata_core.workspace = true
+turf.workspace = true
+
+uf-product = { workspace = true, default-features = false }
+uf-integrations = { workspace = true, default-features = false }
+orbital-macros = { workspace = true }
+orbital-paging = { workspace = true, default-features = false, features = ["leptos"] }
+orbital-primitives = { workspace = true, default-features = false }
+orbital-core-components = { workspace = true }
+uf-product-macros = { workspace = true }
+uf-help-macros = { workspace = true }
+uf-help = { workspace = true, default-features = false }
+uf-notifications-api = { workspace = true, default-features = false }
+
+serde = { workspace = true, features = ["derive"] }
+serde_json.workspace = true
+uuid = { version = "1", features = ["serde", "v4"] }
+chrono = { workspace = true, features = ["serde"] }
+
+valence = { workspace = true, optional = true }
+
+inventory = { workspace = true }
+
+[features]
+# Lazy inbox view is the host default (`cargo leptos --split`). Disable for
+# hosts that ship a single WASM.
+default = ["lazy-routes"]
+lazy-routes = []
+dev-tools = ["uf-notifications-api/dev-tools"]
+hydrate = [
+    "leptos/hydrate",
+    "uf-product/hydrate",
+    "uf-integrations/hydrate",
+    "uf-help/hydrate",
+    "uf-notifications-api/hydrate",
+    "orbital-paging/hydrate",
+    "orbital-primitives/hydrate"]
+ssr = [
+    "leptos/ssr",
+    "leptos_meta/ssr",
+    "leptos_router/ssr",
+    "dep:leptos_axum",
+    "uf-product/ssr",
+    "uf-integrations/ssr",
+    "uf-help/ssr",
+    "uf-notifications-api/ssr",
+    "dep:valence",
+    "orbital-paging/ssr",
+    "orbital-primitives/ssr"]

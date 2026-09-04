@@ -1,0 +1,167 @@
+#![allow(missing_docs)]
+//! Validation framework integration tests
+//!
+//! Tests that schema validations are enforced in generated models
+//!
+//! Run with: `cargo test --package app-template --test validation_tests --features ssr`
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn test_account_validation_accepts_valid_values() {
+        #[cfg(feature = "ssr")]
+        {
+            use chrono::Utc;
+            use orbital::generated::Account;
+
+            let now = Utc::now();
+            assert!(Account::new(
+                "Acme".to_string(),
+                None,
+                None,
+                "billing@acme.test".to_string(),
+                now,
+                now
+            )
+            .is_ok());
+        }
+    }
+
+    #[test]
+    fn test_account_validation_rejects_invalid_values() {
+        #[cfg(feature = "ssr")]
+        {
+            use chrono::Utc;
+            use orbital::generated::Account;
+
+            let now = Utc::now();
+            let result = Account::new(
+                "Acme".to_string(),
+                None,
+                None,
+                "not-an-email".to_string(),
+                now,
+                now,
+            );
+            assert!(result.is_err());
+
+            let err = result.unwrap_err();
+            assert!(err.to_string().contains("Validation"));
+        }
+    }
+
+    #[test]
+    fn test_validation_error_messages() {
+        #[cfg(feature = "ssr")]
+        {
+            use chrono::Utc;
+            use orbital::generated::Account;
+
+            let now = Utc::now();
+            let result = Account::new(
+                "Acme".to_string(),
+                None,
+                None,
+                "not-an-email".to_string(),
+                now,
+                now,
+            );
+            assert!(result.is_err());
+
+            let err = result.unwrap_err();
+            let err_msg = err.to_string();
+
+            assert!(err_msg.to_lowercase().contains("email") || err_msg.contains("Validation"));
+        }
+    }
+
+    #[cfg(feature = "ssr")]
+    async fn test_valence() -> valence::Valence {
+        use surrealdb::engine::local::{Db, Mem};
+        use surrealdb::Surreal;
+
+        let db = Surreal::<Db>::init();
+        db.connect::<Mem>(()).await.unwrap();
+        db.use_ns("test").use_db("test").await.unwrap();
+        valence::Valence::new(
+            valence::SurrealMemBackend::shared_router_with_embedded_logical_names_slices(
+                db.clone(),
+                &[
+                    valence::DEFAULT_EMBEDDED_SURREAL_LOGICAL_NAMES,
+                    orbital::embedded_surreal::EMBEDDED_SURREAL_LOGICAL_NAMES,
+                ],
+            ),
+        )
+        .with_actor(valence::Actor::System {
+            operation: "test".to_string(),
+        })
+        .build()
+    }
+
+    #[tokio::test]
+    async fn test_setter_validation() {
+        #[cfg(feature = "ssr")]
+        {
+            use chrono::Utc;
+            use orbital::generated::Account;
+
+            let v = test_valence().await;
+            let now = Utc::now();
+            let account = Account::new(
+                "Acme".to_string(),
+                None,
+                None,
+                "billing@acme.test".to_string(),
+                now,
+                now,
+            )
+            .expect("Valid value");
+            let mutable = account.get_mutable(&v);
+
+            assert!(mutable.set_name("Acme Updated".to_string()).is_ok());
+
+            // Re-create to test invalid value
+            let account2 = Account::new(
+                "Acme".to_string(),
+                None,
+                None,
+                "billing@acme.test".to_string(),
+                now,
+                now,
+            )
+            .expect("Valid value");
+            let mutable2 = account2.get_mutable(&v);
+            assert!(mutable2.set_name("x".repeat(256)).is_err());
+        }
+    }
+
+    #[tokio::test]
+    async fn test_setter_validation_error_message() {
+        #[cfg(feature = "ssr")]
+        {
+            use chrono::Utc;
+            use orbital::generated::Account;
+
+            let v = test_valence().await;
+            let now = Utc::now();
+            let account = Account::new(
+                "Acme".to_string(),
+                None,
+                None,
+                "billing@acme.test".to_string(),
+                now,
+                now,
+            )
+            .expect("Valid value");
+            let mutable = account.get_mutable(&v);
+
+            let result = mutable.set_name("x".repeat(256));
+            assert!(result.is_err());
+
+            if let Err(err) = result {
+                let msg = err.to_string();
+                assert!(msg.contains("Validation") || msg.to_lowercase().contains("length"));
+            }
+        }
+    }
+}

@@ -1,0 +1,30 @@
+[package]
+name = "uf-search-core"
+version = "0.1.0"
+edition = "2021"
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+description = "Leptos-free search keys/items and SSR provider registry for Unified Field product search"
+
+[lints]
+workspace = true
+
+[dependencies]
+serde = { workspace = true }
+anyhow = { workspace = true, optional = true }
+valence = { workspace = true, optional = true }
+quark = { workspace = true, optional = true }
+
+[features]
+default = []
+ssr = ["dep:anyhow", "dep:valence", "dep:quark"]
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }
+
+[[example]]
+name = "query_many_stub"
+required-features = ["ssr"]

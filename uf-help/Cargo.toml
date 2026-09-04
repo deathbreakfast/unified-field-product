@@ -1,0 +1,48 @@
+[package]
+name = "uf-help"
+version = "0.3.0"
+edition = "2021"
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+description = "Optional Help product offering — spotlight tours, report dialogs, and app-bar help for Unified Field shells."
+
+[lints]
+workspace = true
+
+[dependencies]
+icondata = { workspace = true }
+inventory = { workspace = true }
+leptos = { workspace = true }
+leptos_router = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+uuid = { workspace = true }
+uf-product = { workspace = true, default-features = false }
+uf-help-macros = { workspace = true }
+uf-product-macros = { workspace = true }
+chrono = { workspace = true, optional = true }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"], optional = true }
+async-trait = { workspace = true }
+thiserror = "2"
+valence = { workspace = true, optional = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["rt", "macros"] }
+
+[features]
+default = []
+hydrate = [
+    "leptos/hydrate",
+    "uf-product/hydrate",
+]
+ssr = [
+    "leptos/ssr",
+    "leptos_router/ssr",
+    "uf-product/ssr",
+    "dep:chrono",
+    "dep:reqwest",
+    "dep:valence",
+]

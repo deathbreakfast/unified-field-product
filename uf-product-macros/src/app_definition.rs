@@ -1,0 +1,394 @@
+use proc_macro2::TokenStream;
+use quote::{format_ident, quote};
+use syn::{
+    parse::{Parse, ParseStream},
+    punctuated::Punctuated,
+    Expr, Ident, Result, Token,
+};
+
+/// Represents the parsed structure of a `uf_app!` macro invocation
+struct UfAppDefinition {
+    fields: Vec<AppField>,
+}
+
+struct AppField {
+    name: Ident,
+    value: Expr,
+}
+
+impl Parse for UfAppDefinition {
+    fn parse(input: ParseStream) -> Result<Self> {
+        let fields = Punctuated::<AppField, Token![,]>::parse_terminated(input)?;
+        Ok(Self {
+            fields: fields.into_iter().collect(),
+        })
+    }
+}
+
+impl Parse for AppField {
+    fn parse(input: ParseStream) -> Result<Self> {
+        let name: Ident = input.parse()?;
+        input.parse::<Token![:]>()?;
+        let value: Expr = input.parse()?;
+        Ok(Self { name, value })
+    }
+}
+
+#[allow(clippy::too_many_lines)]
+pub fn expand_uf_app(input: TokenStream) -> TokenStream {
+    let app_def = match syn::parse2::<UfAppDefinition>(input) {
+        Ok(def) => def,
+        Err(e) => return e.to_compile_error(),
+    };
+
+    // Extract fields
+    let mut name = None;
+    let mut id = None;
+    let mut description = None;
+    let mut icon = None;
+    let mut version = None;
+    let mut route_path_param = None;
+    let mut route_view = None;
+    let mut routes_component = None;
+    let mut permission_manifest = None;
+    let mut brand_seed = None;
+    let mut repository = None;
+    let mut crate_name = None;
+
+    for field in &app_def.fields {
+        match field.name.to_string().as_str() {
+            "name" => name = Some(&field.value),
+            "id" => id = Some(&field.value),
+            "description" => description = Some(&field.value),
+            "icon" => icon = Some(&field.value),
+            "version" => version = Some(&field.value),
+            // Accepted for forward compatibility; not yet expanded.
+            "permissions" | "navigation" => {}
+            "route_path" => route_path_param = Some(&field.value),
+            "route_view" => route_view = Some(&field.value),
+            "routes" => routes_component = Some(&field.value),
+            "permission_manifest" => permission_manifest = Some(&field.value),
+            "brand_seed" => brand_seed = Some(&field.value),
+            "repository" => repository = Some(&field.value),
+            "crate_name" => crate_name = Some(&field.value),
+            _ => {
+                return syn::Error::new_spanned(
+                    &field.name,
+                    format!("Unknown field: {}", field.name),
+                )
+                .to_compile_error()
+            }
+        }
+    }
+
+    // ID is required for route registration
+    let id_value = match id {
+        Some(Expr::Lit(lit)) => {
+            if let syn::Lit::Str(s) = &lit.lit {
+                s.value()
+            } else {
+                return syn::Error::new_spanned(lit, "id must be a string literal")
+                    .to_compile_error();
+            }
+        }
+        _ => {
+            return syn::Error::new(
+                proc_macro2::Span::call_site(),
+                "id field is required and must be a string literal",
+            )
+            .to_compile_error();
+        }
+    };
+
+    // Generate route function name from app ID in PascalCase
+    // Convert "counter" -> "Counter", "my-app" -> "MyApp", etc.
+    let route_fn_name = {
+        let pascal_case: String = id_value
+            .split(['-', '_', ' '])
+            .filter(|s| !s.is_empty())
+            .map(|word| {
+                let mut chars = word.chars();
+                chars.next().map_or_else(String::new, |first| {
+                    let mut result = first.to_uppercase().to_string();
+                    result.push_str(chars.as_str());
+                    result
+                })
+            })
+            .collect();
+        format_ident!("{}Routes", pascal_case)
+    };
+
+    // Determine route_path for inventory - use provided route_path_param, or default to "/{id}"
+    let route_path_value = route_path_param.map_or_else(
+        || {
+            // Default to "/{id}"
+            let default_path = format!("/{id_value}");
+            let path_lit = syn::LitStr::new(&default_path, proc_macro2::Span::call_site());
+            quote! { #path_lit }
+        },
+        |rp| {
+            // Extract string literal value if it's a string literal, otherwise use as-is
+            if let Expr::Lit(lit) = rp {
+                if let syn::Lit::Str(s) = &lit.lit {
+                    quote! { #s }
+                } else {
+                    quote! { #rp }
+                }
+            } else {
+                quote! { #rp }
+            }
+        },
+    );
+
+    // Generate route registration if route fields are provided
+    let route_registration =
+        if let (Some(path_expr), Some(view_expr)) = (route_path_param, route_view) {
+            quote! {
+                /// Transparent route component generated by uf_app! macro
+                ///
+                /// This component can be used within a Router's Routes to automatically
+                /// register this app's routes.
+                #[::leptos::prelude::component(transparent)]
+                pub fn #route_fn_name() -> impl ::leptos_router::MatchNestedRoutes + Clone {
+                    use ::leptos::prelude::*;
+                    use ::leptos_router::{components::*, path};
+
+                    view! {
+                        <Route path=path!(#path_expr) view=#view_expr />
+                    }.into_inner()
+                }
+            }
+        } else {
+            quote! {}
+        };
+
+    // Generate the app metadata struct
+    let permission_manifest_expr = permission_manifest.map_or_else(
+        || quote! { None },
+        |manifest_ty| {
+            quote! {
+                Some(<#manifest_ty as ::uf_product::AppPermissionManifestProvider>::manifest)
+            }
+        },
+    );
+
+    let brand_seed_expr =
+        brand_seed.map_or_else(|| quote! { None }, |seed_expr| quote! { Some(#seed_expr) });
+
+    let repository_expr =
+        repository.map_or_else(|| quote! { None }, |repo_expr| quote! { Some(#repo_expr) });
+
+    let crate_name_expr = crate_name.map_or_else(
+        || quote! { None },
+        |crate_expr| quote! { Some(#crate_expr) },
+    );
+
+    let expanded = quote! {
+        /// Application metadata generated by uf_app! macro
+        pub struct AppMetadata;
+
+        impl AppMetadata {
+            pub const NAME: &'static str = #name;
+            pub const ID: &'static str = #id;
+            pub const DESCRIPTION: &'static str = #description;
+            pub const ICON: &'static str = #icon;
+            pub const VERSION: &'static str = #version;
+
+            /// Get the application name
+            pub fn name() -> &'static str {
+                Self::NAME
+            }
+
+            /// Get the application ID
+            pub fn id() -> &'static str {
+                Self::ID
+            }
+
+            /// Get the application description
+            pub fn description() -> &'static str {
+                Self::DESCRIPTION
+            }
+
+            /// Get the application icon
+            pub fn icon() -> &'static str {
+                Self::ICON
+            }
+
+            /// Get the application version
+            pub fn version() -> &'static str {
+                Self::VERSION
+            }
+        }
+    };
+
+    // Add routes() method if routes_component is provided
+    // Since route components are functions that return impl MatchNestedRoutes + Clone,
+    // we can't easily store them as types. Instead, we'll add a method that documents
+    // how to access the routes and provides the component identifier.
+    //
+    // Actually, route components MUST be used in JSX syntax (<Component />), so
+    // we can't really return them from a method in a useful way. The best we can do
+    // is provide documentation. However, we could add a type alias for convenience.
+    let routes_method = routes_component.map_or_else(
+        || quote! {},
+        |routes_comp| {
+            quote! {
+                impl AppMetadata {
+                    /// Get the route component as a MatchNestedRoutes + Clone
+                    ///
+                    /// This returns the result of calling the route component function.
+                    /// However, note that route components are typically used in JSX syntax
+                    /// within a `<Routes>` component for proper integration with Leptos Router.
+                    ///
+                    /// Example:
+                    /// ```ignore
+                    /// // Direct usage (recommended):
+                    /// use counter_app::CounterRoutes;
+                    /// view! {
+                    ///     <Routes>
+                    ///         <CounterRoutes />
+                    ///     </Routes>
+                    /// }
+                    ///
+                    /// // Or through AppMetadata:
+                    /// use counter_app::AppMetadata;
+                    /// let routes = AppMetadata::routes();
+                    /// // Note: This still needs to be used in JSX syntax within Routes
+                    /// ```
+                    pub fn routes() -> impl ::leptos_router::MatchNestedRoutes + Clone {
+                        #routes_comp()
+                    }
+                }
+            }
+        },
+    );
+
+    let expanded = quote! {
+        #expanded
+        #routes_method
+
+        #route_registration
+
+        // Register app metadata with inventory (SSR only - doesn't work in WASM)
+        // This registration always runs on SSR, whether or not routes are provided
+        #[cfg(feature = "ssr")]
+        ::uf_product::inventory::submit! {
+            ::uf_product::AppRegistration {
+                id: #id,
+                name: #name,
+                description: #description,
+                icon: #icon,
+                route_path: #route_path_value,
+                repository: #repository_expr,
+                crate_name: #crate_name_expr,
+                brand_seed: #brand_seed_expr,
+                permission_manifest: #permission_manifest_expr,
+            }
+        }
+    };
+
+    expanded
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use quote::quote;
+
+    fn expand_str(tokens: TokenStream) -> String {
+        expand_uf_app(tokens).to_string()
+    }
+
+    #[test]
+    fn uf_app_expands_metadata_and_inventory_happy_path() {
+        let out = expand_str(quote! {
+            name: "Apps",
+            id: "apps",
+            description: "Apps directory",
+            icon: "📱",
+            version: "0.1.0",
+            routes: UfAppsRoutes,
+            route_path: "/apps",
+        });
+        assert!(out.contains("AppMetadata"), "expected AppMetadata: {out}");
+        assert!(out.contains("\"apps\""), "expected id literal: {out}");
+        assert!(
+            out.contains("inventory :: submit"),
+            "expected inventory submit: {out}"
+        );
+        assert!(
+            out.contains("UfAppsRoutes"),
+            "expected routes component wiring: {out}"
+        );
+    }
+
+    #[test]
+    fn uf_app_defaults_route_path_from_id_happy_path() {
+        let out = expand_str(quote! {
+            name: "Welcome",
+            id: "welcome",
+            description: "Welcome",
+            icon: "👋",
+            version: "0.1.0",
+        });
+        assert!(
+            out.contains("\"/welcome\""),
+            "expected default route_path: {out}"
+        );
+    }
+
+    #[test]
+    fn uf_app_missing_id_is_compile_error_sad() {
+        let out = expand_str(quote! {
+            name: "Broken",
+            description: "missing id",
+        });
+        assert!(
+            out.contains("id field is required"),
+            "expected missing-id error: {out}"
+        );
+    }
+
+    #[test]
+    fn uf_app_unknown_field_is_compile_error_sad() {
+        let out = expand_str(quote! {
+            name: "Broken",
+            id: "broken",
+            not_a_field: "x",
+        });
+        assert!(
+            out.contains("Unknown field"),
+            "expected unknown-field error: {out}"
+        );
+    }
+
+    #[test]
+    fn uf_app_optional_repository_and_crate_name_happy_path() {
+        let out = expand_str(quote! {
+            name: "Apps",
+            id: "apps",
+            description: "Apps directory",
+            icon: "📱",
+            version: "0.1.0",
+            route_path: "/apps",
+            repository: "https://github.com/unified-field-dev/unified-field-product",
+            crate_name: "uf-apps",
+        });
+        assert!(
+            out.contains("repository"),
+            "expected repository field in inventory: {out}"
+        );
+        assert!(
+            out.contains("crate_name"),
+            "expected crate_name field in inventory: {out}"
+        );
+        assert!(
+            out.contains("https://github.com/unified-field-dev/unified-field-product"),
+            "expected repository URL: {out}"
+        );
+        assert!(
+            out.contains("\"uf-apps\""),
+            "expected crate_name literal: {out}"
+        );
+    }
+}

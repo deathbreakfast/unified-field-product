@@ -1,0 +1,150 @@
+#![allow(missing_docs)]
+//! Generated model integration tests
+//!
+//! Tests a generated core model including:
+//! - Constructor and getters
+//! - Mutable builder pattern
+//! - Change tracking
+//! - Model trait implementation
+//!
+//! Run with: `cargo test --package app-template --test generated_models_tests --features ssr`
+
+#[cfg(test)]
+mod tests {
+
+    #[test]
+    fn test_account_new() {
+        #[cfg(feature = "ssr")]
+        {
+            use chrono::Utc;
+            use orbital::generated::Account;
+
+            let now = Utc::now();
+            let account = Account::new(
+                "Acme".to_string(),
+                None,
+                None,
+                "billing@acme.test".to_string(),
+                now,
+                now,
+            )
+            .expect("Valid account should succeed");
+            assert_eq!(account.name(), "Acme");
+            assert!(account.id().is_none(), "New account should have no ID");
+        }
+    }
+
+    #[cfg(feature = "ssr")]
+    async fn test_valence() -> valence::Valence {
+        use surrealdb::engine::local::{Db, Mem};
+        use surrealdb::Surreal;
+
+        let db = Surreal::<Db>::init();
+        db.connect::<Mem>(()).await.unwrap();
+        db.use_ns("test").use_db("test").await.unwrap();
+        valence::Valence::new(
+            valence::SurrealMemBackend::shared_router_with_embedded_logical_names_slices(
+                db.clone(),
+                &[
+                    valence::DEFAULT_EMBEDDED_SURREAL_LOGICAL_NAMES,
+                    orbital::embedded_surreal::EMBEDDED_SURREAL_LOGICAL_NAMES,
+                ],
+            ),
+        )
+        .with_actor(valence::Actor::System {
+            operation: "test".to_string(),
+        })
+        .build()
+    }
+
+    #[tokio::test]
+    async fn test_account_mutable_builder() {
+        #[cfg(feature = "ssr")]
+        {
+            use chrono::Utc;
+            use orbital::generated::Account;
+
+            let v = test_valence().await;
+            let now = Utc::now();
+            let account = Account::new(
+                "Acme".to_string(),
+                None,
+                None,
+                "billing@acme.test".to_string(),
+                now,
+                now,
+            )
+            .expect("Valid account should succeed");
+            let mutable = account
+                .get_mutable(&v)
+                .set_name("Acme Updated".to_string())
+                .expect("Valid value should succeed");
+
+            assert!(mutable.name_has_change());
+
+            let updated = mutable.build();
+            assert_eq!(updated.name(), "Acme Updated");
+        }
+    }
+
+    #[tokio::test]
+    async fn test_account_no_change() {
+        #[cfg(feature = "ssr")]
+        {
+            use chrono::Utc;
+            use orbital::generated::Account;
+
+            let v = test_valence().await;
+            let now = Utc::now();
+            let account = Account::new(
+                "Acme".to_string(),
+                None,
+                None,
+                "billing@acme.test".to_string(),
+                now,
+                now,
+            )
+            .expect("Valid account should succeed");
+            let mutable = account.get_mutable(&v);
+
+            assert!(!mutable.name_has_change());
+
+            let unchanged = mutable.build();
+            assert_eq!(unchanged.name(), "Acme");
+        }
+    }
+
+    #[test]
+    fn test_account_model_trait() {
+        #[cfg(feature = "ssr")]
+        {
+            use orbital::generated::Account;
+            use valence::Model;
+
+            assert_eq!(Account::table_name(), "account");
+            assert_eq!(Account::schema_version(), "0.1.0");
+        }
+    }
+
+    #[tokio::test]
+    async fn test_account_get_mutable() {
+        #[cfg(feature = "ssr")]
+        {
+            use chrono::Utc;
+            use orbital::generated::Account;
+
+            let v = test_valence().await;
+            let now = Utc::now();
+            let account = Account::new(
+                "Acme".to_string(),
+                None,
+                None,
+                "billing@acme.test".to_string(),
+                now,
+                now,
+            )
+            .expect("Valid account should succeed");
+            let _mutable = account.get_mutable(&v);
+        }
+    }
+}

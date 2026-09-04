@@ -1,0 +1,63 @@
+[package]
+name = "component-preview-host"
+version = "0.1.0"
+edition = "2021"
+publish = false
+license.workspace = true
+description = "Teaching host that mounts uf-component-preview OrbitalComponentRoutes at /orbital."
+
+[lints]
+workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+leptos = { workspace = true }
+leptos_meta = { workspace = true }
+leptos_router = { workspace = true }
+uf-product = { workspace = true, default-features = false }
+uf-component-preview = { workspace = true, default-features = false }
+
+axum = { workspace = true, optional = true }
+leptos_axum = { workspace = true, optional = true }
+tokio = { workspace = true, optional = true }
+tower-http = { version = "0.6", features = ["fs"], optional = true }
+simple_logger = { version = "5", optional = true }
+log = { workspace = true, optional = true }
+any_spawner = { version = "0.3", features = ["futures-executor"], optional = true }
+
+console_error_panic_hook = { version = "0.1", optional = true }
+console_log = { version = "1", optional = true }
+wasm-bindgen = { workspace = true, optional = true }
+
+[features]
+default = []
+hydrate = [
+    "leptos/hydrate",
+    "uf-product/hydrate",
+    "uf-component-preview/hydrate",
+    "dep:console_error_panic_hook",
+    "dep:console_log",
+    "dep:wasm-bindgen",
+    "dep:log",
+]
+ssr = [
+    "leptos/ssr",
+    "leptos_meta/ssr",
+    "leptos_router/ssr",
+    "uf-product/ssr",
+    "uf-component-preview/ssr",
+    "dep:axum",
+    "dep:leptos_axum",
+    "dep:tokio",
+    "dep:tower-http",
+    "dep:simple_logger",
+    "dep:log",
+    "dep:any_spawner",
+]
+
+[[bin]]
+name = "component-preview-host"
+path = "src/main.rs"
+required-features = ["ssr"]

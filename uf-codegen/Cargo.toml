@@ -1,0 +1,24 @@
+[package]
+name = "uf-codegen"
+version = "0.1.0"
+edition = "2021"
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+description = "Build-time scan of uf_app! into generated route and analytics tables"
+
+[lints]
+workspace = true
+
+[dependencies]
+anyhow = { workspace = true }
+cargo_metadata = "0.20"
+quote = "1.0"
+syn = { version = "2.0", features = ["full", "parsing"] }
+proc-macro2 = "1.0"
+prettyplease = "0.2"
+
+[[example]]
+name = "emit_routes_table"
