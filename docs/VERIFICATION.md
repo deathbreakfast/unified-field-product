@@ -30,6 +30,14 @@ cargo test -p uf-welcome --features ssr
 cargo clippy -p uf-apps --features ssr --all-targets -- -D warnings
 ```
 
+Step-up (`StepUpMode` parse + stable `STEP_UP:` prefixes; macro expansion):
+
+```bash
+cargo test -p uf-product-macros server_step_up
+cargo test -p uf-product --lib step_up_mode_ -- --nocapture
+cargo test -p uf-product --lib step_up_error_prefixes -- --nocapture
+```
+
 Additional SSR checks (not in the default CI `test` job):
 
 ```bash

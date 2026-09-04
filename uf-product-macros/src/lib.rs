@@ -11,6 +11,10 @@
 //!   emits route imports. [Get started](#getting-started)
 //! - **Product server macro** — The `#[server]` attribute wraps Leptos server functions with
 //!   operation-context plumbing and an optional permission gate. [Get started](#server-macro)
+//! - **Step-up server gate** — Optional `step_up` / `step_up = "fresh"` on `#[server]` inserts
+//!   `uf_product::permissions::require_step_up` after the permission check so Tier A
+//!   mutations demand a recent TOTP window (or a handler-supplied fresh code).
+//!   [Get started](#step-up-gate)
 //! - **Permission manifest derive** — `#[derive(UfPermissionManifest)]` builds a stable
 //!   permission manifest from a crate-local enum for route and server-fn gates.
 //! - **Search source macro** — `define_search_sources!` registers backend search sources for
@@ -71,6 +75,45 @@
 //! Permission-gated calls return [`ServerFnError`](https://docs.rs/leptos/latest/leptos/server_fn/enum.ServerFnError.html)
 //! when `actor_can` fails for the named `permission`. Unwrapped fns still receive operation
 //! context through `with_operation`.
+//!
+//! ## Step-up gate
+//!
+//! Sensitive mutations that already use `permission = "…"` can also demand a recent TOTP
+//! sudo window (or a one-shot fresh code) without hand-writing the gate. The `step_up`
+//! attribute expands to `uf_product::permissions::require_step_up` after the permission
+//! check so UI clients see a stable `STEP_UP:`
+//! [`ServerFnError`](https://docs.rs/leptos/latest/leptos/server_fn/enum.ServerFnError.html)
+//! prefix when proof is missing.
+//!
+//! **Prerequisites:** Host with `ssr`, Higgs session, and lepton-auth writing the sudo
+//! window (`verify_totp_for_session`). Prefer `step_up` (window mode) for Tier A; use
+//! `step_up = "fresh"` when the handler itself calls `lepton_auth::verify_fresh_totp`.
+//!
+//! ```rust,ignore
+//! use leptos::prelude::*;
+//!
+//! #[uf_product_macros::server(permission = "GaugeAdmin", step_up)]
+//! pub async fn grant_role(target: String) -> Result<(), ServerFnError> {
+//!     // require_step_up("window") already ran; proceed under the session actor.
+//!     let _ = target;
+//!     Ok(())
+//! }
+//!
+//! #[uf_product_macros::server(permission = "SecretsReveal", step_up = "fresh")]
+//! pub async fn reveal_secret(id: String, totp_code: String) -> Result<String, ServerFnError> {
+//!     lepton_auth::verify_fresh_totp(&totp_code).await.map_err(|e| {
+//!         ServerFnError::new(format!("STEP_UP:{}", e))
+//!     })?;
+//!     Ok(id)
+//! }
+//! ```
+//!
+//! Window-mode calls return `STEP_UP:step_up_required:` (or `_expired:`) until the
+//! operator completes the step-up dialog. Fresh mode always passes the macro gate; the
+//! handler must still verify the code. Unknown `step_up` tokens are a compile error.
+//!
+//! Next: wire `uf_product::permissions::require_step_up` directly when you are not using
+//! the attribute, or open lepton-auth **Verify TOTP for a sudo window**.
 //!
 //! ## Define search sources
 //!

@@ -5,30 +5,48 @@ use syn::{parse2, parse_quote, ItemFn, LitStr, Token};
 
 struct ServerArgs {
     permission: Option<LitStr>,
+    /// `None` = no step-up; `Some("")` / `Some("window")` = window; `Some("fresh")` = fresh.
+    step_up: Option<LitStr>,
 }
 
 impl Parse for ServerArgs {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
         if input.is_empty() {
-            return Ok(Self { permission: None });
+            return Ok(Self {
+                permission: None,
+                step_up: None,
+            });
         }
 
-        let ident: syn::Ident = input.parse()?;
-        if ident != "permission" {
-            return Err(syn::Error::new_spanned(
-                ident,
-                "unsupported argument; expected `permission = \"...\"`",
-            ));
-        }
-        input.parse::<Token![=]>()?;
-        let permission: LitStr = input.parse()?;
+        let mut permission = None;
+        let mut step_up = None;
 
-        if !input.is_empty() {
-            return Err(input.error("unexpected trailing tokens in server macro arguments"));
+        while !input.is_empty() {
+            let ident: syn::Ident = input.parse()?;
+            if ident == "permission" {
+                input.parse::<Token![=]>()?;
+                permission = Some(input.parse::<LitStr>()?);
+            } else if ident == "step_up" {
+                if input.peek(Token![=]) {
+                    input.parse::<Token![=]>()?;
+                    step_up = Some(input.parse::<LitStr>()?);
+                } else {
+                    step_up = Some(LitStr::new("window", ident.span()));
+                }
+            } else {
+                return Err(syn::Error::new_spanned(
+                    ident,
+                    "unsupported argument; expected `permission = \"...\"` or `step_up[=\"window\"|\"fresh\"]`",
+                ));
+            }
+            if input.peek(Token![,]) {
+                input.parse::<Token![,]>()?;
+            }
         }
 
         Ok(Self {
-            permission: Some(permission),
+            permission,
+            step_up,
         })
     }
 }
@@ -38,6 +56,8 @@ impl Parse for ServerArgs {
 /// Without `permission = "…"`, wraps the async body in
 /// `uf_product::ssr::with_operation(fn_name, …)`. With a permission argument, uses
 /// `higgs::server_runtime::with_operation` and a Gauge `actor_can` gate.
+/// Optional `step_up` / `step_up = "fresh"` inserts
+/// [`uf_product::permissions::require_step_up`] after the permission gate.
 ///
 /// Prefer the public docs on [`crate::server`] for integrator examples.
 pub fn expand_server(attr: TokenStream, input: TokenStream) -> TokenStream {
@@ -50,11 +70,9 @@ pub fn expand_server(attr: TokenStream, input: TokenStream) -> TokenStream {
         Err(e) => return e.to_compile_error(),
     };
 
-    // Extract function name
     let fn_name = &input_fn.sig.ident;
     let fn_name_str = fn_name.to_string();
 
-    // Check if function is async
     if input_fn.sig.asyncness.is_none() {
         return syn::Error::new_spanned(
             &input_fn.sig,
@@ -63,7 +81,6 @@ pub fn expand_server(attr: TokenStream, input: TokenStream) -> TokenStream {
         .to_compile_error();
     }
 
-    // Separate server attributes from other attributes
     let mut server_attrs = Vec::new();
     let mut other_attrs = Vec::new();
 
@@ -75,15 +92,11 @@ pub fn expand_server(attr: TokenStream, input: TokenStream) -> TokenStream {
         }
     }
 
-    // If no #[server] attribute found, add a default one
     if server_attrs.is_empty() {
         server_attrs.push(parse_quote!(#[server]));
     }
 
-    // Extract the function body
     let body = &input_fn.block;
-
-    // Build the new function with wrapped body
     let vis = &input_fn.vis;
     let sig = &input_fn.sig;
     let fn_name_str_lit = syn::LitStr::new(&fn_name_str, proc_macro2::Span::call_site());
@@ -93,20 +106,38 @@ pub fn expand_server(attr: TokenStream, input: TokenStream) -> TokenStream {
         || quote! {},
         |permission| {
             quote! {
-            #[cfg(feature = "ssr")]
-            {
-                uf_product::permissions::require_permission(#permission).await?;
-            }
+                #[cfg(feature = "ssr")]
+                {
+                    uf_product::permissions::require_permission(#permission).await?;
                 }
+            }
         },
     );
 
-    let wrapped_body = if has_permission_arg {
+    let has_step_up = args.step_up.is_some();
+    let step_up_guard = args.step_up.map_or_else(
+        || quote! {},
+        |mode| {
+            let mode_lit = if mode.value().is_empty() {
+                LitStr::new("window", mode.span())
+            } else {
+                mode
+            };
+            quote! {
+                #[cfg(feature = "ssr")]
+                {
+                    uf_product::permissions::require_step_up(#mode_lit).await?;
+                }
+            }
+        },
+    );
+
+    let use_higgs_runtime = has_permission_arg || has_step_up;
+    let wrapped_body = if use_higgs_runtime {
         quote! {
-            // Operation tagging lives on `higgs::server_runtime::with_operation`;
-            // payload helpers remain under the same module.
             higgs::server_runtime::with_operation(#fn_name_str_lit, async move {
                 #permission_guard
+                #step_up_guard
                 #body
             }).await
         }
@@ -176,6 +207,46 @@ mod tests {
         assert!(
             out.contains("\"apps.view\""),
             "expected permission name: {out}"
+        );
+    }
+
+    #[test]
+    fn server_step_up_window_gate_happy_path() {
+        let out = expand_server(
+            quote! { permission = "GaugeAdmin", step_up },
+            quote! {
+                pub async fn add_user() -> Result<(), ()> {
+                    Ok(())
+                }
+            },
+        )
+        .to_string();
+        assert!(
+            out.contains("require_permission"),
+            "expected permission gate: {out}"
+        );
+        assert!(
+            out.contains("require_step_up"),
+            "expected step_up gate: {out}"
+        );
+        assert!(out.contains("\"window\""), "expected window mode: {out}");
+    }
+
+    #[test]
+    fn server_step_up_fresh_gate_happy_path() {
+        let out = expand_server(
+            quote! { permission = "SecretsReveal", step_up = "fresh" },
+            quote! {
+                pub async fn reveal() -> Result<(), ()> {
+                    Ok(())
+                }
+            },
+        )
+        .to_string();
+        assert!(out.contains("\"fresh\""), "expected fresh mode: {out}");
+        assert!(
+            out.contains("require_step_up"),
+            "expected step_up gate: {out}"
         );
     }
 

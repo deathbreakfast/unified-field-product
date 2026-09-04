@@ -83,8 +83,14 @@
 //! Hosts install a `PermissionBackend` via `provide_permission_backend` at
 //! shell bootstrap (SSR). `require_permission` and route gates **fail closed** when
 //! no backend is in context.
+//!
+//! Sensitive mutations that need a recent TOTP check use `require_step_up`
+//! (or `step_up` on `#[uf_product_macros::server]`). lepton-auth opens the
+//! session sudo window; this module only reads it.
 
 mod backend;
+#[cfg(feature = "ssr")]
+mod step_up;
 
 #[cfg(feature = "ssr")]
 pub use backend::{
@@ -93,6 +99,13 @@ pub use backend::{
 };
 
 pub use backend::check_permission_by_name;
+
+#[cfg(feature = "ssr")]
+pub use step_up::{
+    provide_step_up_backend, require_step_up, use_step_up_backend, StepUpBackend, StepUpMode,
+    STEP_UP_AUTH_HASH_KEY, STEP_UP_EXPIRES_AT_KEY, STEP_UP_SCOPE_KEY, STEP_UP_SCOPE_SENSITIVE,
+    STEP_UP_TTL_SECS, STEP_UP_USER_ID_KEY, STEP_UP_VERIFIED_AT_KEY,
+};
 
 /// Convert app-specific permission enums into canonical string names.
 ///

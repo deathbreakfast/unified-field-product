@@ -19,6 +19,9 @@
 //!   and shell discovery via `uf_app!`. [Get started](#register-app-discovery)
 //! - **Permission manifests** — Declare stable permission names for routes, server fns,
 //!   and admin tooling. [Get started](#permission-manifests)
+//! - **Step-up gate** — Assert a recent TOTP sudo window (or fresh-mode no-op) from product
+//!   server functions via [`permissions::require_step_up`]. Prefer the
+//!   `#[uf_product_macros::server(..., step_up)]` expansion. [Get started](#require-step-up)
 //! - **Workspace content index** — Upsert per-user search rows for AppBar content search
 //!   (separate from picker sources in `uf-search-core`). [Get started](#workspace-content-search)
 //! - **Appearance preferences** — Load and save light/dark mode and brand colors per user.
@@ -272,6 +275,41 @@
 //! after a host calls Gauge `sync_permission_manifests` (see that crate’s
 //! rustdoc guide **App permission manifest sync**). Runtime checks still fail
 //! closed until a `PermissionBackend` is wired.
+//!
+//! ## Require step-up
+//!
+//! Product hosts gate Tier A mutations on a recent TOTP sudo window without depending
+//! on lepton-auth types in every app crate. Call [`permissions::require_step_up`] after
+//! the permission check (or let `#[uf_product_macros::server(..., step_up)]` expand to
+//! it) once per sensitive server-fn request under SSR (per-request gate). lepton-auth opens the window with
+//! `verify_totp_for_session`; this gate only reads session keys under
+//! [`permissions::StepUpMode`].
+//!
+//! **Prerequisites:** `ssr` feature; Higgs request context; tower-sessions bag holding
+//! the sudo window. Call after `require_permission` on each gated mutation.
+//!
+//! ```rust,ignore
+//! use leptos::prelude::*;
+//! use uf_product::permissions::{require_step_up, StepUpMode};
+//!
+//! async fn grant_role_inner() -> Result<(), ServerFnError> {
+//!     require_step_up(StepUpMode::Window.as_str()).await?;
+//!     Ok(())
+//! }
+//!
+//! async fn break_glass_inner() -> Result<(), ServerFnError> {
+//!     // Fresh mode: macro/gate returns Ok; handler must verify the code itself.
+//!     require_step_up(StepUpMode::Fresh.as_str()).await?;
+//!     Ok(())
+//! }
+//! ```
+//!
+//! Window mode returns `STEP_UP:step_up_required:` / `STEP_UP:step_up_expired:` when the
+//! bag is missing or stale. Fresh mode always returns `Ok(())` here so handlers can call
+//! `lepton_auth::verify_fresh_totp`. Optional hosts install
+//! [`permissions::provide_step_up_backend`] once at shell boot.
+//!
+//! Next: `uf-product-macros` **Step-up gate**, or lepton-auth **Verify TOTP for a sudo window**.
 //!
 //! ## Workspace content search
 //!

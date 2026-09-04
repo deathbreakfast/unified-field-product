@@ -8,8 +8,6 @@
 //! [`collect_help_steps_for_route`] filters by [`route_matches`]: exact pathname
 //! equality, or a segment pattern where `:param` matches one non-empty path
 //! segment (for example `"/apps/:app_name"` or `"/boson/tasks/:task_name/config"`).
-//! When an exact inventory key matches the live path, `:param` siblings are
-//! dropped (so `/chronon/jobs/new` does not merge with `/chronon/jobs/:job_id`).
 //! [`inventory_route_keys_for_pathname`] returns the pattern keys used when
 //! reading or writing Valence visit rows (not the live browser slug).
 
@@ -110,35 +108,13 @@ fn matches_param_pattern(pattern: &str, pathname: &str) -> bool {
     })
 }
 
-/// Whether `pattern` is an exact (non-`:param`) match for `pathname`.
-///
-/// Exact keys and the Permission index alias win over sibling `:param`
-/// patterns so `/chronon/jobs/new` does not merge with `/chronon/jobs/:job_id`.
-fn is_exact_route_match(pattern: &str, pathname: &str) -> bool {
-    pattern == pathname || matches_permission_index_alias(pattern, pathname)
-}
-
 /// Collect help steps whose [`HelpStepDescriptor::route`] matches `pathname`.
-///
-/// When any exact inventory key matches, `:param` siblings are dropped so a
-/// static path like `/chronon/jobs/new` does not pick up `/chronon/jobs/:job_id`.
 #[must_use]
 pub fn collect_help_steps_for_route(pathname: &str) -> Vec<&'static HelpStepDescriptor> {
-    let matched: Vec<&'static HelpStepDescriptor> = collect_help_steps()
+    collect_help_steps()
         .into_iter()
         .filter(|d| route_matches(d.route, pathname))
-        .collect();
-    if matched
-        .iter()
-        .any(|d| is_exact_route_match(d.route, pathname))
-    {
-        matched
-            .into_iter()
-            .filter(|d| is_exact_route_match(d.route, pathname))
-            .collect()
-    } else {
-        matched
-    }
+        .collect()
 }
 
 /// Distinct inventory route keys that apply to `pathname` (exact or pattern).
@@ -242,22 +218,5 @@ mod tests {
             "/permission/permissions/abc"
         ));
         assert!(!route_matches("/permission/permissions/:id", "/permission"));
-    }
-
-    #[test]
-    fn exact_key_wins_over_param_sibling_for_jobs_new() {
-        let pathname = "/chronon/jobs/new";
-        assert!(route_matches("/chronon/jobs/new", pathname));
-        assert!(route_matches("/chronon/jobs/:job_id", pathname));
-        assert!(is_exact_route_match("/chronon/jobs/new", pathname));
-        assert!(!is_exact_route_match("/chronon/jobs/:job_id", pathname));
-    }
-
-    #[test]
-    fn param_sibling_still_matches_real_job_id() {
-        let pathname = "/chronon/jobs/job-123";
-        assert!(!route_matches("/chronon/jobs/new", pathname));
-        assert!(route_matches("/chronon/jobs/:job_id", pathname));
-        assert!(!is_exact_route_match("/chronon/jobs/:job_id", pathname));
     }
 }
