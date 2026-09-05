@@ -37,3 +37,11 @@ Out of scope: vulnerabilities solely in third-party dependencies unless this pro
 - **Dev-only** — `create_test_notification` requires the `dev-tools` feature and is not enabled in production defaults.
 - **Preview search** — `preview_search_principals` requires a signed-in session, uses session Valence (not System), and caps per-source result limits.
 - **Telemetry** — `record_page_view` truncates client-supplied field strings before Spectra emit.
+- **Welcome featured** — CUD uses session Valence + `WelcomeAdmin` Valence gate (`SYSTEM_ONLY` retained for bootstrap). No mid-request System elevate (`uf-welcome` `no_elevate_path_gate`).
+- **Workspace search writer** — index CUD is `OWNER_BY_USER_FIELD` (+ `SYSTEM_ONLY` for job backfill); hard delete asserts ownership before raw backend delete.
+
+## Surviving System exceptions
+
+| Site | Rationale |
+|---|---|
+| IndexedDemo backfill `should_run` | Prefer job System Valence; rebind only when the iter is not already System |

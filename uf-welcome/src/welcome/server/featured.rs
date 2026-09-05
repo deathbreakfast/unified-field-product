@@ -78,21 +78,10 @@ fn harness_valence() -> Option<std::sync::Arc<valence::Valence>> {
 }
 
 #[cfg(feature = "ssr")]
-fn harness_system_valence() -> Result<valence::Valence, ServerFnError> {
-    use valence::Actor;
-
-    let v = harness_valence()
-        .ok_or_else(|| ServerFnError::new("e2e featured Valence context missing".to_string()))?;
-    Ok(v.with_actor(Actor::System {
-        operation: "e2e_welcome_featured".into(),
-    }))
-}
-
-#[cfg(feature = "ssr")]
-fn harness_authenticated_valence() -> Option<valence::Valence> {
-    // System actor: mem ownership/privacy on AUTHENTICATED reads can miss
-    // System-written catalog rows; e2e harness elevates for featured reads.
-    harness_system_valence().ok()
+fn harness_session_valence() -> Option<valence::Valence> {
+    // Prefer the harness Valence as-is (User/Anonymous). Do not elevate for reads —
+    // catalog rows should be seeded under an AUTHENTICATED actor.
+    harness_valence().map(|v| (*v).clone())
 }
 
 #[cfg(feature = "ssr")]
@@ -124,14 +113,16 @@ enum WelcomeAdminAccess {
 
 #[cfg(feature = "ssr")]
 impl WelcomeAdminAccess {
-    fn system_valence(&self) -> Result<valence::Valence, ServerFnError> {
+    /// Session Valence for featured CUD (WelcomeAdmin enforced by Valence policy).
+    fn session_valence(&self) -> Result<valence::Valence, ServerFnError> {
         match self {
             #[cfg(feature = "admin-permissions")]
             Self::Higgs(ctx) => ctx
-                .unsafe_system_valence()
-                .map_err(|e| ServerFnError::new(format!("Failed to build system Valence: {e}"))),
+                .valence()
+                .map_err(|e| ServerFnError::new(format!("Failed to build session Valence: {e}"))),
             #[cfg(not(feature = "admin-permissions"))]
-            Self::E2eHarness => harness_system_valence(),
+            Self::E2eHarness => harness_session_valence()
+                .ok_or_else(|| ServerFnError::new("e2e featured Valence context missing")),
         }
     }
 }
@@ -185,7 +176,7 @@ pub async fn get_featured_apps() -> Result<Vec<AppLinkDto>, ServerFnError> {
             .is_some()
             || e2e_welcome_admin_from_session().await;
         if harness_ready {
-            if let Some(valence) = harness_authenticated_valence() {
+            if let Some(valence) = harness_session_valence() {
                 if let Ok(rows) = crate::welcome::featured::list(&valence).await {
                     return Ok(rows_to_dtos(rows));
                 }
@@ -247,7 +238,7 @@ pub async fn list_manageable_apps() -> Result<Vec<ManageableAppDto>, ServerFnErr
 ///
 /// # Errors
 ///
-/// Returns [`ServerFnError`] when the caller lacks `WelcomeAdmin`, system Valence
+/// Returns [`ServerFnError`] when the caller lacks `WelcomeAdmin`, session Valence
 /// cannot be built, [`crate::welcome::featured::add`] fails (mapped from
 /// [`crate::welcome::featured::FeaturedError`]: unknown app, duplicate, or
 /// Valence service failure), the new row's `app_id` is missing from
@@ -260,7 +251,7 @@ pub async fn add_featured_app(app_id: String, ordinal: i64) -> Result<AppLinkDto
         use uf_product::AppRegistry;
 
         let access = require_welcome_admin().await?;
-        let valence = access.system_valence()?;
+        let valence = access.session_valence()?;
         let row = crate::welcome::featured::add(&valence, &app_id, ordinal)
             .await
             .map_err(map_featured_error)?;
@@ -286,7 +277,7 @@ pub async fn add_featured_app(app_id: String, ordinal: i64) -> Result<AppLinkDto
 ///
 /// # Errors
 ///
-/// Returns [`ServerFnError`] when the caller lacks `WelcomeAdmin`, system Valence
+/// Returns [`ServerFnError`] when the caller lacks `WelcomeAdmin`, session Valence
 /// cannot be built, [`crate::welcome::featured::remove`] fails (mapped from
 /// [`crate::welcome::featured::FeaturedError`]: not found or Valence service
 /// failure), or the call is made without the `ssr` feature (`"ssr only"`).
@@ -295,7 +286,7 @@ pub async fn remove_featured_app(app_id_or_id: String) -> Result<(), ServerFnErr
     #[cfg(feature = "ssr")]
     {
         let access = require_welcome_admin().await?;
-        let valence = access.system_valence()?;
+        let valence = access.session_valence()?;
         crate::welcome::featured::remove(&valence, &app_id_or_id)
             .await
             .map_err(map_featured_error)
@@ -311,7 +302,7 @@ pub async fn remove_featured_app(app_id_or_id: String) -> Result<(), ServerFnErr
 ///
 /// # Errors
 ///
-/// Returns [`ServerFnError`] when the caller lacks `WelcomeAdmin`, system Valence
+/// Returns [`ServerFnError`] when the caller lacks `WelcomeAdmin`, session Valence
 /// cannot be built, [`crate::welcome::featured::reorder`] fails (mapped from
 /// [`crate::welcome::featured::FeaturedError`]: not found or Valence service
 /// failure), or the call is made without the `ssr` feature (`"ssr only"`).
@@ -320,7 +311,7 @@ pub async fn reorder_featured_apps(app_ids: Vec<String>) -> Result<(), ServerFnE
     #[cfg(feature = "ssr")]
     {
         let access = require_welcome_admin().await?;
-        let valence = access.system_valence()?;
+        let valence = access.session_valence()?;
         crate::welcome::featured::reorder(&valence, &app_ids)
             .await
             .map_err(map_featured_error)

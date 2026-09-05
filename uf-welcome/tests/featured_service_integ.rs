@@ -108,3 +108,24 @@ async fn featured_reorder_missing_err() {
         .expect_err("missing apps");
     assert!(matches!(err, FeaturedError::NotFound { .. }));
 }
+
+#[tokio::test]
+async fn featured_authenticated_without_admin_cud_denied() {
+    register_noop_deletion_dispatcher_for_tests();
+    let key = router_key("default", MEM_ENGINE_ID);
+    let v = Valence::builder()
+        .add_backend("default", Arc::new(InMemoryBackend::new()))
+        .default_backend_key(key)
+        .with_actor(Actor::User {
+            user_id: "alice".into(),
+        })
+        .build()
+        .expect("valence");
+    let err = add(&v, "welcome", 0)
+        .await
+        .expect_err("AUTHENTICATED without WelcomeAdmin must fail CUD");
+    assert!(
+        matches!(err, FeaturedError::Service(_)),
+        "expected privacy/service denial, got {err:?}"
+    );
+}

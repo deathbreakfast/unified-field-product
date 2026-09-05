@@ -134,6 +134,7 @@ higgs-host = { package = "higgs-host", git = "https://github.com/unified-field-d
 higgs-identity = { package = "higgs-identity", git = "https://github.com/unified-field-dev/higgs", branch = "main" }
 lepton-identity = { git = "https://github.com/unified-field-dev/lepton", branch = "main", default-features = false, features = ["db-sqlite"] }
 lepton-host-adapter = { git = "https://github.com/unified-field-dev/lepton", branch = "main", default-features = false, features = ["db-sqlite"] }
+gauge = { git = "https://github.com/deathbreakfast/gauge", branch = "feat/delete-now", default-features = false }
 quark = { package = "uf-quark", git = "https://github.com/unified-field-dev/quark", branch = "main" }
 inventory = "0.3"
 

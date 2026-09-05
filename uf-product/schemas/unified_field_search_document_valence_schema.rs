@@ -7,7 +7,7 @@ use valence::privacy_policies::owner::OWNER_BY_USER_FIELD;
 valence_schema! {
     UnifiedFieldSearchDocument {
         table: "unified_field_search_document",
-        version: "0.1.0",
+        version: "0.1.1",
         database: crate::embedded_surreal::IDENTITY_DEFAULT_STORAGE,
         description: "Per-user denormalized workspace search index row",
 
@@ -29,19 +29,19 @@ valence_schema! {
             },
             create: {
                 always_allow: [],
-                allow: [SYSTEM_ONLY],
+                allow: [OWNER_BY_USER_FIELD, SYSTEM_ONLY],
                 block: [],
                 always_block: [],
             },
             update: {
                 always_allow: [],
-                allow: [SYSTEM_ONLY],
+                allow: [OWNER_BY_USER_FIELD, SYSTEM_ONLY],
                 block: [],
                 always_block: [],
             },
             delete: {
                 always_allow: [],
-                allow: [SYSTEM_ONLY],
+                allow: [OWNER_BY_USER_FIELD, SYSTEM_ONLY],
                 block: [],
                 always_block: [],
             },

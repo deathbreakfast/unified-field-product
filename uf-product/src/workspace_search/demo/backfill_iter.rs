@@ -25,10 +25,15 @@ impl IndexedDemoBackfillIter {
             return Ok(IterEvaluation::skip("source missing id"));
         };
         let id = document_id(row.user(), DEMO_APP_ID, DEMO_SOURCE_TABLE, rid.id());
-        let system = valence.with_actor(valence::Actor::System {
-            operation: "indexed_demo_backfill_should_run".into(),
-        });
-        match UnifiedFieldSearchDocument::get(&id, &system).await? {
+        // Prefer job/System Valence already in hand; only rebind when the caller is not System.
+        let index_v = if valence.actor().is_system() {
+            valence.clone()
+        } else {
+            valence.with_actor(valence::Actor::System {
+                operation: "indexed_demo_backfill_should_run".into(),
+            })
+        };
+        match UnifiedFieldSearchDocument::get(&id, &index_v).await? {
             Some(doc)
                 if doc.title() == row.title()
                     && doc.link() == row.link()

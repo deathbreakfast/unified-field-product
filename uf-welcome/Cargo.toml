@@ -32,6 +32,7 @@ inventory = { workspace = true, optional = true }
 
 valence = { workspace = true, optional = true }
 higgs = { workspace = true, optional = true }
+gauge = { workspace = true, optional = true, default-features = false }
 chrono = { workspace = true, optional = true }
 uuid = { workspace = true, optional = true }
 anyhow = { workspace = true, optional = true }
@@ -51,8 +52,8 @@ lazy-routes = []
 db-sqlite = ["valence/sqlite"]
 db-mem = ["valence/mem"]
 hydrate = ["leptos/hydrate", "uf-integrations/hydrate", "uf-product/hydrate", "uf-help/hydrate"]
-# Marker: host wired `PermissionBackend` (Gauge) at bootstrap; no compile-time gauge dep.
-admin-permissions = []
+# Host wired Gauge PermissionBackend; enables WelcomeAdmin Valence gate (raw walks).
+admin-permissions = ["dep:gauge", "gauge/ssr"]
 ssr = [
     "leptos/ssr",
     "leptos_meta/ssr",
@@ -73,8 +74,9 @@ ssr = [
     "dep:serde_json",
     "dep:quark",
     "dep:spectra",
-    "dep:tower-sessions"]
-
+    "dep:tower-sessions",
+    "admin-permissions",
+]
 [dev-dependencies]
 tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }
 valence = { workspace = true }
