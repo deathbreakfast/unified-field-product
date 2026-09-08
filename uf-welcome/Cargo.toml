@@ -53,6 +53,7 @@ db-sqlite = ["valence/sqlite"]
 db-mem = ["valence/mem"]
 hydrate = ["leptos/hydrate", "uf-integrations/hydrate", "uf-product/hydrate", "uf-help/hydrate"]
 # Host wired Gauge PermissionBackend; enables WelcomeAdmin Valence gate (raw walks).
+# Opt-in separately from `ssr` so e2e / teaching hosts can use the session harness.
 admin-permissions = ["dep:gauge", "gauge/ssr"]
 ssr = [
     "leptos/ssr",
@@ -75,7 +76,6 @@ ssr = [
     "dep:quark",
     "dep:spectra",
     "dep:tower-sessions",
-    "admin-permissions",
 ]
 [dev-dependencies]
 tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }
@@ -83,4 +83,4 @@ valence = { workspace = true }
 
 [[test]]
 name = "featured_service_integ"
-required-features = ["ssr"]
+required-features = ["ssr", "admin-permissions"]

@@ -1,6 +1,8 @@
 //! Valence privacy evaluators for welcome featured-app schemas.
 //!
-//! Uses [`gauge::actor_can_raw`] so policy checks do not re-enter typed ORM privacy.
+//! With `admin-permissions`, uses [`gauge::actor_can_raw`] so policy checks do not
+//! re-enter typed ORM privacy. Without it (e2e / teaching hosts), session Users
+//! may CUD; server functions still enforce `WelcomeAdmin` via session or Higgs.
 
 use async_trait::async_trait;
 use std::any::Any;
@@ -12,7 +14,7 @@ pub const WELCOME_ADMIN_PERMISSION: &str = "WelcomeAdmin";
 /// Session actors holding `WelcomeAdmin` may mutate featured catalog rows.
 pub const WELCOME_ADMIN_GATE: WelcomeAdminGate = WelcomeAdminGate;
 
-/// Static WelcomeAdmin gate (raw Gauge walks).
+/// Static WelcomeAdmin gate (raw Gauge walks when `admin-permissions` is on).
 #[derive(Debug, Clone, Copy)]
 pub struct WelcomeAdminGate;
 
@@ -38,9 +40,17 @@ impl PolicyEvaluator for WelcomeAdminGate {
         if viewer.is_system() {
             return Ok(true);
         }
-        gauge::actor_can_raw::actor_can_raw(v, WELCOME_ADMIN_PERMISSION)
-            .await
-            .map_err(|e| Error::Privacy(format!("WelcomeAdmin raw check failed: {e}")))
+        #[cfg(feature = "admin-permissions")]
+        {
+            gauge::actor_can_raw::actor_can_raw(v, WELCOME_ADMIN_PERMISSION)
+                .await
+                .map_err(|e| Error::Privacy(format!("WelcomeAdmin raw check failed: {e}")))
+        }
+        #[cfg(not(feature = "admin-permissions"))]
+        {
+            let _ = v;
+            Ok(matches!(viewer, Actor::User { .. }))
+        }
     }
 
     fn as_any(&self) -> &dyn Any {
