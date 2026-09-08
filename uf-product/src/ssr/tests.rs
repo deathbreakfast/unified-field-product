@@ -120,7 +120,7 @@ mod privacy_policy_tests {
 
     #[test]
     fn user_appearance_schema_read_update_create_owner_delete_system() {
-        use crate::generated::UserAppearance;
+        use lepton_identity::generated::UserAppearance;
 
         let schema = UserAppearance::get_schema();
         let policies = schema.policies.as_ref().expect("appearance policies");
