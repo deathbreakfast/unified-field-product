@@ -74,7 +74,7 @@
 //! use uf_welcome::WelcomeAdminPage;
 //!
 //! // WelcomeAdmin permission gates server fns (see permissions::WelcomePermission).
-//! let err = add(&system_valence, "zz-unknown-app", 0).await.unwrap_err();
+//! let err = add(&session_valence, "zz-unknown-app", 0).await.unwrap_err();
 //! assert!(matches!(err, FeaturedError::UnknownApp { .. }));
 //!
 //! view! { <WelcomeAdminPage /> }
@@ -127,6 +127,8 @@ pub mod welcome;
 pub mod embedded_surreal;
 #[cfg(feature = "ssr")]
 pub mod generated;
+#[cfg(feature = "ssr")]
+pub mod privacy_policies;
 #[cfg(feature = "ssr")]
 mod schemas;
 

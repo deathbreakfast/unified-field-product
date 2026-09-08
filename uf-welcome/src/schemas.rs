@@ -1,6 +1,5 @@
-//! Valence schema includes (SSR). Codegen inventory registers models at link time.
-
-#[cfg(feature = "ssr")]
-mod welcome_featured_app_schema {
-    include!("../schemas/welcome_featured_app_valence_schema.rs");
-}
+//! Runtime schema registration for welcome.
+//!
+//! Model schemas are registered by codegen (`OUT_DIR/generated_models.rs`). Including
+//! `*_valence_schema.rs` here would submit a second [`valence::SchemaMetadataInit`]
+//! and panic in [`valence::SchemaRegistry`].

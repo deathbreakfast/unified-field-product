@@ -242,8 +242,12 @@ jobs:
         run: |
           set -euo pipefail
           pkg="${{ matrix.package }}"
+          features="ssr"
+          if [ "${pkg}" = "uf-welcome" ]; then
+            features="ssr,admin-permissions"
+          fi
           for attempt in 1 2; do
-            if cargo test -p "${pkg}" --features ssr; then
+            if cargo test -p "${pkg}" --features "${features}"; then
               exit 0
             fi
             if [ "${attempt}" -eq 1 ]; then

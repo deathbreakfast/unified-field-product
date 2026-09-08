@@ -11,48 +11,74 @@ pub(crate) fn clamp_preview_search_limit(limit_per_source: u32) -> u32 {
     limit_per_source.min(MAX_LIMIT_PER_SOURCE)
 }
 
-/// Server function backing the search-source-picker preview: queries the real
-/// [`uf_search_core::SearchSourceRegistry`] so the preview reflects live data.
+/// Fixed mock principals for the catalog preview (no live Valence / email reads).
+fn mock_preview_principals(query: Option<&str>, limit_per_source: u32) -> Vec<SearchSourceItem> {
+    let limit = clamp_preview_search_limit(limit_per_source) as usize;
+    let q = query.unwrap_or("").trim().to_lowercase();
+    let all = [
+        SearchSourceItem {
+            source_id: "user_search_source".to_string(),
+            id: "preview-user-ada".to_string(),
+            title: "Ada Lovelace (ada001)".to_string(),
+            description: Some("User account".to_string()),
+            kind: "user".to_string(),
+        },
+        SearchSourceItem {
+            source_id: "user_search_source".to_string(),
+            id: "preview-user-grace".to_string(),
+            title: "Grace Hopper (grace0)".to_string(),
+            description: Some("User account".to_string()),
+            kind: "user".to_string(),
+        },
+        SearchSourceItem {
+            source_id: "permission_group_search_source".to_string(),
+            id: "preview-group-ops".to_string(),
+            title: "Ops Reviewers".to_string(),
+            description: Some("Mock permission group".to_string()),
+            kind: "permission_group".to_string(),
+        },
+        SearchSourceItem {
+            source_id: "permission_group_search_source".to_string(),
+            id: "preview-group-readers".to_string(),
+            title: "Docs Readers".to_string(),
+            description: Some("Mock permission group".to_string()),
+            kind: "permission_group".to_string(),
+        },
+    ];
+    all.into_iter()
+        .filter(|item| {
+            if q.is_empty() {
+                return true;
+            }
+            item.title.to_lowercase().contains(&q)
+                || item.id.to_lowercase().contains(&q)
+                || item
+                    .description
+                    .as_ref()
+                    .is_some_and(|d| d.to_lowercase().contains(&q))
+        })
+        .take(limit.max(1).saturating_mul(2))
+        .collect()
+}
+
+/// Server function backing the search-source-picker preview with **mock** data.
 ///
-/// Requires an authenticated session. Uses the request actor's Valence so
-/// principal search respects viewer-scoped privacy (not System elevation).
+/// Does not query live Valence or the real [`uf_search_core::SearchSourceRegistry`].
+/// The `/orbital` catalog stays mounted; this fixture only demonstrates the picker UI.
 #[server]
 pub async fn preview_search_principals(
-    /// Search sources to query.
+    /// Search sources to query (ignored for mock data; kept for API compatibility).
     source_keys: Vec<SearchSourceKey>,
     /// Optional free-text query; empty/missing returns each source's default results.
     query: Option<String>,
     /// Maximum number of results to return per source.
     limit_per_source: u32,
 ) -> Result<Vec<SearchSourceItem>, ServerFnError> {
-    #[cfg(feature = "ssr")]
-    {
-        let limit_per_source = clamp_preview_search_limit(limit_per_source);
-
-        let ctx = higgs::Higgs::from_request().await?;
-        if ctx.session_user_id().is_none() {
-            return Err(ServerFnError::new("You must be signed in"));
-        }
-        let v = ctx
-            .valence()
-            .map_err(|e| ServerFnError::new(e.to_string()))?;
-
-        let registry = uf_search_core::SearchSourceRegistry::auto_discover();
-        let query_text = query.unwrap_or_default();
-        return registry
-            .query_many(&source_keys, &v, &query_text, limit_per_source)
-            .await
-            .map_err(|e| ServerFnError::new(format!("Failed to query preview principals: {}", e)));
-    }
-
-    #[allow(unreachable_code)]
-    {
-        let _ = (source_keys, query, limit_per_source);
-        Ok(Vec::new())
-    }
+    let _ = source_keys;
+    Ok(mock_preview_principals(query.as_deref(), limit_per_source))
 }
 
-/// Wired SearchSourcePicker preview with live query callbacks.
+/// Wired SearchSourcePicker preview with mock query callbacks.
 #[component]
 pub fn SearchSourcePickerPreviewFixture() -> impl IntoView {
     let options = RwSignal::new(Vec::<SearchSourceItem>::new());
@@ -176,7 +202,7 @@ pub fn SearchSourcePickerPreview() -> impl IntoView {
 
 #[cfg(test)]
 mod clamp_tests {
-    use super::clamp_preview_search_limit;
+    use super::{clamp_preview_search_limit, mock_preview_principals};
 
     #[test]
     fn clamp_preview_search_limit_caps_high_values_sad() {
@@ -188,5 +214,12 @@ mod clamp_tests {
     fn clamp_preview_search_limit_keeps_reasonable_happy_path() {
         assert_eq!(clamp_preview_search_limit(20), 20);
         assert_eq!(clamp_preview_search_limit(0), 0);
+    }
+
+    #[test]
+    fn mock_preview_principals_filters_by_query() {
+        let rows = mock_preview_principals(Some("ada"), 20);
+        assert!(rows.iter().any(|r| r.id.contains("ada")));
+        assert!(!rows.iter().any(|r| r.id.contains("grace")));
     }
 }

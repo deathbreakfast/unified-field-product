@@ -1,4 +1,4 @@
-//! Welcome featured-app catalog CRUD (SYSTEM Valence writes).
+//! Welcome featured-app catalog CRUD (session Valence + WelcomeAdmin / System).
 //!
 //! # Errors
 //!
@@ -6,7 +6,7 @@
 //! `app_id` is missing from [`uf_product::AppRegistry`], [`FeaturedError::Duplicate`] on
 //! re-add, [`FeaturedError::NotFound`] on remove/reorder of a missing key, and
 //! [`FeaturedError::Service`] for Valence failures. Callers that mutate must pass a
-//! System-elevated [`Valence`] (e.g. Higgs `system_valence` / `unsafe_system_valence`).
+//! [`Valence`] whose actor holds `WelcomeAdmin` (or System for bootstrap / integ).
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};

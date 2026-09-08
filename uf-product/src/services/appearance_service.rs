@@ -52,7 +52,7 @@ fn is_hex_color(value: &str) -> bool {
 pub async fn get_my_appearance() -> Result<AppearanceData, ServerFnError> {
     #[cfg(feature = "ssr")]
     {
-        use crate::generated::UserAppearance;
+        use lepton_identity::generated::UserAppearance;
         use chrono::Utc;
         use valence::{Model, RecordPredicate};
 
@@ -143,7 +143,7 @@ pub async fn save_my_appearance(
 
     #[cfg(feature = "ssr")]
     {
-        use crate::generated::UserAppearance;
+        use lepton_identity::generated::UserAppearance;
         use chrono::Utc;
         use valence::RecordPredicate;
 

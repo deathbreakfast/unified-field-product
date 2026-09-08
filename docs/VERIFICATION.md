@@ -26,7 +26,7 @@ cargo test -p uf-product-macros -p uf-codegen
 cargo test -p uf-search-core --features ssr
 cargo test -p uf-apps --features ssr
 cargo test -p uf-product --features ssr
-cargo test -p uf-welcome --features ssr
+cargo test -p uf-welcome --features ssr,admin-permissions
 cargo clippy -p uf-apps --features ssr --all-targets -- -D warnings
 ```
 

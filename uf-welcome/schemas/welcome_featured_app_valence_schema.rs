@@ -1,28 +1,29 @@
 // Featured apps catalog for the signed-in welcome page.
 
+use crate::privacy_policies::WELCOME_ADMIN_GATE;
 use valence::prelude::*;
 use valence::privacy_policies::common::{AUTHENTICATED, SYSTEM_ONLY};
 
 valence_schema! {
     WelcomeFeaturedApp {
         table: "welcome_featured_app",
-        version: "0.1.0",
+        version: "0.1.1",
         database: crate::embedded_surreal::DEFAULT_STORAGE,
         description: "Admin-curated featured app rows for /welcome (app_id = AppRegistration.id)",
 
         policies: {
-            // Authenticated welcome readers; mutations require System (server elevates after Gauge).
+            // Authenticated welcome readers; CUD for WelcomeAdmin (or System jobs).
             read: {
                 allow: [AUTHENTICATED],
             },
             create: {
-                allow: [SYSTEM_ONLY],
+                allow: [WELCOME_ADMIN_GATE, SYSTEM_ONLY],
             },
             update: {
-                allow: [SYSTEM_ONLY],
+                allow: [WELCOME_ADMIN_GATE, SYSTEM_ONLY],
             },
             delete: {
-                allow: [SYSTEM_ONLY],
+                allow: [WELCOME_ADMIN_GATE, SYSTEM_ONLY],
             },
         },
 

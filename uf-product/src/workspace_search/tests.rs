@@ -304,9 +304,9 @@ async fn privacy_anonymous_read_denied_sad() {
 }
 
 #[tokio::test]
-async fn privacy_owner_cud_denied_sad() {
+async fn privacy_cross_user_cud_denied_sad() {
     let system_v = mem_valence(system());
-    let alice_v = system_v.with_actor(alice());
+    let bob_v = system_v.with_actor(bob());
     let row = UnifiedFieldSearchDocument::new(
         RecordId::new("user", "alice"),
         "demo".into(),
@@ -319,8 +319,11 @@ async fn privacy_owner_cud_denied_sad() {
         chrono::Utc::now(),
     )
     .expect("new");
-    let created = UnifiedFieldSearchDocument::upsert("forge13", row, &alice_v).await;
-    assert!(created.is_err(), "owner must not create index rows");
+    let created = UnifiedFieldSearchDocument::upsert("forge13", row, &bob_v).await;
+    assert!(
+        created.is_err(),
+        "bob must not create alice-owned index rows"
+    );
 }
 
 #[tokio::test]
@@ -384,6 +387,50 @@ async fn query_system_actor_rejected_sad() {
             reason: "system_actor_forbidden"
         }
     ));
+}
+
+#[tokio::test]
+async fn privacy_other_user_hard_delete_denied_sad() {
+    let system_v = mem_valence(system());
+    SearchDocumentWriter::upsert(
+        &system_v,
+        draft_for("alice", "delx", "AliceDeleteMe", "/demo/delx"),
+    )
+    .await
+    .expect("upsert");
+    let bob_v = system_v.with_actor(bob());
+    let err = SearchDocumentWriter::delete(
+        &bob_v,
+        &RecordId::new("user", "alice"),
+        "demo",
+        "indexed_demo_item",
+        "delx",
+    )
+    .await
+    .expect_err("bob must not hard-delete alice row");
+    assert!(matches!(err, WorkspaceSearchError::Write { .. }));
+}
+
+#[tokio::test]
+async fn privacy_owner_write_own_happy() {
+    let alice_v = mem_valence(alice());
+    SearchDocumentWriter::upsert(
+        &alice_v,
+        draft_for("alice", "own1", "AliceOwnsWrite", "/demo/own1"),
+    )
+    .await
+    .expect("owner upsert");
+    let id = document_id(
+        &RecordId::new("user", "alice"),
+        "demo",
+        "indexed_demo_item",
+        "own1",
+    );
+    let row = UnifiedFieldSearchDocument::get(&id, &alice_v)
+        .await
+        .expect("get")
+        .expect("owner row");
+    assert_eq!(row.title(), "AliceOwnsWrite");
 }
 
 #[tokio::test]
