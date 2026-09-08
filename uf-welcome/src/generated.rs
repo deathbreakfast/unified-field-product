@@ -13,6 +13,8 @@
 //! source-of-truth field definitions.
 
 #[cfg(feature = "ssr")]
+use crate::privacy_policies::WELCOME_ADMIN_GATE;
+#[cfg(feature = "ssr")]
 use valence::privacy_policies::common::{AUTHENTICATED, SYSTEM_ONLY};
 
 #[cfg(feature = "ssr")]
