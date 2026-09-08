@@ -125,7 +125,7 @@ async fn featured_authenticated_without_admin_cud_denied() {
         .await
         .expect_err("AUTHENTICATED without WelcomeAdmin must fail CUD");
     assert!(
-        matches!(err, FeaturedError::Service(_)),
+        matches!(err, FeaturedError::Service { .. }),
         "expected privacy/service denial, got {err:?}"
     );
 }
