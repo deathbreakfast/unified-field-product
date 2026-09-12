@@ -6,6 +6,7 @@ use valence::privacy_policies::owner::OWNER_BY_USER_FIELD;
 
 valence_schema! {
     UnifiedFieldSearchDocument {
+        repository: "https://github.com/unified-field-dev/unified-field-product",
         table: "unified_field_search_document",
         version: "0.1.1",
         database: crate::embedded_surreal::IDENTITY_DEFAULT_STORAGE,
