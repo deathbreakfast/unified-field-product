@@ -66,7 +66,7 @@ pub async fn get_my_appearance() -> Result<AppearanceData, ServerFnError> {
         // Session Valence enforces OWNER_BY_USER_FIELD on read/update.
         let v = crate::ssr::valence(&ctx)?;
 
-        let existing = UserAppearance::query(&v)
+        let existing = UserAppearance::query_used(&v, valence::use_!("query UserAppearance in src/services/appearance_service.rs; Valence persistence for this feature path; typed store; visible to session actor / service path."))
             .where_user(RecordPredicate::Equals(user.clone()))
             .first()
             .await
@@ -84,7 +84,7 @@ pub async fn get_my_appearance() -> Result<AppearanceData, ServerFnError> {
                 )
                 .map_err(|e| ServerFnError::new(format!("Failed to build appearance: {e}")))?;
 
-                UserAppearance::create(new_row, &v)
+                UserAppearance::create_used(new_row, &v, valence::use_!("create UserAppearance in src/services/appearance_service.rs; Valence persistence for this feature path; typed store; visible to session actor / service path."))
                     .await
                     .map_err(|e| ServerFnError::new(format!("Failed to create appearance: {e}")))?
             }
@@ -156,7 +156,7 @@ pub async fn save_my_appearance(
 
         let v = crate::ssr::valence(&ctx)?;
 
-        let row = UserAppearance::query(&v)
+        let row = UserAppearance::query_used(&v, valence::use_!("query UserAppearance in src/services/appearance_service.rs; Valence persistence for this feature path; typed store; visible to session actor / service path."))
             .where_user(RecordPredicate::Equals(user))
             .first()
             .await
@@ -164,7 +164,7 @@ pub async fn save_my_appearance(
             .ok_or_else(|| ServerFnError::new("Appearance not found"))?;
 
         let mut mutable = row
-            .get_mutable(&v)
+            .get_mutable_used(&v, valence::use_!("get_mutable via appearance_service.rs; mutable handle for in-place update; typed store; session/service path."))
             .set_color_mode(color_mode)
             .map_err(|e| ServerFnError::new(format!("Validation error: {e}")))?
             .set_brand_source(brand_source)

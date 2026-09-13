@@ -110,7 +110,7 @@ impl SearchDocumentWriter {
             message: e.to_string(),
         })?;
 
-        crate::generated::UnifiedFieldSearchDocument::upsert(&id, row, valence)
+        crate::generated::UnifiedFieldSearchDocument::upsert_used(&id, row, valence, valence::use_!("upsert UnifiedFieldSearchDocument in src/workspace_search/writer.rs; Valence persistence for this feature path; typed store; visible to session actor / service path."))
             .await
             .map_err(|e| WorkspaceSearchError::Write {
                 operation: "upsert",

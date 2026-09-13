@@ -153,7 +153,7 @@ async fn writer_upsert_persists_fields_happy() {
         "indexed_demo_item",
         "1",
     );
-    let row = UnifiedFieldSearchDocument::get(&id, &v)
+    let row = UnifiedFieldSearchDocument::get_used(&id, &v, valence::use_!("get UnifiedFieldSearchDocument in src/workspace_search/tests.rs; Valence persistence for this feature path; typed store; visible to session actor / service path."))
         .await
         .expect("get")
         .expect("row");
@@ -182,7 +182,7 @@ async fn writer_upsert_idempotent_happy() {
         "indexed_demo_item",
         "2",
     );
-    let row = UnifiedFieldSearchDocument::get(&id, &v)
+    let row = UnifiedFieldSearchDocument::get_used(&id, &v, valence::use_!("get UnifiedFieldSearchDocument in src/workspace_search/tests.rs; Valence persistence for this feature path; typed store; visible to session actor / service path."))
         .await
         .expect("get")
         .expect("row");
@@ -219,7 +219,7 @@ async fn writer_delete_removes_row_happy() {
         .await
         .expect("delete");
     let id = document_id(&user, "demo", "indexed_demo_item", "5");
-    let gone = UnifiedFieldSearchDocument::get(&id, &v).await.expect("get");
+    let gone = UnifiedFieldSearchDocument::get_used(&id, &v, valence::use_!("get UnifiedFieldSearchDocument in src/workspace_search/tests.rs; Valence persistence for this feature path; typed store; visible to session actor / service path.")).await.expect("get");
     assert!(gone.is_none());
 }
 
@@ -253,7 +253,7 @@ async fn privacy_owner_read_own_happy() {
         "indexed_demo_item",
         "10",
     );
-    let row = UnifiedFieldSearchDocument::get(&id, &alice_v)
+    let row = UnifiedFieldSearchDocument::get_used(&id, &alice_v, valence::use_!("get UnifiedFieldSearchDocument in src/workspace_search/tests.rs; Valence persistence for this feature path; typed store; visible to session actor / service path."))
         .await
         .expect("get")
         .expect("owner can read");
@@ -276,7 +276,7 @@ async fn privacy_other_user_read_denied_sad() {
         "indexed_demo_item",
         "11",
     );
-    let denied = UnifiedFieldSearchDocument::get(&id, &bob_v).await;
+    let denied = UnifiedFieldSearchDocument::get_used(&id, &bob_v, valence::use_!("get UnifiedFieldSearchDocument in src/workspace_search/tests.rs; Valence persistence for this feature path; typed store; visible to session actor / service path.")).await;
     assert!(
         denied.is_err() || matches!(denied, Ok(None)),
         "bob must not read alice document: {denied:?}"
@@ -296,7 +296,7 @@ async fn privacy_anonymous_read_denied_sad() {
         "indexed_demo_item",
         "12",
     );
-    let denied = UnifiedFieldSearchDocument::get(&id, &anon).await;
+    let denied = UnifiedFieldSearchDocument::get_used(&id, &anon, valence::use_!("get UnifiedFieldSearchDocument in src/workspace_search/tests.rs; Valence persistence for this feature path; typed store; visible to session actor / service path.")).await;
     assert!(
         denied.is_err() || matches!(denied, Ok(None)),
         "anonymous must not read: {denied:?}"
@@ -319,7 +319,7 @@ async fn privacy_cross_user_cud_denied_sad() {
         chrono::Utc::now(),
     )
     .expect("new");
-    let created = UnifiedFieldSearchDocument::upsert("forge13", row, &bob_v).await;
+    let created = UnifiedFieldSearchDocument::upsert_used("forge13", row, &bob_v, valence::use_!("upsert UnifiedFieldSearchDocument in src/workspace_search/tests.rs; Valence persistence for this feature path; typed store; visible to session actor / service path.")).await;
     assert!(
         created.is_err(),
         "bob must not create alice-owned index rows"
@@ -426,7 +426,7 @@ async fn privacy_owner_write_own_happy() {
         "indexed_demo_item",
         "own1",
     );
-    let row = UnifiedFieldSearchDocument::get(&id, &alice_v)
+    let row = UnifiedFieldSearchDocument::get_used(&id, &alice_v, valence::use_!("get UnifiedFieldSearchDocument in src/workspace_search/tests.rs; Valence persistence for this feature path; typed store; visible to session actor / service path."))
         .await
         .expect("get")
         .expect("owner row");

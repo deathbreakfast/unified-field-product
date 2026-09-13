@@ -42,7 +42,7 @@
 //!         max_results: u32,
 //!     ) -> uf_product::search_sources::SearchSourceFuture<'a> {
 //!         Box::pin(async move {
-//!             let users = lepton::generated::User::query(valence)
+//!             let users = lepton::generated::User::query_used(valence, valence::use_!("query User in src/search_sources/mod.rs; Valence persistence for this feature path; typed store; visible to session actor / service path."))
 //!                 .where_email(valence::StringPredicate::Contains(query_text.to_string()))
 //!                 .limit(max_results)
 //!                 .await?;

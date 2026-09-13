@@ -63,7 +63,7 @@ pub async fn query(
     let limit = max_results.clamp(1, ABSOLUTE_MAX_RESULTS).max(1);
     let _ = DEFAULT_MAX_RESULTS; // documented default for callers; clamp handles bounds
 
-    let mut q = crate::generated::UnifiedFieldSearchDocument::query(valence);
+    let mut q = crate::generated::UnifiedFieldSearchDocument::query_used(valence, valence::use_!("query UnifiedFieldSearchDocument in src/workspace_search/query.rs; Valence persistence for this feature path; typed store; visible to session actor / service path."));
     q.inner = q
         .inner
         .set_search_fields(vec!["title".to_string(), "searchable_text".to_string()])

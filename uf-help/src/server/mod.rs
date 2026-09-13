@@ -343,7 +343,7 @@ async fn list_visits_ssr(pathname: &str) -> Result<Vec<HelpVisitRecord>, crate::
 
     let mut out = Vec::new();
     for key in route_keys {
-        let rows = HelpTourStepVisit::query(&v)
+        let rows = HelpTourStepVisit::query_used(&v, valence::use_!("query HelpTourStepVisit in src/server/mod.rs; Valence persistence for this feature path; typed store; visible to session actor / service path."))
             .where_user(RecordPredicate::Equals(user.clone()))
             .where_route(StringPredicate::Equals(key))
             .await
@@ -411,7 +411,7 @@ async fn upsert_visit(
     use uf_product::generated::HelpTourStepVisit;
     use valence::{Model, RecordPredicate, StringPredicate};
 
-    let existing = HelpTourStepVisit::query(v)
+    let existing = HelpTourStepVisit::query_used(v, valence::use_!("query HelpTourStepVisit in src/server/mod.rs; Valence persistence for this feature path; typed store; visible to session actor / service path."))
         .where_user(RecordPredicate::Equals(user.clone()))
         .where_route(StringPredicate::Equals(step.route.clone()))
         .where_feature_highlight(StringPredicate::Equals(step.feature_highlight.clone()))
@@ -422,7 +422,7 @@ async fn upsert_visit(
     let replay_s = crate::service::replay_to_stored(replay);
     if let Some(row) = existing {
         let mut mutable = row
-            .get_mutable(v)
+            .get_mutable_used(v, valence::use_!("get_mutable via mod.rs; mutable handle for in-place update; typed store; session/service path."))
             .set_replay(replay_s)
             .map_err(|e| crate::HelpError::Storage(e.to_string()))?;
         if let Some(spotlight) = &step.spotlight {
@@ -447,7 +447,7 @@ async fn upsert_visit(
             now,
         )
         .map_err(|e| crate::HelpError::Storage(e.to_string()))?;
-        HelpTourStepVisit::create(new_row, v)
+        HelpTourStepVisit::create_used(new_row, v, valence::use_!("create HelpTourStepVisit in src/server/mod.rs; Valence persistence for this feature path; typed store; visible to session actor / service path."))
             .await
             .map_err(|e| crate::HelpError::Storage(e.to_string()))?;
     }
@@ -481,14 +481,14 @@ async fn request_replay_ssr(pathname: &str) -> Result<(), crate::HelpError> {
     }
 
     for key in &route_keys {
-        let rows = HelpTourStepVisit::query(&v)
+        let rows = HelpTourStepVisit::query_used(&v, valence::use_!("query HelpTourStepVisit in src/server/mod.rs; Valence persistence for this feature path; typed store; visible to session actor / service path."))
             .where_user(RecordPredicate::Equals(user.clone()))
             .where_route(StringPredicate::Equals(key.clone()))
             .await
             .map_err(|e| crate::HelpError::Storage(e.to_string()))?;
 
         for row in rows {
-            row.get_mutable(&v)
+            row.get_mutable_used(&v, valence::use_!("get_mutable via mod.rs; mutable handle for in-place update; typed store; session/service path."))
                 .set_replay(crate::service::replay_to_stored(true))
                 .map_err(|e| crate::HelpError::Storage(e.to_string()))?
                 .set_updated_at(now)

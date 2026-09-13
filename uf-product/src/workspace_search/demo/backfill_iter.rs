@@ -33,7 +33,7 @@ impl IndexedDemoBackfillIter {
                 operation: "indexed_demo_backfill_should_run".into(),
             })
         };
-        match UnifiedFieldSearchDocument::get(&id, &index_v).await? {
+        match UnifiedFieldSearchDocument::get_used(&id, &index_v, valence::use_!("get UnifiedFieldSearchDocument in workspace_search/demo/backfill_iter.rs; Valence persistence for this feature path; typed store; visible to session actor / service path.")).await? {
             Some(doc)
                 if doc.title() == row.title()
                     && doc.link() == row.link()

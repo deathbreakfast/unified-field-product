@@ -65,7 +65,7 @@ async fn find_by_app_id(
     v: &Valence,
     app_id: &str,
 ) -> Result<Option<WelcomeFeaturedApp>, FeaturedError> {
-    WelcomeFeaturedApp::query(v)
+    WelcomeFeaturedApp::query_used(v, valence::use_!("query WelcomeFeaturedApp in welcome/featured/service.rs; Valence persistence for this feature path; typed store; visible to session actor / service path."))
         .where_app_id(StringPredicate::Equals(app_id.to_string()))
         .first()
         .await
@@ -80,7 +80,7 @@ async fn find_by_app_id(
 ///
 /// Returns [`FeaturedError::Service`] when the Valence list query fails.
 pub async fn list(v: &Valence) -> Result<Vec<FeaturedAppRow>, FeaturedError> {
-    let rows = WelcomeFeaturedApp::query(v)
+    let rows = WelcomeFeaturedApp::query_used(v, valence::use_!("query WelcomeFeaturedApp in welcome/featured/service.rs; Valence persistence for this feature path; typed store; visible to session actor / service path."))
         .order_by_ordinal(valence::query::SortDirection::Asc)
         .await
         .map_err(|e| FeaturedError::service("list", e))?;
@@ -128,7 +128,7 @@ pub async fn add(v: &Valence, app_id: &str, ordinal: i64) -> Result<FeaturedAppR
     let id = Uuid::new_v4().to_string();
     let row = WelcomeFeaturedApp::new(app_id.to_string(), ordinal, now, now)
         .map_err(|e| FeaturedError::service("add", e))?;
-    let created = WelcomeFeaturedApp::upsert(&id, row, v)
+    let created = WelcomeFeaturedApp::upsert_used(&id, row, v, valence::use_!("upsert WelcomeFeaturedApp in welcome/featured/service.rs; Valence persistence for this feature path; typed store; visible to session actor / service path."))
         .await
         .map_err(|e| FeaturedError::service("add", e))?;
     let mut out = to_row(&created);
@@ -150,7 +150,7 @@ pub async fn add(v: &Valence, app_id: &str, ordinal: i64) -> Result<FeaturedAppR
 /// missing a record id).
 pub async fn remove(v: &Valence, app_id_or_id: &str) -> Result<(), FeaturedError> {
     let key = app_id_or_id;
-    let existing = match WelcomeFeaturedApp::get(key, v)
+    let existing = match WelcomeFeaturedApp::get_used(key, v, valence::use_!("get WelcomeFeaturedApp in welcome/featured/service.rs; Valence persistence for this feature path; typed store; visible to session actor / service path."))
         .await
         .map_err(|e| FeaturedError::service("remove", e))?
     {
@@ -201,7 +201,7 @@ pub async fn reorder(v: &Valence, app_ids: &[String]) -> Result<(), FeaturedErro
         if id.is_empty() {
             return Err(FeaturedError::not_found(app_id.clone()));
         }
-        row.get_mutable(v)
+        row.get_mutable_used(v, valence::use_!("get_mutable via service.rs; mutable handle for in-place update; typed store; session/service path."))
             .set_ordinal(ordinal as i64)
             .map_err(|e| FeaturedError::service("reorder", e))?
             .set_updated_at(now)
