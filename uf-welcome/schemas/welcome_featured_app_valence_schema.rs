@@ -6,6 +6,7 @@ use valence::privacy_policies::common::{AUTHENTICATED, SYSTEM_ONLY};
 
 valence_schema! {
     WelcomeFeaturedApp {
+        repository: "https://github.com/unified-field-dev/unified-field-product",
         table: "welcome_featured_app",
         version: "0.1.1",
         database: crate::embedded_surreal::DEFAULT_STORAGE,

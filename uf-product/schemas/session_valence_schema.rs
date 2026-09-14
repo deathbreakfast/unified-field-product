@@ -4,6 +4,7 @@ use valence::privacy_policies::owner::OWNER_BY_USER_FIELD;
 
 valence_schema! {
     Session {
+        repository: "https://github.com/unified-field-dev/unified-field-product",
         table: "session",
         version: "0.1.0",
         database: crate::embedded_surreal::SESSION_DEFAULT_STORAGE,
