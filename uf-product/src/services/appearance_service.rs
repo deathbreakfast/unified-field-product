@@ -66,7 +66,7 @@ pub async fn get_my_appearance() -> Result<AppearanceData, ServerFnError> {
         // Session Valence enforces OWNER_BY_USER_FIELD on read/update.
         let v = crate::ssr::valence(&ctx)?;
 
-        let existing = UserAppearance::query(&v)
+        let existing = UserAppearance::query_used(&v, valence::use_!(r#"In **services**, we **list User Appearance** so the product can show or process the matching set for this workflow. Callers allowed for **services** use the list; it is not a public dump of every field to anonymous visitors."#))
             .where_user(RecordPredicate::Equals(user.clone()))
             .first()
             .await
@@ -84,7 +84,7 @@ pub async fn get_my_appearance() -> Result<AppearanceData, ServerFnError> {
                 )
                 .map_err(|e| ServerFnError::new(format!("Failed to build appearance: {e}")))?;
 
-                UserAppearance::create(new_row, &v)
+                UserAppearance::create_used(new_row, &v, valence::use_!(r#"When **services** needs to persist work, we **save User Appearance** so the next step in that feature can continue with the latest values. People and services allowed for **services** use this data for that workflow—not as a general export of unrelated personal fields."#))
                     .await
                     .map_err(|e| ServerFnError::new(format!("Failed to create appearance: {e}")))?
             }
@@ -156,7 +156,7 @@ pub async fn save_my_appearance(
 
         let v = crate::ssr::valence(&ctx)?;
 
-        let row = UserAppearance::query(&v)
+        let row = UserAppearance::query_used(&v, valence::use_!(r#"In **services**, we **list User Appearance** so the product can show or process the matching set for this workflow. Callers allowed for **services** use the list; it is not a public dump of every field to anonymous visitors."#))
             .where_user(RecordPredicate::Equals(user))
             .first()
             .await
@@ -164,7 +164,7 @@ pub async fn save_my_appearance(
             .ok_or_else(|| ServerFnError::new("Appearance not found"))?;
 
         let mut mutable = row
-            .get_mutable(&v)
+            .get_mutable_used(&v, valence::use_!(r#"In **services**, we **update this data** so later steps see the latest values for this workflow. Callers allowed for **services** use the updated data; this is not a public export of unrelated fields."#))
             .set_color_mode(color_mode)
             .map_err(|e| ServerFnError::new(format!("Validation error: {e}")))?
             .set_brand_source(brand_source)

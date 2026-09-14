@@ -183,7 +183,7 @@ async fn wipe_recipient_notifications(system: &valence::Valence, recipient: Reco
     }
 
     for round in 0..40 {
-        let batch = match Notification::query(&owner)
+        let batch = match Notification::query_used(&owner, valence::use_!(r#"**Test:** Fixture **Notification** list for `seed` so the suite can arrange and assert persistence behavior. CI and developers running the suite only."#))
             .where_user(RecordPredicate::Equals(recipient.clone()))
             .limit(100)
             .await
@@ -323,7 +323,7 @@ pub async fn seed_data(
             log::error!("e2e seed: IndexedDemoItem::new failed: {err}");
             StatusCode::INTERNAL_SERVER_ERROR
         })?;
-        IndexedDemoItem::upsert("e2e-ws-1", row, &valence)
+        IndexedDemoItem::upsert_used("e2e-ws-1", row, &valence, valence::use_!(r#"**Test:** Fixture **Indexed Demo Item** save for `seed` so the suite can arrange and assert persistence behavior. CI and developers running the suite only."#))
             .await
             .map_err(|err| {
                 log::error!("e2e seed: IndexedDemoItem upsert failed: {err}");

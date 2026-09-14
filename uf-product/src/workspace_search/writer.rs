@@ -110,7 +110,7 @@ impl SearchDocumentWriter {
             message: e.to_string(),
         })?;
 
-        crate::generated::UnifiedFieldSearchDocument::upsert(&id, row, valence)
+        crate::generated::UnifiedFieldSearchDocument::upsert_used(&id, row, valence, valence::use_!(r#"When **workspace_search** needs to persist work, we **save Unified Field Search Document** so the next step in that feature can continue with the latest values. People and services allowed for **workspace_search** use this data for that workflow—not as a general export of unrelated personal fields."#))
             .await
             .map_err(|e| WorkspaceSearchError::Write {
                 operation: "upsert",
