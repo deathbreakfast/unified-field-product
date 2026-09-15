@@ -31,6 +31,9 @@
 //! - **Design-system re-exports** — Import [`components`], [`primitives`], [`models`], and
 //!   [`nav`] through one dependency path (sourced from `orbital-zone-a`).
 //! - **Shell chrome** — App bar, layout, and search UI live in `uf-integrations` (not this crate).
+//! - **Detail-extension slots** — Let an optional product contribute a panel into another
+//!   product's detail page (a Polaron org/team Overview tab, say) without either one
+//!   Cargo-depending on the other. [Get started](#detail-extension-slots)
 //!
 //! ## Getting started
 //!
@@ -385,6 +388,52 @@
 //!
 //! Navigating under `/counter` resolves `app_id` **counter** and records a page view.
 //!
+//! ## Detail-extension slots
+//!
+//! Some products want to show a small panel on *another* product's detail page — a
+//! strategy summary on a Polaron org's Overview tab, say — without the host page
+//! Cargo-depending on the contributing product. [`DetailExtensionContribution`] lets an
+//! optional offering register that panel via `inventory::submit!`, keyed by
+//! [`DetailExtensionKind`]; the host page renders [`DetailExtensionSlot`] wherever the
+//! panel should appear. Call this once at host boot (force-link the contributing crate)
+//! and once per host page (mount the slot) — not per request.
+//!
+//! **Prerequisites:** the contributing product force-linked into the host binary (a
+//! `register_*` touch-point call is enough, the same pattern as [`register_app_bar_utility`]);
+//! a stable `scope_id` for the host page (e.g. an org or team id).
+//!
+//! ```rust,ignore
+//! use leptos::prelude::*;
+//! use uf_product::{DetailExtensionContribution, DetailExtensionKind, DetailExtensionSlot};
+//!
+//! // Contributing product: register a panel for Polaron's org Overview tab.
+//! fn render_org_panel(org_id: String) -> AnyView {
+//!     view! { <p>{format!("Strategy panel for org {org_id}")}</p> }.into_any()
+//! }
+//!
+//! inventory::submit! {
+//!     DetailExtensionContribution::new(
+//!         10,
+//!         "example_org_panel",
+//!         DetailExtensionKind::PolaronOrgOverview,
+//!         render_org_panel,
+//!     )
+//! }
+//!
+//! // Host page: render whatever is registered for this org, or nothing.
+//! #[component]
+//! fn OrgOverviewTab(org_id: String) -> impl IntoView {
+//!     view! {
+//!         <DetailExtensionSlot kind=DetailExtensionKind::PolaronOrgOverview scope_id=org_id />
+//!     }
+//! }
+//! ```
+//!
+//! With the contributing crate force-linked, the host page's Overview tab renders
+//! "Strategy panel for org …" for that org id. Without it, [`DetailExtensionSlot`]
+//! renders nothing — the host page stays valid whether or not the optional product is
+//! mounted.
+//!
 //! ## Feature flags
 //!
 //! | Feature | Effect |
@@ -417,6 +466,7 @@
 //! - [`provide_auth_context`] / [`use_authenticated_user`] / [`use_auth_state`] — session.
 //! - [`permissions`] — permission manifest contracts.
 //! - [`routes`] — app registration + route guards.
+//! - [`detail_extensions`] — cross-product detail-page panels via `inventory`.
 //! - `uf-integrations` — shell app bar, `WorkspaceSearch`, and `SearchSourcePicker`.
 //! - [`workspace_search`] — per-user content index (SideEffect/Iter writers + query).
 //! - `uf-search-core` — picker DTOs/registry (also via [`search_sources`]).
@@ -436,6 +486,7 @@ pub mod app_bar_menu_extras;
 pub mod app_bar_utilities;
 pub mod auth_dialog;
 pub mod components;
+pub mod detail_extensions;
 pub mod nav;
 pub mod paths;
 pub mod permissions;
@@ -481,6 +532,10 @@ pub use auth_dialog::{
 ///
 /// After sign-in or sign-out, call [`AuthContext::trigger_refresh`].
 pub use context::AuthContext;
+pub use detail_extensions::{
+    collect_detail_extensions, register_detail_extensions, DetailExtensionContribution,
+    DetailExtensionKind, DetailExtensionSlot,
+};
 
 /// Insert [`AuthContext`] into Leptos context. Call once near the host `Router`.
 ///
