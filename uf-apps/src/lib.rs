@@ -21,6 +21,9 @@
 //!   [`ensure_app_bar_linked`] once at host boot. [Get started](#link-app-bar-launcher)
 //! - **App detail overview** — Per-app overview card from [`AppDetailPage`] and
 //!   [`server::get_app_overview`].
+//! - **App detail extension slot** — An optional product crate (Magnon is the first
+//!   consumer) can render its own panel below the overview card on `/apps/:app_name`
+//!   without uf-apps depending on it. [Get started](#app-detail-extension-slot)
 //! - **Apps directory self-registration** — This crate registers itself with `uf_app!`
 //!   (`id: "apps"`, route `/apps`) so it appears in the host app inventory.
 //!
@@ -56,6 +59,45 @@
 //! slug returns `Ok(None)` and the page shows a warning banner. Transport or SSR
 //! errors surface as `Err(ServerFnError)` with an error
 //! [`uf_product::primitives::MessageBar`].
+//!
+//! ## App detail extension slot
+//!
+//! Below `AppOverviewCard` on `/apps/:app_name`, [`AppDetailPage`] renders
+//! `<DetailExtensionSlot kind=DetailExtensionKind::UfAppDetail scope_id=.. />`.
+//! An optional product crate registers a panel for that slot with
+//! `inventory::submit!` at crate load, without uf-apps ever depending on it — the
+//! host binary must force-link the contributing crate (call its `ensure_*_linked`-
+//! style boot hook, the same way [`ensure_app_bar_linked`] force-links this
+//! crate's app-bar button) for the panel to appear. If nothing is linked, the slot
+//! renders nothing and `/apps/:app_name` is unaffected.
+//!
+//! ```rust,ignore
+//! use leptos::prelude::*;
+//! use uf_product::{DetailExtensionContribution, DetailExtensionKind};
+//!
+//! /// Renders the panel for the app named by `scope_id` (the `/apps/:app_name` slug).
+//! fn render_magnon_application_panel(scope_id: String) -> AnyView {
+//!     view! {
+//!         <p>{format!("Magnon strategy panel for app '{scope_id}'")}</p>
+//!     }
+//!     .into_any()
+//! }
+//!
+//! inventory::submit! {
+//!     DetailExtensionContribution::new(
+//!         10,
+//!         "magnon_application_strategy_panel",
+//!         DetailExtensionKind::UfAppDetail,
+//!         render_magnon_application_panel,
+//!     )
+//! }
+//! ```
+//!
+//! `scope_id` is the app's `id`/slug from its `uf_app!` registration — the same
+//! value [`AppDetailPage`] already passes to [`server::get_app_overview`]. No
+//! contribution registered is not an error; see
+//! [`uf_product::DetailExtensionSlot`] for the empty-slot contract and sad-path
+//! test.
 //!
 //! ## Getting started
 //!
@@ -150,6 +192,8 @@
 //!
 //! - [`UfAppsRoutes`] — nested `/apps` + `/apps/:app_name` routes.
 //! - [`AppsIndexPage`] / [`AppDetailPage`] — index grid and overview card.
+//! - [App detail extension slot](#app-detail-extension-slot) —
+//!   [`uf_product::DetailExtensionKind::UfAppDetail`] / [`uf_product::DetailExtensionContribution`].
 //! - [`mod@apps_launcher`] — Dialog typeahead ([`AppsLauncher`], [`safe_app_route_path`]).
 //! - [`mod@server`] — [`server::get_apps_page`], [`server::get_app_overview`], [`server::AppDirectoryItem`].
 //! - [`ensure_help_linked`] — seeded Help spotlight steps; call once so

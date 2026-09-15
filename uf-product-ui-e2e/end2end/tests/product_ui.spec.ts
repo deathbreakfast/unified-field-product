@@ -633,6 +633,46 @@ test.describe("pw-apps", () => {
       timeout: 30_000,
     });
   });
+
+  test("pw-apps-detail-extension-slot-renders-happy", async ({ page }) => {
+    // Magnon DESIGN.md M0b P2: DetailExtensionKind::UfAppDetail actually mounts
+    // below AppOverviewCard and threads the real app slug as scope_id — this host
+    // force-links a test-only probe contribution (detail_extension_fixture.rs).
+    await seedAuth(page, "authenticated_verified");
+
+    await page.goto("/apps", { waitUntil: "domcontentloaded" });
+    await waitForHydrated(page);
+    await page.getByTestId("app-card-apps").getByRole("link", { name: /open/i }).click();
+    await expect(page.getByTestId("app-detail-page")).toBeVisible({
+      timeout: 60_000,
+    });
+    await expect(page.getByTestId("uf-app-detail-extension-probe")).toHaveText("apps", {
+      timeout: 30_000,
+    });
+
+    await page.goto("/apps", { waitUntil: "domcontentloaded" });
+    await waitForHydrated(page);
+    await page.getByTestId("app-card-welcome").getByRole("link", { name: /open/i }).click();
+    await expect(page.getByTestId("app-detail-page")).toBeVisible({
+      timeout: 60_000,
+    });
+    await expect(page.getByTestId("uf-app-detail-extension-probe")).toHaveText("welcome", {
+      timeout: 30_000,
+    });
+  });
+
+  test("pw-apps-detail-extension-slot-absent-unknown-sad", async ({ page }) => {
+    await seedAuth(page, "authenticated_verified");
+    await page.goto("/apps/zz-no-such-app", { waitUntil: "domcontentloaded" });
+    await waitForHydrated(page);
+    await expect(page.getByTestId("app-detail-page")).toBeVisible({
+      timeout: 60_000,
+    });
+    await expect(page.getByText("App not found.")).toBeVisible({
+      timeout: 30_000,
+    });
+    await expect(page.getByTestId("uf-app-detail-extension-probe")).toHaveCount(0);
+  });
 });
 
 test.describe("pw-apps-launcher", () => {

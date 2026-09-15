@@ -4,6 +4,7 @@ use uf_product::components::ContentContainer;
 use uf_product::primitives::{
     Button, ButtonAppearance, Flex, FlexGap, MessageBar, MessageBarIntent,
 };
+use uf_product::{DetailExtensionKind, DetailExtensionSlot};
 
 use crate::components::{AppOverviewCard, WelcomeCardSkeleton};
 use crate::server::get_app_overview;
@@ -24,6 +25,14 @@ fn title_from_slug(slug: &str) -> String {
 /// Reads `app_name` from the router, loads [`crate::server::get_app_overview`],
 /// and renders the overview card (`AppOverviewCard`). Unknown slugs show a
 /// warning [`uf_product::primitives::MessageBar`]; server-fn failures show an error banner.
+///
+/// Below the overview card, mounts
+/// `<DetailExtensionSlot kind=DetailExtensionKind::UfAppDetail scope_id=.. />`
+/// so an optional product crate can contribute its own panel for this app
+/// without `uf-apps` depending on it — see
+/// [`crate`](crate#app-detail-extension-slot) for how a product crate
+/// registers one. The slot only mounts once the app resolves; an unknown
+/// slug shows the warning banner instead and never threads a `scope_id`.
 #[component]
 pub fn AppDetailPage() -> impl IntoView {
     let params = use_params_map();
@@ -45,7 +54,16 @@ pub fn AppDetailPage() -> impl IntoView {
                 <Suspense fallback=move || view! { <WelcomeCardSkeleton title=display_title.get_untracked() /> }>
                     {move || match overview_res.get() {
                         Some(Ok(Some(overview))) => {
-                            view! { <AppOverviewCard overview=overview /> }.into_any()
+                            view! {
+                                <Flex vertical=true gap=FlexGap::Large full_width=true>
+                                    <AppOverviewCard overview=overview />
+                                    <DetailExtensionSlot
+                                        kind=DetailExtensionKind::UfAppDetail
+                                        scope_id=slug.get()
+                                    />
+                                </Flex>
+                            }
+                                .into_any()
                         }
                         Some(Ok(None)) => view! {
                             <MessageBar intent=MessageBarIntent::Warning>
