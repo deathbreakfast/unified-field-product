@@ -4,6 +4,7 @@
 mod app;
 #[cfg(feature = "ssr")]
 mod app_state;
+mod detail_extension_fixture;
 #[cfg(feature = "ssr")]
 mod e2e_permissions;
 #[cfg(feature = "ssr")]

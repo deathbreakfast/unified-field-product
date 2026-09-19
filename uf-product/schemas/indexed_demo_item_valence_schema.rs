@@ -8,6 +8,7 @@ use valence::privacy_policies::owner::OWNER_BY_USER_FIELD;
 
 valence_schema! {
     IndexedDemoItem {
+        repository: "https://github.com/unified-field-dev/unified-field-product",
         table: "indexed_demo_item",
         version: "0.1.0",
         database: crate::embedded_surreal::IDENTITY_DEFAULT_STORAGE,

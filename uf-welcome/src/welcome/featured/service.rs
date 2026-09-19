@@ -65,7 +65,7 @@ async fn find_by_app_id(
     v: &Valence,
     app_id: &str,
 ) -> Result<Option<WelcomeFeaturedApp>, FeaturedError> {
-    WelcomeFeaturedApp::query(v)
+    WelcomeFeaturedApp::query_used(v, valence::use_!(r"In **featured**, we **list Welcome Featured App** so the product can show or process the matching set for this workflow. Callers allowed for **featured** use the list; it is not a public dump of every field to anonymous visitors."))
         .where_app_id(StringPredicate::Equals(app_id.to_string()))
         .first()
         .await
@@ -80,7 +80,7 @@ async fn find_by_app_id(
 ///
 /// Returns [`FeaturedError::Service`] when the Valence list query fails.
 pub async fn list(v: &Valence) -> Result<Vec<FeaturedAppRow>, FeaturedError> {
-    let rows = WelcomeFeaturedApp::query(v)
+    let rows = WelcomeFeaturedApp::query_used(v, valence::use_!(r"In **featured**, we **list Welcome Featured App** so the product can show or process the matching set for this workflow. Callers allowed for **featured** use the list; it is not a public dump of every field to anonymous visitors."))
         .order_by_ordinal(valence::query::SortDirection::Asc)
         .await
         .map_err(|e| FeaturedError::service("list", e))?;
@@ -128,7 +128,7 @@ pub async fn add(v: &Valence, app_id: &str, ordinal: i64) -> Result<FeaturedAppR
     let id = Uuid::new_v4().to_string();
     let row = WelcomeFeaturedApp::new(app_id.to_string(), ordinal, now, now)
         .map_err(|e| FeaturedError::service("add", e))?;
-    let created = WelcomeFeaturedApp::upsert(&id, row, v)
+    let created = WelcomeFeaturedApp::upsert_used(&id, row, v, valence::use_!(r"When **featured** needs to persist work, we **save Welcome Featured App** so the next step in that feature can continue with the latest values. People and services allowed for **featured** use this data for that workflow—not as a general export of unrelated personal fields."))
         .await
         .map_err(|e| FeaturedError::service("add", e))?;
     let mut out = to_row(&created);
@@ -150,7 +150,7 @@ pub async fn add(v: &Valence, app_id: &str, ordinal: i64) -> Result<FeaturedAppR
 /// missing a record id).
 pub async fn remove(v: &Valence, app_id_or_id: &str) -> Result<(), FeaturedError> {
     let key = app_id_or_id;
-    let existing = match WelcomeFeaturedApp::get(key, v)
+    let existing = match WelcomeFeaturedApp::get_used(key, v, valence::use_!(r"In **featured**, we **load Welcome Featured App** so the application can decide what to do next in this workflow. The result is used by **featured** logic—not necessarily displayed on a page unless that feature’s UI shows it."))
         .await
         .map_err(|e| FeaturedError::service("remove", e))?
     {
@@ -201,7 +201,7 @@ pub async fn reorder(v: &Valence, app_ids: &[String]) -> Result<(), FeaturedErro
         if id.is_empty() {
             return Err(FeaturedError::not_found(app_id.clone()));
         }
-        row.get_mutable(v)
+        row.get_mutable_used(v, valence::use_!(r"In **featured**, we **update this data** so later steps see the latest values for this workflow. Callers allowed for **featured** use the updated data; this is not a public export of unrelated fields."))
             .set_ordinal(ordinal as i64)
             .map_err(|e| FeaturedError::service("reorder", e))?
             .set_updated_at(now)
