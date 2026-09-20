@@ -198,7 +198,7 @@ async fn hard_remove_document(
             })?;
 
     // Raw delete bypasses Valence privacy — assert row owner matches the natural key.
-    match backend.get_record(INDEX_TABLE, id).await {
+    match valence::get_record_used(backend, INDEX_TABLE, id, valence::use_!(r#"Before **workspace search** hard-deletes an index document, we **load that search document** to confirm its owner matches the expected user. The writer uses this check only."#)).await {
         Ok(Some(existing)) => {
             let row_user = existing
                 .get("user")
@@ -228,7 +228,7 @@ async fn hard_remove_document(
         }
     }
 
-    match backend.delete_record(INDEX_TABLE, id).await {
+    match valence::delete_record_used(backend, INDEX_TABLE, id, valence::use_!(r#"When **workspace search** removes an index document, we **delete that search document row** so stale results leave the index. The search writer uses this cleanup path."#)).await {
         Ok(()) => {}
         Err(valence::Error::NotFound(_)) => {}
         Err(e) => {

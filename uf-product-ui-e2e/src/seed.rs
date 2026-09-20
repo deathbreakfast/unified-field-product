@@ -129,7 +129,7 @@ async fn hard_delete_notification_id(system: &valence::Valence, id: &str) -> boo
             continue;
         }
         match system.backend_for_table(NOTIFICATION_TABLE) {
-            Ok(backend) => match backend.delete_record(NOTIFICATION_TABLE, &bare).await {
+            Ok(backend) => match valence::delete_record_used(backend, NOTIFICATION_TABLE, &bare, valence::use_!(r#"**Test:** Fixture notification hard-delete for `seed` so the suite can reset notification rows between runs. CI and developers running the suite only."#)).await {
                 Ok(()) => {
                     valence::read_cache::invalidate(NOTIFICATION_TABLE, &bare);
                     let _ = valence::ownership::OwnershipService::mark_deleted_ownership(

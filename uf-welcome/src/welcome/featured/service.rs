@@ -174,8 +174,7 @@ pub async fn remove(v: &Valence, app_id_or_id: &str) -> Result<(), FeaturedError
     let backend = v
         .backend_for_table(WelcomeFeaturedApp::table_name())
         .map_err(|e| FeaturedError::service("remove", e))?;
-    backend
-        .delete_record(WelcomeFeaturedApp::table_name(), &id)
+    valence::delete_record_used(backend, WelcomeFeaturedApp::table_name(), &id, valence::use_!(r#"When an operator **removes a featured app** from Welcome, we **delete that featured-app row** so it no longer appears on the welcome surface. Operators who manage featured apps use this path."#))
         .await
         .map_err(|e| FeaturedError::service("remove", e))?;
     valence::read_cache::invalidate(WelcomeFeaturedApp::table_name(), &id);
