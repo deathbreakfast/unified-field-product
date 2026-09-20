@@ -469,10 +469,15 @@ async fn writer_upsert_renews_ttl_happy() {
         "indexed_demo_item",
         "ttl1",
     );
-    let raw1 = valence::QueryCore::get_record_json("unified_field_search_document", &id, &v)
-        .await
-        .expect("raw1")
-        .expect("present");
+    let raw1 = valence::QueryCore::get_record_json_used(
+        "unified_field_search_document",
+        &id,
+        &v,
+        valence::use_!(r#"**Test:** Fixture row load for `workspace_search` so the suite can assert TTL renew stamps on search documents. CI and developers running the suite only."#),
+    )
+    .await
+    .expect("raw1")
+    .expect("present");
     let exp1 = raw1
         .get(EXPIRE_AT_FIELD)
         .cloned()
@@ -481,10 +486,15 @@ async fn writer_upsert_renews_ttl_happy() {
     SearchDocumentWriter::upsert(&v, draft)
         .await
         .expect("upsert2 renew");
-    let raw2 = valence::QueryCore::get_record_json("unified_field_search_document", &id, &v)
-        .await
-        .expect("raw2")
-        .expect("present");
+    let raw2 = valence::QueryCore::get_record_json_used(
+        "unified_field_search_document",
+        &id,
+        &v,
+        valence::use_!(r#"**Test:** Fixture row load for `workspace_search` so the suite can assert TTL renew stamps on search documents. CI and developers running the suite only."#),
+    )
+    .await
+    .expect("raw2")
+    .expect("present");
     let exp2 = raw2
         .get(EXPIRE_AT_FIELD)
         .cloned()
