@@ -33,22 +33,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout product into unified-field layout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           path: ${{ env.PRODUCT_WD }}
       - name: Checkout lepton (private path dep)
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           repository: unified-field-dev/lepton
           path: ${{ env.UF_ROOT }}/L1-host-stack-kits/lepton
           ssh-key: ${{ secrets.LEPTON_CLONE_SSH_KEY }}
       - name: Checkout uf-notifications
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           repository: unified-field-dev/uf-notifications
           path: ${{ env.UF_ROOT }}/L2-product-platform/uf-notifications
       - name: Checkout lepton-uf-app (private path dep)
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           repository: unified-field-dev/lepton-uf-app
           path: ${{ env.UF_ROOT }}/L2-product-platform/lepton-uf-app
@@ -83,22 +83,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout product into unified-field layout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           path: ${{ env.PRODUCT_WD }}
       - name: Checkout lepton (private path dep)
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           repository: unified-field-dev/lepton
           path: ${{ env.UF_ROOT }}/L1-host-stack-kits/lepton
           ssh-key: ${{ secrets.LEPTON_CLONE_SSH_KEY }}
       - name: Checkout uf-notifications
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           repository: unified-field-dev/uf-notifications
           path: ${{ env.UF_ROOT }}/L2-product-platform/uf-notifications
       - name: Checkout lepton-uf-app (private path dep)
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           repository: unified-field-dev/lepton-uf-app
           path: ${{ env.UF_ROOT }}/L2-product-platform/lepton-uf-app
@@ -137,22 +137,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout product into unified-field layout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           path: ${{ env.PRODUCT_WD }}
       - name: Checkout lepton (private path dep)
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           repository: unified-field-dev/lepton
           path: ${{ env.UF_ROOT }}/L1-host-stack-kits/lepton
           ssh-key: ${{ secrets.LEPTON_CLONE_SSH_KEY }}
       - name: Checkout uf-notifications
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           repository: unified-field-dev/uf-notifications
           path: ${{ env.UF_ROOT }}/L2-product-platform/uf-notifications
       - name: Checkout lepton-uf-app (private path dep)
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           repository: unified-field-dev/lepton-uf-app
           path: ${{ env.UF_ROOT }}/L2-product-platform/lepton-uf-app
@@ -195,22 +195,22 @@ jobs:
         package: [uf-product, uf-welcome]
     steps:
       - name: Checkout product into unified-field layout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           path: ${{ env.PRODUCT_WD }}
       - name: Checkout lepton (private path dep)
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           repository: unified-field-dev/lepton
           path: ${{ env.UF_ROOT }}/L1-host-stack-kits/lepton
           ssh-key: ${{ secrets.LEPTON_CLONE_SSH_KEY }}
       - name: Checkout uf-notifications
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           repository: unified-field-dev/uf-notifications
           path: ${{ env.UF_ROOT }}/L2-product-platform/uf-notifications
       - name: Checkout lepton-uf-app (private path dep)
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           repository: unified-field-dev/lepton-uf-app
           path: ${{ env.UF_ROOT }}/L2-product-platform/lepton-uf-app
@@ -261,22 +261,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout product into unified-field layout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           path: ${{ env.PRODUCT_WD }}
       - name: Checkout lepton (private path dep)
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           repository: unified-field-dev/lepton
           path: ${{ env.UF_ROOT }}/L1-host-stack-kits/lepton
           ssh-key: ${{ secrets.LEPTON_CLONE_SSH_KEY }}
       - name: Checkout uf-notifications
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           repository: unified-field-dev/uf-notifications
           path: ${{ env.UF_ROOT }}/L2-product-platform/uf-notifications
       - name: Checkout lepton-uf-app (private path dep)
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           repository: unified-field-dev/lepton-uf-app
           path: ${{ env.UF_ROOT }}/L2-product-platform/lepton-uf-app
@@ -302,7 +302,7 @@ jobs:
           targets: wasm32-unknown-unknown
       - name: Install cargo-leptos
         run: cargo install cargo-leptos --locked --version 0.3.6
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: "20"
           cache: npm
@@ -314,7 +314,7 @@ jobs:
         id: pw-version
         working-directory: ${{ env.PRODUCT_WD }}/uf-product-ui-e2e/end2end
         run: echo "version=$(node -p "require('./package-lock.json').packages['node_modules/@playwright/test'].version")" >> $GITHUB_OUTPUT
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         id: playwright-cache
         with:
           path: ~/.cache/ms-playwright
@@ -334,7 +334,7 @@ jobs:
         run: cargo leptos end-to-end --project uf-product-ui-e2e
       - name: Upload Playwright artifacts on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: playwright-artifacts-uf-product-${{ github.run_id }}
           path: |
@@ -346,22 +346,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout product into unified-field layout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           path: ${{ env.PRODUCT_WD }}
       - name: Checkout lepton (private path dep)
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           repository: unified-field-dev/lepton
           path: ${{ env.UF_ROOT }}/L1-host-stack-kits/lepton
           ssh-key: ${{ secrets.LEPTON_CLONE_SSH_KEY }}
       - name: Checkout uf-notifications
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           repository: unified-field-dev/uf-notifications
           path: ${{ env.UF_ROOT }}/L2-product-platform/uf-notifications
       - name: Checkout lepton-uf-app (private path dep)
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           repository: unified-field-dev/lepton-uf-app
           path: ${{ env.UF_ROOT }}/L2-product-platform/lepton-uf-app
@@ -397,22 +397,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout product into unified-field layout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           path: ${{ env.PRODUCT_WD }}
       - name: Checkout lepton (private path dep)
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           repository: unified-field-dev/lepton
           path: ${{ env.UF_ROOT }}/L1-host-stack-kits/lepton
           ssh-key: ${{ secrets.LEPTON_CLONE_SSH_KEY }}
       - name: Checkout uf-notifications
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           repository: unified-field-dev/uf-notifications
           path: ${{ env.UF_ROOT }}/L2-product-platform/uf-notifications
       - name: Checkout lepton-uf-app (private path dep)
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           repository: unified-field-dev/lepton-uf-app
           path: ${{ env.UF_ROOT }}/L2-product-platform/lepton-uf-app
