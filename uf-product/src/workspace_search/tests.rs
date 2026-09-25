@@ -153,7 +153,7 @@ async fn writer_upsert_persists_fields_happy() {
         "indexed_demo_item",
         "1",
     );
-    let row = UnifiedFieldSearchDocument::get_used(&id, &v, valence::use_!(r"In **workspace_search**, we **load Unified Field Search Document** so the application can decide what to do next in this workflow. The result is used by **workspace_search** logic—not necessarily displayed on a page unless that feature’s UI shows it."))
+    let row = UnifiedFieldSearchDocument::get(&id, &v, valence::use_!(r"In **workspace_search**, we **load Unified Field Search Document** so the application can decide what to do next in this workflow. The result is used by **workspace_search** logic—not necessarily displayed on a page unless that feature’s UI shows it."))
         .await
         .expect("get")
         .expect("row");
@@ -182,7 +182,7 @@ async fn writer_upsert_idempotent_happy() {
         "indexed_demo_item",
         "2",
     );
-    let row = UnifiedFieldSearchDocument::get_used(&id, &v, valence::use_!(r"In **workspace_search**, we **load Unified Field Search Document** so the application can decide what to do next in this workflow. The result is used by **workspace_search** logic—not necessarily displayed on a page unless that feature’s UI shows it."))
+    let row = UnifiedFieldSearchDocument::get(&id, &v, valence::use_!(r"In **workspace_search**, we **load Unified Field Search Document** so the application can decide what to do next in this workflow. The result is used by **workspace_search** logic—not necessarily displayed on a page unless that feature’s UI shows it."))
         .await
         .expect("get")
         .expect("row");
@@ -219,7 +219,7 @@ async fn writer_delete_removes_row_happy() {
         .await
         .expect("delete");
     let id = document_id(&user, "demo", "indexed_demo_item", "5");
-    let gone = UnifiedFieldSearchDocument::get_used(&id, &v, valence::use_!(r"In **workspace_search**, we **load Unified Field Search Document** so the application can decide what to do next in this workflow. The result is used by **workspace_search** logic—not necessarily displayed on a page unless that feature’s UI shows it.")).await.expect("get");
+    let gone = UnifiedFieldSearchDocument::get(&id, &v, valence::use_!(r"In **workspace_search**, we **load Unified Field Search Document** so the application can decide what to do next in this workflow. The result is used by **workspace_search** logic—not necessarily displayed on a page unless that feature’s UI shows it.")).await.expect("get");
     assert!(gone.is_none());
 }
 
@@ -253,7 +253,7 @@ async fn privacy_owner_read_own_happy() {
         "indexed_demo_item",
         "10",
     );
-    let row = UnifiedFieldSearchDocument::get_used(&id, &alice_v, valence::use_!(r"In **workspace_search**, we **load Unified Field Search Document** so the application can decide what to do next in this workflow. The result is used by **workspace_search** logic—not necessarily displayed on a page unless that feature’s UI shows it."))
+    let row = UnifiedFieldSearchDocument::get(&id, &alice_v, valence::use_!(r"In **workspace_search**, we **load Unified Field Search Document** so the application can decide what to do next in this workflow. The result is used by **workspace_search** logic—not necessarily displayed on a page unless that feature’s UI shows it."))
         .await
         .expect("get")
         .expect("owner can read");
@@ -276,7 +276,7 @@ async fn privacy_other_user_read_denied_sad() {
         "indexed_demo_item",
         "11",
     );
-    let denied = UnifiedFieldSearchDocument::get_used(&id, &bob_v, valence::use_!(r"In **workspace_search**, we **load Unified Field Search Document** so the application can decide what to do next in this workflow. The result is used by **workspace_search** logic—not necessarily displayed on a page unless that feature’s UI shows it.")).await;
+    let denied = UnifiedFieldSearchDocument::get(&id, &bob_v, valence::use_!(r"In **workspace_search**, we **load Unified Field Search Document** so the application can decide what to do next in this workflow. The result is used by **workspace_search** logic—not necessarily displayed on a page unless that feature’s UI shows it.")).await;
     assert!(
         denied.is_err() || matches!(denied, Ok(None)),
         "bob must not read alice document: {denied:?}"
@@ -296,7 +296,7 @@ async fn privacy_anonymous_read_denied_sad() {
         "indexed_demo_item",
         "12",
     );
-    let denied = UnifiedFieldSearchDocument::get_used(&id, &anon, valence::use_!(r"In **workspace_search**, we **load Unified Field Search Document** so the application can decide what to do next in this workflow. The result is used by **workspace_search** logic—not necessarily displayed on a page unless that feature’s UI shows it.")).await;
+    let denied = UnifiedFieldSearchDocument::get(&id, &anon, valence::use_!(r"In **workspace_search**, we **load Unified Field Search Document** so the application can decide what to do next in this workflow. The result is used by **workspace_search** logic—not necessarily displayed on a page unless that feature’s UI shows it.")).await;
     assert!(
         denied.is_err() || matches!(denied, Ok(None)),
         "anonymous must not read: {denied:?}"
@@ -319,7 +319,7 @@ async fn privacy_cross_user_cud_denied_sad() {
         chrono::Utc::now(),
     )
     .expect("new");
-    let created = UnifiedFieldSearchDocument::upsert_used("forge13", row, &bob_v, valence::use_!(r"When **workspace_search** needs to persist work, we **save Unified Field Search Document** so the next step in that feature can continue with the latest values. People and services allowed for **workspace_search** use this data for that workflow—not as a general export of unrelated personal fields.")).await;
+    let created = UnifiedFieldSearchDocument::upsert("forge13", row, &bob_v, valence::use_!(r"When **workspace_search** needs to persist work, we **save Unified Field Search Document** so the next step in that feature can continue with the latest values. People and services allowed for **workspace_search** use this data for that workflow—not as a general export of unrelated personal fields.")).await;
     assert!(
         created.is_err(),
         "bob must not create alice-owned index rows"
@@ -426,7 +426,7 @@ async fn privacy_owner_write_own_happy() {
         "indexed_demo_item",
         "own1",
     );
-    let row = UnifiedFieldSearchDocument::get_used(&id, &alice_v, valence::use_!(r"In **workspace_search**, we **load Unified Field Search Document** so the application can decide what to do next in this workflow. The result is used by **workspace_search** logic—not necessarily displayed on a page unless that feature’s UI shows it."))
+    let row = UnifiedFieldSearchDocument::get(&id, &alice_v, valence::use_!(r"In **workspace_search**, we **load Unified Field Search Document** so the application can decide what to do next in this workflow. The result is used by **workspace_search** logic—not necessarily displayed on a page unless that feature’s UI shows it."))
         .await
         .expect("get")
         .expect("owner row");
@@ -469,10 +469,15 @@ async fn writer_upsert_renews_ttl_happy() {
         "indexed_demo_item",
         "ttl1",
     );
-    let raw1 = valence::QueryCore::get_record_json("unified_field_search_document", &id, &v)
-        .await
-        .expect("raw1")
-        .expect("present");
+    let raw1 = valence::QueryCore::get_record_json(
+        "unified_field_search_document",
+        &id,
+        &v,
+        valence::use_!(r"**Test:** Fixture row load for `workspace_search` so the suite can assert TTL renew stamps on search documents. CI and developers running the suite only."),
+    )
+    .await
+    .expect("raw1")
+    .expect("present");
     let exp1 = raw1
         .get(EXPIRE_AT_FIELD)
         .cloned()
@@ -481,10 +486,15 @@ async fn writer_upsert_renews_ttl_happy() {
     SearchDocumentWriter::upsert(&v, draft)
         .await
         .expect("upsert2 renew");
-    let raw2 = valence::QueryCore::get_record_json("unified_field_search_document", &id, &v)
-        .await
-        .expect("raw2")
-        .expect("present");
+    let raw2 = valence::QueryCore::get_record_json(
+        "unified_field_search_document",
+        &id,
+        &v,
+        valence::use_!(r"**Test:** Fixture row load for `workspace_search` so the suite can assert TTL renew stamps on search documents. CI and developers running the suite only."),
+    )
+    .await
+    .expect("raw2")
+    .expect("present");
     let exp2 = raw2
         .get(EXPIRE_AT_FIELD)
         .cloned()

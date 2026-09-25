@@ -33,7 +33,7 @@ impl IndexedDemoBackfillIter {
                 operation: "indexed_demo_backfill_should_run".into(),
             })
         };
-        match UnifiedFieldSearchDocument::get_used(&id, &index_v, valence::use_!(r"In **demo**, we **load Unified Field Search Document** so the application can decide what to do next in this workflow. The result is used by **demo** logic—not necessarily displayed on a page unless that feature’s UI shows it.")).await? {
+        match UnifiedFieldSearchDocument::get(&id, &index_v, valence::use_!(r"In **demo**, we **load Unified Field Search Document** so the application can decide what to do next in this workflow. The result is used by **demo** logic—not necessarily displayed on a page unless that feature’s UI shows it.")).await? {
             Some(doc)
                 if doc.title() == row.title()
                     && doc.link() == row.link()

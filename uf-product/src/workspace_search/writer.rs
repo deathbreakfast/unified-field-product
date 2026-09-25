@@ -110,7 +110,7 @@ impl SearchDocumentWriter {
             message: e.to_string(),
         })?;
 
-        crate::generated::UnifiedFieldSearchDocument::upsert_used(&id, row, valence, valence::use_!(r"When **workspace_search** needs to persist work, we **save Unified Field Search Document** so the next step in that feature can continue with the latest values. People and services allowed for **workspace_search** use this data for that workflow—not as a general export of unrelated personal fields."))
+        crate::generated::UnifiedFieldSearchDocument::upsert(&id, row, valence, valence::use_!(r"When **workspace_search** needs to persist work, we **save Unified Field Search Document** so the next step in that feature can continue with the latest values. People and services allowed for **workspace_search** use this data for that workflow—not as a general export of unrelated personal fields."))
             .await
             .map_err(|e| WorkspaceSearchError::Write {
                 operation: "upsert",
@@ -198,7 +198,7 @@ async fn hard_remove_document(
             })?;
 
     // Raw delete bypasses Valence privacy — assert row owner matches the natural key.
-    match backend.get_record(INDEX_TABLE, id).await {
+    match valence::get_record(backend.as_ref(), INDEX_TABLE, id, valence::use_!(r"Before **workspace search** hard-deletes an index document, we **load that search document** to confirm its owner matches the expected user. The writer uses this check only.")).await {
         Ok(Some(existing)) => {
             let row_user = existing
                 .get("user")
@@ -228,7 +228,7 @@ async fn hard_remove_document(
         }
     }
 
-    match backend.delete_record(INDEX_TABLE, id).await {
+    match valence::delete_record(backend.as_ref(), INDEX_TABLE, id, valence::use_!(r"When **workspace search** removes an index document, we **delete that search document row** so stale results leave the index. The search writer uses this cleanup path.")).await {
         Ok(()) => {}
         Err(valence::Error::NotFound(_)) => {}
         Err(e) => {

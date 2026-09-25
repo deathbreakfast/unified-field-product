@@ -49,7 +49,7 @@ async fn create_item(
 ) -> IndexedDemoItem {
     let row =
         IndexedDemoItem::new(RecordId::new("user", user), title.into(), link.into()).expect("new");
-    IndexedDemoItem::upsert_used(id, row, v, valence::use_!(r"When **demo** needs to persist work, we **save Indexed Demo Item** so the next step in that feature can continue with the latest values. People and services allowed for **demo** use this data for that workflow—not as a general export of unrelated personal fields."))
+    IndexedDemoItem::upsert(id, row, v, valence::use_!(r"When **demo** needs to persist work, we **save Indexed Demo Item** so the next step in that feature can continue with the latest values. People and services allowed for **demo** use this data for that workflow—not as a general export of unrelated personal fields."))
         .await
         .expect("upsert source")
 }
@@ -65,7 +65,7 @@ async fn se_create_indexes_document_happy() {
         "d1",
     );
     let sys = v.with_actor(system());
-    let doc = UnifiedFieldSearchDocument::get_used(&id, &sys, valence::use_!(r"In **demo**, we **load Unified Field Search Document** so the application can decide what to do next in this workflow. The result is used by **demo** logic—not necessarily displayed on a page unless that feature’s UI shows it."))
+    let doc = UnifiedFieldSearchDocument::get(&id, &sys, valence::use_!(r"In **demo**, we **load Unified Field Search Document** so the application can decide what to do next in this workflow. The result is used by **demo** logic—not necessarily displayed on a page unless that feature’s UI shows it."))
         .await
         .expect("get")
         .expect("indexed");
@@ -84,7 +84,7 @@ async fn se_update_refreshes_document_happy() {
         "/demo/d2b".into(),
     )
     .expect("new");
-    IndexedDemoItem::upsert_used("d2", updated, &v, valence::use_!(r"When **demo** needs to persist work, we **save Indexed Demo Item** so the next step in that feature can continue with the latest values. People and services allowed for **demo** use this data for that workflow—not as a general export of unrelated personal fields."))
+    IndexedDemoItem::upsert("d2", updated, &v, valence::use_!(r"When **demo** needs to persist work, we **save Indexed Demo Item** so the next step in that feature can continue with the latest values. People and services allowed for **demo** use this data for that workflow—not as a general export of unrelated personal fields."))
         .await
         .expect("update");
     let id = document_id(
@@ -94,7 +94,7 @@ async fn se_update_refreshes_document_happy() {
         "d2",
     );
     let sys = v.with_actor(system());
-    let doc = UnifiedFieldSearchDocument::get_used(&id, &sys, valence::use_!(r"In **demo**, we **load Unified Field Search Document** so the application can decide what to do next in this workflow. The result is used by **demo** logic—not necessarily displayed on a page unless that feature’s UI shows it."))
+    let doc = UnifiedFieldSearchDocument::get(&id, &sys, valence::use_!(r"In **demo**, we **load Unified Field Search Document** so the application can decide what to do next in this workflow. The result is used by **demo** logic—not necessarily displayed on a page unless that feature’s UI shows it."))
         .await
         .expect("get")
         .expect("indexed");
@@ -109,7 +109,7 @@ async fn se_delete_removes_document_happy() {
     let user = RecordId::new("user", "alice");
     let id = document_id(&user, DEMO_APP_ID, DEMO_SOURCE_TABLE, "d3");
     let sys = v.with_actor(system());
-    assert!(UnifiedFieldSearchDocument::get_used(&id, &sys, valence::use_!(r"In **demo**, we **load Unified Field Search Document** so the application can decide what to do next in this workflow. The result is used by **demo** logic—not necessarily displayed on a page unless that feature’s UI shows it."))
+    assert!(UnifiedFieldSearchDocument::get(&id, &sys, valence::use_!(r"In **demo**, we **load Unified Field Search Document** so the application can decide what to do next in this workflow. The result is used by **demo** logic—not necessarily displayed on a page unless that feature’s UI shows it."))
         .await
         .expect("get")
         .is_some());
@@ -128,7 +128,7 @@ async fn se_delete_removes_document_happy() {
         .await
         .expect("se delete");
     let id_b = document_id(&user, DEMO_APP_ID, DEMO_SOURCE_TABLE, "d3b");
-    assert!(UnifiedFieldSearchDocument::get_used(&id_b, &sys, valence::use_!(r"In **demo**, we **load Unified Field Search Document** so the application can decide what to do next in this workflow. The result is used by **demo** logic—not necessarily displayed on a page unless that feature’s UI shows it."))
+    assert!(UnifiedFieldSearchDocument::get(&id_b, &sys, valence::use_!(r"In **demo**, we **load Unified Field Search Document** so the application can decide what to do next in this workflow. The result is used by **demo** logic—not necessarily displayed on a page unless that feature’s UI shows it."))
         .await
         .expect("get")
         .is_none());
@@ -144,7 +144,7 @@ async fn se_error_does_not_fail_source_write_sad() {
         "/demo/err".into(),
     )
     .expect("new");
-    let saved = IndexedDemoItem::upsert_used("derr", row, &v, valence::use_!(r"When **demo** needs to persist work, we **save Indexed Demo Item** so the next step in that feature can continue with the latest values. People and services allowed for **demo** use this data for that workflow—not as a general export of unrelated personal fields."))
+    let saved = IndexedDemoItem::upsert("derr", row, &v, valence::use_!(r"When **demo** needs to persist work, we **save Indexed Demo Item** so the next step in that feature can continue with the latest values. People and services allowed for **demo** use this data for that workflow—not as a general export of unrelated personal fields."))
         .await
         .expect("source write must succeed despite SE error");
     assert_eq!(saved.title(), title.as_str());
@@ -156,7 +156,7 @@ async fn se_error_does_not_fail_source_write_sad() {
     );
     let sys = v.with_actor(system());
     assert!(
-        UnifiedFieldSearchDocument::get_used(&id, &sys, valence::use_!(r"In **demo**, we **load Unified Field Search Document** so the application can decide what to do next in this workflow. The result is used by **demo** logic—not necessarily displayed on a page unless that feature’s UI shows it."))
+        UnifiedFieldSearchDocument::get(&id, &sys, valence::use_!(r"In **demo**, we **load Unified Field Search Document** so the application can decide what to do next in this workflow. The result is used by **demo** logic—not necessarily displayed on a page unless that feature’s UI shows it."))
             .await
             .expect("get")
             .is_none(),
@@ -174,7 +174,7 @@ async fn se_uses_source_user_field_happy() {
         DEMO_SOURCE_TABLE,
         "dbob",
     );
-    let doc = UnifiedFieldSearchDocument::get_used(&id, &v, valence::use_!(r"In **demo**, we **load Unified Field Search Document** so the application can decide what to do next in this workflow. The result is used by **demo** logic—not necessarily displayed on a page unless that feature’s UI shows it."))
+    let doc = UnifiedFieldSearchDocument::get(&id, &v, valence::use_!(r"In **demo**, we **load Unified Field Search Document** so the application can decide what to do next in this workflow. The result is used by **demo** logic—not necessarily displayed on a page unless that feature’s UI shows it."))
         .await
         .expect("get")
         .expect("indexed under bob");
@@ -197,7 +197,7 @@ async fn iter_backfill_inserts_missing_happy() {
         .expect("strip index");
     let sys = v.with_actor(system());
     let id = document_id(&user, DEMO_APP_ID, DEMO_SOURCE_TABLE, "ib1");
-    assert!(UnifiedFieldSearchDocument::get_used(&id, &sys, valence::use_!(r"In **demo**, we **load Unified Field Search Document** so the application can decide what to do next in this workflow. The result is used by **demo** logic—not necessarily displayed on a page unless that feature’s UI shows it."))
+    assert!(UnifiedFieldSearchDocument::get(&id, &sys, valence::use_!(r"In **demo**, we **load Unified Field Search Document** so the application can decide what to do next in this workflow. The result is used by **demo** logic—not necessarily displayed on a page unless that feature’s UI shows it."))
         .await
         .expect("get")
         .is_none());
@@ -211,7 +211,7 @@ async fn iter_backfill_inserts_missing_happy() {
         .execute(&item, &v)
         .await
         .expect("execute");
-    let doc = UnifiedFieldSearchDocument::get_used(&id, &sys, valence::use_!(r"In **demo**, we **load Unified Field Search Document** so the application can decide what to do next in this workflow. The result is used by **demo** logic—not necessarily displayed on a page unless that feature’s UI shows it."))
+    let doc = UnifiedFieldSearchDocument::get(&id, &sys, valence::use_!(r"In **demo**, we **load Unified Field Search Document** so the application can decide what to do next in this workflow. The result is used by **demo** logic—not necessarily displayed on a page unless that feature’s UI shows it."))
         .await
         .expect("get")
         .expect("backfilled");
@@ -242,7 +242,7 @@ async fn iter_backfill_preserves_owner_happy() {
         .await
         .expect("backfill");
     let id = document_id(&user, DEMO_APP_ID, DEMO_SOURCE_TABLE, "ib3");
-    let doc = UnifiedFieldSearchDocument::get_used(&id, &v, valence::use_!(r"In **demo**, we **load Unified Field Search Document** so the application can decide what to do next in this workflow. The result is used by **demo** logic—not necessarily displayed on a page unless that feature’s UI shows it."))
+    let doc = UnifiedFieldSearchDocument::get(&id, &v, valence::use_!(r"In **demo**, we **load Unified Field Search Document** so the application can decide what to do next in this workflow. The result is used by **demo** logic—not necessarily displayed on a page unless that feature’s UI shows it."))
         .await
         .expect("get")
         .expect("doc");

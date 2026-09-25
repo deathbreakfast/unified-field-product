@@ -129,7 +129,7 @@ async fn hard_delete_notification_id(system: &valence::Valence, id: &str) -> boo
             continue;
         }
         match system.backend_for_table(NOTIFICATION_TABLE) {
-            Ok(backend) => match backend.delete_record(NOTIFICATION_TABLE, &bare).await {
+            Ok(backend) => match valence::delete_record(backend.as_ref(), NOTIFICATION_TABLE, &bare, valence::use_!(r"**Test:** Fixture notification hard-delete for `seed` so the suite can reset notification rows between runs. CI and developers running the suite only.")).await {
                 Ok(()) => {
                     valence::read_cache::invalidate(NOTIFICATION_TABLE, &bare);
                     let _ = valence::ownership::OwnershipService::mark_deleted_ownership(
@@ -183,7 +183,7 @@ async fn wipe_recipient_notifications(system: &valence::Valence, recipient: Reco
     }
 
     for round in 0..40 {
-        let batch = match Notification::query_used(&owner, valence::use_!(r"**Test:** Fixture **Notification** list for `seed` so the suite can arrange and assert persistence behavior. CI and developers running the suite only."))
+        let batch = match Notification::query(&owner, valence::use_!(r"**Test:** Fixture **Notification** list for `seed` so the suite can arrange and assert persistence behavior. CI and developers running the suite only."))
             .where_user(RecordPredicate::Equals(recipient.clone()))
             .limit(100)
             .await
@@ -323,7 +323,7 @@ pub async fn seed_data(
             log::error!("e2e seed: IndexedDemoItem::new failed: {err}");
             StatusCode::INTERNAL_SERVER_ERROR
         })?;
-        IndexedDemoItem::upsert_used("e2e-ws-1", row, &valence, valence::use_!(r"**Test:** Fixture **Indexed Demo Item** save for `seed` so the suite can arrange and assert persistence behavior. CI and developers running the suite only."))
+        IndexedDemoItem::upsert("e2e-ws-1", row, &valence, valence::use_!(r"**Test:** Fixture **Indexed Demo Item** save for `seed` so the suite can arrange and assert persistence behavior. CI and developers running the suite only."))
             .await
             .map_err(|err| {
                 log::error!("e2e seed: IndexedDemoItem upsert failed: {err}");

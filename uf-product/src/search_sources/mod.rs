@@ -42,7 +42,7 @@
 //!         max_results: u32,
 //!     ) -> uf_product::search_sources::SearchSourceFuture<'a> {
 //!         Box::pin(async move {
-//!             let users = lepton::generated::User::query_used(valence, valence::use_!(r"In **search_sources**, we **list User** so the product can show or process the matching set for this workflow. Callers allowed for **search_sources** use the list; it is not a public dump of every field to anonymous visitors."))
+//!             let users = lepton::generated::User::query(valence, valence::use_!(r"In **search_sources**, we **list User** so the product can show or process the matching set for this workflow. Callers allowed for **search_sources** use the list; it is not a public dump of every field to anonymous visitors."))
 //!                 .where_email(valence::StringPredicate::Contains(query_text.to_string()))
 //!                 .limit(max_results)
 //!                 .await?;

@@ -51,7 +51,7 @@ uf_app! {
 fn main() {
     let paths = get_all_app_route_paths();
     assert!(
-        paths.iter().any(|p| *p == "/sample-beacon"),
+        paths.contains(&"/sample-beacon"),
         "expected /sample-beacon in {paths:?}"
     );
     println!("uf_app_registration: OK — paths={paths:?}");

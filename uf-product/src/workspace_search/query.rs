@@ -63,7 +63,12 @@ pub async fn query(
     let limit = max_results.clamp(1, ABSOLUTE_MAX_RESULTS).max(1);
     let _ = DEFAULT_MAX_RESULTS; // documented default for callers; clamp handles bounds
 
-    let mut q = crate::generated::UnifiedFieldSearchDocument::query_used(valence, valence::use_!(r"In **workspace_search**, we **list Unified Field Search Document** so the product can show or process the matching set for this workflow. Callers allowed for **workspace_search** use the list; it is not a public dump of every field to anonymous visitors."));
+    let mut q = crate::generated::UnifiedFieldSearchDocument::query(
+        valence,
+        valence::use_!(
+            r"In **workspace_search**, we **list Unified Field Search Document** so the product can show or process the matching set for this workflow. Callers allowed for **workspace_search** use the list; it is not a public dump of every field to anonymous visitors."
+        ),
+    );
     q.inner = q
         .inner
         .set_search_fields(vec!["title".to_string(), "searchable_text".to_string()])

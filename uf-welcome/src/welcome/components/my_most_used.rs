@@ -13,7 +13,7 @@ use super::WelcomeCard;
 /// My most used card body.
 #[component]
 pub fn MyMostUsedCardBody() -> impl IntoView {
-    let links = Resource::new(|| (), |()| async move { get_my_most_used().await });
+    let links = Resource::new(|| (), |()| async move { get_my_most().await });
     view! {
         <div data-testid="my-most-used-card">
             <AppLinksBody

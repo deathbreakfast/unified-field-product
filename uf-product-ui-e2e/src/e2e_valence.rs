@@ -52,7 +52,7 @@ async fn seed_user(id: &str, valence: &Valence) {
         now,
     )
     .expect("build e2e user");
-    User::upsert_used(id, user, valence, valence::use_!(r"**Test:** Fixture **User** save for `e2e_valence` so the suite can arrange and assert persistence behavior. CI and developers running the suite only."))
+    User::upsert(id, user, valence, valence::use_!(r"**Test:** Fixture **User** save for `e2e_valence` so the suite can arrange and assert persistence behavior. CI and developers running the suite only."))
         .await
         .expect("upsert e2e user");
 }

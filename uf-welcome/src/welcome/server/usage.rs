@@ -72,7 +72,7 @@ pub async fn get_recent_apps() -> Result<Vec<AppLinkDto>, ServerFnError> {
 /// missing Spectra, or query failure do not become [`ServerFnError`]. Transport
 /// failures may still surface as [`ServerFnError`].
 #[uf_product_macros::server]
-pub async fn get_my_most_used() -> Result<Vec<AppLinkDto>, ServerFnError> {
+pub async fn get_my_most() -> Result<Vec<AppLinkDto>, ServerFnError> {
     #[cfg(feature = "ssr")]
     {
         use uf_product::telemetry::usage::{

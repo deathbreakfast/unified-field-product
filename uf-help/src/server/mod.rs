@@ -343,7 +343,7 @@ async fn list_visits_ssr(pathname: &str) -> Result<Vec<HelpVisitRecord>, crate::
 
     let mut out = Vec::new();
     for key in route_keys {
-        let rows = HelpTourStepVisit::query_used(&v, valence::use_!(r"In **server**, we **list Help Tour Step Visit** so the product can show or process the matching set for this workflow. Callers allowed for **server** use the list—not anonymous visitors."))
+        let rows = HelpTourStepVisit::query(&v, valence::use_!(r"In **server**, we **list Help Tour Step Visit** so the product can show or process the matching set for this workflow. Callers allowed for **server** use the list—not anonymous visitors."))
             .where_user(RecordPredicate::Equals(user.clone()))
             .where_route(StringPredicate::Equals(key))
             .await
@@ -411,7 +411,7 @@ async fn upsert_visit(
     use uf_product::generated::HelpTourStepVisit;
     use valence::{Model, RecordPredicate, StringPredicate};
 
-    let existing = HelpTourStepVisit::query_used(v, valence::use_!(r"In **server**, we **list Help Tour Step Visit** so the product can show or process the matching set for this workflow. Callers allowed for **server** use the list—not anonymous visitors."))
+    let existing = HelpTourStepVisit::query(v, valence::use_!(r"In **server**, we **list Help Tour Step Visit** so the product can show or process the matching set for this workflow. Callers allowed for **server** use the list—not anonymous visitors."))
         .where_user(RecordPredicate::Equals(user.clone()))
         .where_route(StringPredicate::Equals(step.route.clone()))
         .where_feature_highlight(StringPredicate::Equals(step.feature_highlight.clone()))
@@ -422,7 +422,7 @@ async fn upsert_visit(
     let replay_s = crate::service::replay_to_stored(replay);
     if let Some(row) = existing {
         let mut mutable = row
-            .get_mutable_used(v, valence::use_!(r"In **server**, we **update this data** so later steps see the latest values for this workflow. Callers allowed for **server** use the updated data; this is not a public export of unrelated fields."))
+            .get_mutable(v, valence::use_!(r"In **server**, we **update this data** so later steps see the latest values for this workflow. Callers allowed for **server** use the updated data; this is not a public export of unrelated fields."))
             .set_replay(replay_s)
             .map_err(|e| crate::HelpError::Storage(e.to_string()))?;
         if let Some(spotlight) = &step.spotlight {
@@ -447,7 +447,7 @@ async fn upsert_visit(
             now,
         )
         .map_err(|e| crate::HelpError::Storage(e.to_string()))?;
-        HelpTourStepVisit::create_used(new_row, v, valence::use_!(r"When **server** needs to persist work, we **save Help Tour Step Visit** so the next step in that feature can continue with the latest values. People and services allowed for **server** use this data for that workflow—not as a general export of unrelated personal fields."))
+        HelpTourStepVisit::create(new_row, v, valence::use_!(r"When **server** needs to persist work, we **save Help Tour Step Visit** so the next step in that feature can continue with the latest values. People and services allowed for **server** use this data for that workflow—not as a general export of unrelated personal fields."))
             .await
             .map_err(|e| crate::HelpError::Storage(e.to_string()))?;
     }
@@ -481,14 +481,14 @@ async fn request_replay_ssr(pathname: &str) -> Result<(), crate::HelpError> {
     }
 
     for key in &route_keys {
-        let rows = HelpTourStepVisit::query_used(&v, valence::use_!(r"In **server**, we **list Help Tour Step Visit** so the product can show or process the matching set for this workflow. Callers allowed for **server** use the list—not anonymous visitors."))
+        let rows = HelpTourStepVisit::query(&v, valence::use_!(r"In **server**, we **list Help Tour Step Visit** so the product can show or process the matching set for this workflow. Callers allowed for **server** use the list—not anonymous visitors."))
             .where_user(RecordPredicate::Equals(user.clone()))
             .where_route(StringPredicate::Equals(key.clone()))
             .await
             .map_err(|e| crate::HelpError::Storage(e.to_string()))?;
 
         for row in rows {
-            row.get_mutable_used(&v, valence::use_!(r"In **server**, we **update this data** so later steps see the latest values for this workflow. Callers allowed for **server** use the updated data; this is not a public export of unrelated fields."))
+            row.get_mutable(&v, valence::use_!(r"In **server**, we **update this data** so later steps see the latest values for this workflow. Callers allowed for **server** use the updated data; this is not a public export of unrelated fields."))
                 .set_replay(crate::service::replay_to_stored(true))
                 .map_err(|e| crate::HelpError::Storage(e.to_string()))?
                 .set_updated_at(now)
