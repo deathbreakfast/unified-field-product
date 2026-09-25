@@ -1,4 +1,4 @@
-//! UC3 field builders for orbital shell page views.
+//! Spectra event field builders for orbital shell page views.
 
 use serde_json::{json, Value};
 

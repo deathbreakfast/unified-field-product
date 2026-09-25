@@ -4,7 +4,7 @@ use spectra_core::{try_log_event, try_record_counter};
 
 use super::events::page_view_log_fields;
 
-/// Record one main-shell page view (UC1 + UC3).
+/// Record one main-shell page view (metric + event).
 #[allow(clippy::too_many_arguments)]
 pub fn record_page_view_telemetry(
     path: &str,
