@@ -33,9 +33,11 @@ impl From<AppearancePreferences> for AppearanceData {
     }
 }
 
-// Used from `#[server]` bodies (compiled under `ssr`) and unit tests; hydrate
-// stubs omit the server-fn body so this looks unused without the cfg.
-#[cfg(any(feature = "ssr", test))]
+/// Hex color `#RRGGBB` check for appearance brand seed validation.
+///
+/// Called from `#[server]` argument checks that compile even when the `ssr`
+/// feature is off (hydrate / default lib check), so this helper must not be
+/// gated on `ssr`.
 fn is_hex_color(value: &str) -> bool {
     value.len() == 7
         && value.starts_with('#')
