@@ -1,10 +1,6 @@
 # PR / merge gate aligned with docs/VERIFICATION.md Layer 1, Layer 2 (Playwright),
 # and documentation gates.
-# Sibling checkouts assume the Unified Field operator layout; CI checks this repo
-# out under that path and shallow-clones L0/L1/L2/L3 siblings.
-#
-# Pull requests: `pull_request` runs for branches on this repo.
-# Prefer same-repo PRs on unified-field-dev so Actions secrets for sibling clones work.
+# Standalone checkout: UF deps resolve via git branch = main on unified-field-dev.
 name: CI
 
 on:
@@ -25,55 +21,17 @@ env:
   RUST_BACKTRACE: 1
   # Leptos workspace deps enable the `nightly` feature.
   RUSTFLAGS: "-D warnings"
-  UF_ROOT: unified-field
-  PRODUCT_WD: unified-field/L2-product-platform/unified-field-product
 
 jobs:
   fmt:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout product into unified-field layout
-        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
-        with:
-          path: ${{ env.PRODUCT_WD }}
-      - name: Checkout lepton (private path dep)
-        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
-        with:
-          repository: unified-field-dev/lepton
-          path: ${{ env.UF_ROOT }}/L1-host-stack-kits/lepton
-          ssh-key: ${{ secrets.LEPTON_CLONE_SSH_KEY }}
-      - name: Checkout uf-notifications
-        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
-        with:
-          repository: unified-field-dev/uf-notifications
-          path: ${{ env.UF_ROOT }}/L2-product-platform/uf-notifications
-      - name: Checkout lepton-uf-app (private path dep)
-        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
-        with:
-          repository: unified-field-dev/lepton-uf-app
-          path: ${{ env.UF_ROOT }}/L2-product-platform/lepton-uf-app
-          ssh-key: ${{ secrets.LEPTON_UF_APP_CLONE_SSH_KEY }}
-      - name: Checkout path-dep / patch siblings
-        run: |
-          set -euo pipefail
-          clone() {
-            local repo="$1" dest="$2" org="${3:-unified-field-dev}"
-            git clone --depth 1 "https://github.com/${org}/${repo}.git" "${dest}"
-          }
-          clone valence "${UF_ROOT}/L0-upstream-cores/valence"
-          clone orbital "${UF_ROOT}/L0-upstream-cores/orbital"
-          clone higgs "${UF_ROOT}/L1-host-stack-kits/higgs"
-          clone photon "${UF_ROOT}/L0-upstream-cores/photon"
-          clone photon-leptos "${UF_ROOT}/L1-host-stack-kits/photon-leptos"
-          clone chronon "${UF_ROOT}/L0-upstream-cores/chronon" unified-field-dev
-          clone chronon-coordinator-macros "${UF_ROOT}/L1-host-stack-kits/chronon-coordinator-macros" unified-field-dev
-          clone chronon-valence-identity "${UF_ROOT}/L1-host-stack-kits/chronon-valence-identity" unified-field-dev
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
       - uses: dtolnay/rust-toolchain@2c7215f132e9ebf062739d9130488b56d53c060c # master (pin)
         with:
           toolchain: nightly
           components: rustfmt
       - name: cargo fmt --check (Layer 1 packages)
-        working-directory: ${{ env.PRODUCT_WD }}
         run: >
           cargo fmt
           -p uf-product-macros -p uf-codegen -p uf-apps -p uf-search-core
@@ -82,176 +40,73 @@ jobs:
   clippy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout product into unified-field layout
-        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
-        with:
-          path: ${{ env.PRODUCT_WD }}
-      - name: Checkout lepton (private path dep)
-        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
-        with:
-          repository: unified-field-dev/lepton
-          path: ${{ env.UF_ROOT }}/L1-host-stack-kits/lepton
-          ssh-key: ${{ secrets.LEPTON_CLONE_SSH_KEY }}
-      - name: Checkout uf-notifications
-        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
-        with:
-          repository: unified-field-dev/uf-notifications
-          path: ${{ env.UF_ROOT }}/L2-product-platform/uf-notifications
-      - name: Checkout lepton-uf-app (private path dep)
-        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
-        with:
-          repository: unified-field-dev/lepton-uf-app
-          path: ${{ env.UF_ROOT }}/L2-product-platform/lepton-uf-app
-          ssh-key: ${{ secrets.LEPTON_UF_APP_CLONE_SSH_KEY }}
-      - name: Checkout path-dep / patch siblings
-        run: |
-          set -euo pipefail
-          clone() {
-            local repo="$1" dest="$2" org="${3:-unified-field-dev}"
-            git clone --depth 1 "https://github.com/${org}/${repo}.git" "${dest}"
-          }
-          clone valence "${UF_ROOT}/L0-upstream-cores/valence"
-          clone orbital "${UF_ROOT}/L0-upstream-cores/orbital"
-          clone higgs "${UF_ROOT}/L1-host-stack-kits/higgs"
-          clone photon "${UF_ROOT}/L0-upstream-cores/photon"
-          clone photon-leptos "${UF_ROOT}/L1-host-stack-kits/photon-leptos"
-          clone chronon "${UF_ROOT}/L0-upstream-cores/chronon" unified-field-dev
-          clone chronon-coordinator-macros "${UF_ROOT}/L1-host-stack-kits/chronon-coordinator-macros" unified-field-dev
-          clone chronon-valence-identity "${UF_ROOT}/L1-host-stack-kits/chronon-valence-identity" unified-field-dev
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
       - uses: dtolnay/rust-toolchain@2c7215f132e9ebf062739d9130488b56d53c060c # master (pin)
         with:
           toolchain: nightly
           components: clippy
       - name: cargo clippy (macros + codegen + search-core)
-        working-directory: ${{ env.PRODUCT_WD }}
         run: >
           cargo clippy
           -p uf-product-macros -p uf-codegen -p uf-search-core
           --all-targets -- -D warnings
       - name: cargo clippy (uf-apps, ssr)
-        working-directory: ${{ env.PRODUCT_WD }}
         run: cargo clippy -p uf-apps --features ssr --all-targets -- -D warnings
 
   # Lighter packages share one runner (same Layer 1 commands as VERIFICATION.md).
   test:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout product into unified-field layout
-        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
-        with:
-          path: ${{ env.PRODUCT_WD }}
-      - name: Checkout lepton (private path dep)
-        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
-        with:
-          repository: unified-field-dev/lepton
-          path: ${{ env.UF_ROOT }}/L1-host-stack-kits/lepton
-          ssh-key: ${{ secrets.LEPTON_CLONE_SSH_KEY }}
-      - name: Checkout uf-notifications
-        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
-        with:
-          repository: unified-field-dev/uf-notifications
-          path: ${{ env.UF_ROOT }}/L2-product-platform/uf-notifications
-      - name: Checkout lepton-uf-app (private path dep)
-        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
-        with:
-          repository: unified-field-dev/lepton-uf-app
-          path: ${{ env.UF_ROOT }}/L2-product-platform/lepton-uf-app
-          ssh-key: ${{ secrets.LEPTON_UF_APP_CLONE_SSH_KEY }}
-      - name: Checkout path-dep / patch siblings
-        run: |
-          set -euo pipefail
-          clone() {
-            local repo="$1" dest="$2" org="${3:-unified-field-dev}"
-            git clone --depth 1 "https://github.com/${org}/${repo}.git" "${dest}"
-          }
-          clone valence "${UF_ROOT}/L0-upstream-cores/valence"
-          clone orbital "${UF_ROOT}/L0-upstream-cores/orbital"
-          clone higgs "${UF_ROOT}/L1-host-stack-kits/higgs"
-          clone photon "${UF_ROOT}/L0-upstream-cores/photon"
-          clone photon-leptos "${UF_ROOT}/L1-host-stack-kits/photon-leptos"
-          clone chronon "${UF_ROOT}/L0-upstream-cores/chronon" unified-field-dev
-          clone chronon-coordinator-macros "${UF_ROOT}/L1-host-stack-kits/chronon-coordinator-macros" unified-field-dev
-          clone chronon-valence-identity "${UF_ROOT}/L1-host-stack-kits/chronon-valence-identity" unified-field-dev
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
       - uses: dtolnay/rust-toolchain@2c7215f132e9ebf062739d9130488b56d53c060c # master (pin)
         with:
           toolchain: nightly
       - name: cargo test (macros + codegen)
-        working-directory: ${{ env.PRODUCT_WD }}
         run: cargo test -p uf-product-macros -p uf-codegen
       - name: cargo test (uf-search-core, ssr)
-        working-directory: ${{ env.PRODUCT_WD }}
         run: cargo test -p uf-search-core --features ssr
       - name: cargo test (uf-apps, ssr)
-        working-directory: ${{ env.PRODUCT_WD }}
         run: cargo test -p uf-apps --features ssr
 
-  # Fat ssr test bins each get a fresh runner; mold + one retry for linker flakes
-  # (ld bus error / OOM on ubuntu-latest when linking uf-product / uf-welcome).
-  test-heavy:
+  # Fat ssr test bins each get a fresh runner, with one retry for linker flakes
+  # (bus error / OOM on ubuntu-latest when linking uf-product / uf-welcome).
+  test-heavy-uf-product:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        package: [uf-product, uf-welcome]
     steps:
-      - name: Checkout product into unified-field layout
-        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
-        with:
-          path: ${{ env.PRODUCT_WD }}
-      - name: Checkout lepton (private path dep)
-        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
-        with:
-          repository: unified-field-dev/lepton
-          path: ${{ env.UF_ROOT }}/L1-host-stack-kits/lepton
-          ssh-key: ${{ secrets.LEPTON_CLONE_SSH_KEY }}
-      - name: Checkout uf-notifications
-        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
-        with:
-          repository: unified-field-dev/uf-notifications
-          path: ${{ env.UF_ROOT }}/L2-product-platform/uf-notifications
-      - name: Checkout lepton-uf-app (private path dep)
-        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
-        with:
-          repository: unified-field-dev/lepton-uf-app
-          path: ${{ env.UF_ROOT }}/L2-product-platform/lepton-uf-app
-          ssh-key: ${{ secrets.LEPTON_UF_APP_CLONE_SSH_KEY }}
-      - name: Checkout path-dep / patch siblings
-        run: |
-          set -euo pipefail
-          clone() {
-            local repo="$1" dest="$2" org="${3:-unified-field-dev}"
-            git clone --depth 1 "https://github.com/${org}/${repo}.git" "${dest}"
-          }
-          clone valence "${UF_ROOT}/L0-upstream-cores/valence"
-          clone orbital "${UF_ROOT}/L0-upstream-cores/orbital"
-          clone higgs "${UF_ROOT}/L1-host-stack-kits/higgs"
-          clone photon "${UF_ROOT}/L0-upstream-cores/photon"
-          clone photon-leptos "${UF_ROOT}/L1-host-stack-kits/photon-leptos"
-          clone chronon "${UF_ROOT}/L0-upstream-cores/chronon" unified-field-dev
-          clone chronon-coordinator-macros "${UF_ROOT}/L1-host-stack-kits/chronon-coordinator-macros" unified-field-dev
-          clone chronon-valence-identity "${UF_ROOT}/L1-host-stack-kits/chronon-valence-identity" unified-field-dev
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
       - uses: dtolnay/rust-toolchain@2c7215f132e9ebf062739d9130488b56d53c060c # master (pin)
         with:
           toolchain: nightly
-      - name: Install mold
-        run: sudo apt-get update && sudo apt-get install -y mold
-      - name: cargo test (${{ matrix.package }}, ssr)
-        working-directory: ${{ env.PRODUCT_WD }}
-        env:
-          RUSTFLAGS: "-D warnings -C link-arg=-fuse-ld=mold"
+      - name: cargo test (uf-product, ssr)
         run: |
           set -euo pipefail
-          pkg="${{ matrix.package }}"
-          features="ssr"
-          if [ "${pkg}" = "uf-welcome" ]; then
-            features="ssr,admin-permissions"
-          fi
           for attempt in 1 2; do
-            if cargo test -p "${pkg}" --features "${features}"; then
+            if cargo test -p uf-product --features ssr; then
               exit 0
             fi
             if [ "${attempt}" -eq 1 ]; then
-              echo "cargo test -p ${pkg} failed (possible linker flake); retrying once..."
+              echo "cargo test -p uf-product failed (possible linker flake); retrying once..."
+              sleep 5
+            fi
+          done
+          exit 1
+
+  test-heavy-uf-welcome:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: dtolnay/rust-toolchain@2c7215f132e9ebf062739d9130488b56d53c060c # master (pin)
+        with:
+          toolchain: nightly
+      - name: cargo test (uf-welcome, ssr + admin-permissions)
+        run: |
+          set -euo pipefail
+          for attempt in 1 2; do
+            if cargo test -p uf-welcome --features ssr,admin-permissions; then
+              exit 0
+            fi
+            if [ "${attempt}" -eq 1 ]; then
+              echo "cargo test -p uf-welcome failed (possible linker flake); retrying once..."
               sleep 5
             fi
           done
@@ -260,42 +115,7 @@ jobs:
   e2e:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout product into unified-field layout
-        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
-        with:
-          path: ${{ env.PRODUCT_WD }}
-      - name: Checkout lepton (private path dep)
-        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
-        with:
-          repository: unified-field-dev/lepton
-          path: ${{ env.UF_ROOT }}/L1-host-stack-kits/lepton
-          ssh-key: ${{ secrets.LEPTON_CLONE_SSH_KEY }}
-      - name: Checkout uf-notifications
-        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
-        with:
-          repository: unified-field-dev/uf-notifications
-          path: ${{ env.UF_ROOT }}/L2-product-platform/uf-notifications
-      - name: Checkout lepton-uf-app (private path dep)
-        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
-        with:
-          repository: unified-field-dev/lepton-uf-app
-          path: ${{ env.UF_ROOT }}/L2-product-platform/lepton-uf-app
-          ssh-key: ${{ secrets.LEPTON_UF_APP_CLONE_SSH_KEY }}
-      - name: Checkout path-dep / patch siblings
-        run: |
-          set -euo pipefail
-          clone() {
-            local repo="$1" dest="$2" org="${3:-unified-field-dev}"
-            git clone --depth 1 "https://github.com/${org}/${repo}.git" "${dest}"
-          }
-          clone valence "${UF_ROOT}/L0-upstream-cores/valence"
-          clone orbital "${UF_ROOT}/L0-upstream-cores/orbital"
-          clone higgs "${UF_ROOT}/L1-host-stack-kits/higgs"
-          clone photon "${UF_ROOT}/L0-upstream-cores/photon"
-          clone photon-leptos "${UF_ROOT}/L1-host-stack-kits/photon-leptos"
-          clone chronon "${UF_ROOT}/L0-upstream-cores/chronon" unified-field-dev
-          clone chronon-coordinator-macros "${UF_ROOT}/L1-host-stack-kits/chronon-coordinator-macros" unified-field-dev
-          clone chronon-valence-identity "${UF_ROOT}/L1-host-stack-kits/chronon-valence-identity" unified-field-dev
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
       - uses: dtolnay/rust-toolchain@2c7215f132e9ebf062739d9130488b56d53c060c # master (pin)
         with:
           toolchain: nightly
@@ -306,13 +126,13 @@ jobs:
         with:
           node-version: "20"
           cache: npm
-          cache-dependency-path: ${{ env.PRODUCT_WD }}/uf-product-ui-e2e/end2end/package-lock.json
+          cache-dependency-path: uf-product-ui-e2e/end2end/package-lock.json
       - name: Install npm dependencies
-        working-directory: ${{ env.PRODUCT_WD }}/uf-product-ui-e2e/end2end
+        working-directory: uf-product-ui-e2e/end2end
         run: npm ci
       - name: Get Playwright version
         id: pw-version
-        working-directory: ${{ env.PRODUCT_WD }}/uf-product-ui-e2e/end2end
+        working-directory: uf-product-ui-e2e/end2end
         run: echo "version=$(node -p "require('./package-lock.json').packages['node_modules/@playwright/test'].version")" >> $GITHUB_OUTPUT
       - uses: actions/cache@v5
         id: playwright-cache
@@ -321,14 +141,18 @@ jobs:
           key: playwright-${{ runner.os }}-${{ steps.pw-version.outputs.version }}-uf-product
       - name: Install Playwright browsers
         if: steps.playwright-cache.outputs.cache-hit != 'true'
-        working-directory: ${{ env.PRODUCT_WD }}/uf-product-ui-e2e/end2end
+        working-directory: uf-product-ui-e2e/end2end
         run: npx playwright install --with-deps chromium
       - name: Install Playwright OS deps when cache hit
         if: steps.playwright-cache.outputs.cache-hit == 'true'
-        working-directory: ${{ env.PRODUCT_WD }}/uf-product-ui-e2e/end2end
+        working-directory: uf-product-ui-e2e/end2end
         run: npx playwright install-deps chromium
+      # `cargo leptos end-to-end` exits 0 when the host fails to compile, so build first.
+      - name: cargo leptos build
+        env:
+          CI: true
+        run: cargo leptos build --project uf-product-ui-e2e
       - name: cargo leptos end-to-end
-        working-directory: ${{ env.PRODUCT_WD }}
         env:
           CI: true
         run: cargo leptos end-to-end --project uf-product-ui-e2e
@@ -338,54 +162,18 @@ jobs:
         with:
           name: playwright-artifacts-uf-product-${{ github.run_id }}
           path: |
-            ${{ env.PRODUCT_WD }}/uf-product-ui-e2e/end2end/playwright-report/
-            ${{ env.PRODUCT_WD }}/uf-product-ui-e2e/end2end/test-results/
+            uf-product-ui-e2e/end2end/playwright-report/
+            uf-product-ui-e2e/end2end/test-results/
           if-no-files-found: ignore
 
   docs:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout product into unified-field layout
-        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
-        with:
-          path: ${{ env.PRODUCT_WD }}
-      - name: Checkout lepton (private path dep)
-        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
-        with:
-          repository: unified-field-dev/lepton
-          path: ${{ env.UF_ROOT }}/L1-host-stack-kits/lepton
-          ssh-key: ${{ secrets.LEPTON_CLONE_SSH_KEY }}
-      - name: Checkout uf-notifications
-        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
-        with:
-          repository: unified-field-dev/uf-notifications
-          path: ${{ env.UF_ROOT }}/L2-product-platform/uf-notifications
-      - name: Checkout lepton-uf-app (private path dep)
-        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
-        with:
-          repository: unified-field-dev/lepton-uf-app
-          path: ${{ env.UF_ROOT }}/L2-product-platform/lepton-uf-app
-          ssh-key: ${{ secrets.LEPTON_UF_APP_CLONE_SSH_KEY }}
-      - name: Checkout path-dep / patch siblings
-        run: |
-          set -euo pipefail
-          clone() {
-            local repo="$1" dest="$2" org="${3:-unified-field-dev}"
-            git clone --depth 1 "https://github.com/${org}/${repo}.git" "${dest}"
-          }
-          clone valence "${UF_ROOT}/L0-upstream-cores/valence"
-          clone orbital "${UF_ROOT}/L0-upstream-cores/orbital"
-          clone higgs "${UF_ROOT}/L1-host-stack-kits/higgs"
-          clone photon "${UF_ROOT}/L0-upstream-cores/photon"
-          clone photon-leptos "${UF_ROOT}/L1-host-stack-kits/photon-leptos"
-          clone chronon "${UF_ROOT}/L0-upstream-cores/chronon" unified-field-dev
-          clone chronon-coordinator-macros "${UF_ROOT}/L1-host-stack-kits/chronon-coordinator-macros" unified-field-dev
-          clone chronon-valence-identity "${UF_ROOT}/L1-host-stack-kits/chronon-valence-identity" unified-field-dev
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
       - uses: dtolnay/rust-toolchain@2c7215f132e9ebf062739d9130488b56d53c060c # master (pin)
         with:
           toolchain: nightly
       - name: cargo doc (primary packages, deny broken intra-doc links)
-        working-directory: ${{ env.PRODUCT_WD }}
         env:
           RUSTDOCFLAGS: "-D rustdoc::broken-intra-doc-links"
         run: |
@@ -393,13 +181,10 @@ jobs:
           cargo doc -p uf-search-core --features ssr --no-deps
           cargo doc -p uf-product -p uf-integrations --features ssr --no-deps
       - name: cargo deny
-        working-directory: ${{ env.PRODUCT_WD }}
         uses: EmbarkStudios/cargo-deny-action@3c6349835b2b7b196a839186cb8b78e02f7b5f25 # v2.1.1
         with:
           command: check
-          arguments: --manifest-path ${{ env.PRODUCT_WD }}/Cargo.toml
       - name: Security audit
-        working-directory: ${{ env.PRODUCT_WD }}
         run: |
           cargo install cargo-audit --locked
           cargo audit
@@ -407,42 +192,7 @@ jobs:
   leptos-lints:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout product into unified-field layout
-        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
-        with:
-          path: ${{ env.PRODUCT_WD }}
-      - name: Checkout lepton (private path dep)
-        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
-        with:
-          repository: unified-field-dev/lepton
-          path: ${{ env.UF_ROOT }}/L1-host-stack-kits/lepton
-          ssh-key: ${{ secrets.LEPTON_CLONE_SSH_KEY }}
-      - name: Checkout uf-notifications
-        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
-        with:
-          repository: unified-field-dev/uf-notifications
-          path: ${{ env.UF_ROOT }}/L2-product-platform/uf-notifications
-      - name: Checkout lepton-uf-app (private path dep)
-        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
-        with:
-          repository: unified-field-dev/lepton-uf-app
-          path: ${{ env.UF_ROOT }}/L2-product-platform/lepton-uf-app
-          ssh-key: ${{ secrets.LEPTON_UF_APP_CLONE_SSH_KEY }}
-      - name: Checkout path-dep / patch siblings
-        run: |
-          set -euo pipefail
-          clone() {
-            local repo="$1" dest="$2" org="${3:-unified-field-dev}"
-            git clone --depth 1 "https://github.com/${org}/${repo}.git" "${dest}"
-          }
-          clone valence "${UF_ROOT}/L0-upstream-cores/valence"
-          clone orbital "${UF_ROOT}/L0-upstream-cores/orbital"
-          clone higgs "${UF_ROOT}/L1-host-stack-kits/higgs"
-          clone photon "${UF_ROOT}/L0-upstream-cores/photon"
-          clone photon-leptos "${UF_ROOT}/L1-host-stack-kits/photon-leptos"
-          clone chronon "${UF_ROOT}/L0-upstream-cores/chronon" unified-field-dev
-          clone chronon-coordinator-macros "${UF_ROOT}/L1-host-stack-kits/chronon-coordinator-macros" unified-field-dev
-          clone chronon-valence-identity "${UF_ROOT}/L1-host-stack-kits/chronon-valence-identity" unified-field-dev
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
       - uses: dtolnay/rust-toolchain@2c7215f132e9ebf062739d9130488b56d53c060c # master (pin)
         with:
           toolchain: nightly
@@ -455,7 +205,6 @@ jobs:
       - name: Install leptos-lints nightly toolchain
         run: rustup toolchain install nightly-2025-05-14 --component rustc-dev,llvm-tools-preview
       - name: cargo dylint (leptos-lints)
-        working-directory: ${{ env.PRODUCT_WD }}
         env:
           CARGO_RESOLVER_INCOMPATIBLE_RUST_VERSIONS: fallback
           RUSTFLAGS: "-D warnings -Zcrate-attr=feature(stdarch_x86_avx512)"

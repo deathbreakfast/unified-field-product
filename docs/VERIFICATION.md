@@ -12,7 +12,7 @@ export CARGO_TARGET_DIR=target-uf-product
 
 This workspace pins `rust-toolchain.toml` to `nightly` (Leptos `nightly` features + Orbital). Use that channel for the commands below.
 
-Valence / Orbital / Higgs / Photon resolve from `unified-field-dev` git `main` (see workspace `Cargo.toml`). CI shallow-clones those siblings into the operator layout when jobs need them.
+Valence / Orbital / Higgs / Photon resolve from `unified-field-dev` git `main` (see workspace `Cargo.toml`). CI checks out this repo on its own; Cargo fetches those crates from git.
 
 ## Layer 1 — Unit + integration
 

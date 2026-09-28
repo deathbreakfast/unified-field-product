@@ -17,9 +17,9 @@ Lepton session.
 | [`src/lib.rs`](src/lib.rs) | `orbital_shell` + `OrbitalTemplate`, shell layout slots, route mounts |
 
 Workspace Leptos metadata for this package lives in the repo-root `Cargo.toml`
-(`[[workspace.metadata.leptos]]` name `shell-chrome-host`). Point `/fonts` at your
-Orbital `public/fonts` tree; replace the relative default in `src/main.rs` when
-your Orbital checkout is elsewhere.
+(`[[workspace.metadata.leptos]]` name `shell-chrome-host`). The Orbital fonts sit
+in `public/fonts`; cargo-leptos copies that assets dir into the site root, and
+`src/main.rs` serves it at `/fonts`.
 
 ## SSR check (documented gate)
 

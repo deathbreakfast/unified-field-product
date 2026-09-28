@@ -40,6 +40,7 @@ uf-product = { workspace = true, default-features = false }
 uf-search-core = { workspace = true, default-features = false }
 uf-welcome = { workspace = true, default-features = false }
 icondata = { workspace = true }
+inventory = { workspace = true }
 wasm-bindgen = { workspace = true, optional = true }
 async-trait = { workspace = true, optional = true }
 chrono = { workspace = true, optional = true }

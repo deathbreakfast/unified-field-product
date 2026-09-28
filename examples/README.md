@@ -15,9 +15,8 @@ utilities (`uf-help` / `uf-apps` / `uf-appearance`), `SearchSourcePicker`, comin
 pages, plus mounting `UfAppsRoutes` / `UfWelcomeRoutes`.
 
 **Copy:** `Cargo.toml` (ssr/hydrate feature graph), `src/main.rs` (Axum + Leptos boot),
-`src/lib.rs` (shell composition). Point `/fonts` at your Orbital `public/fonts` tree
-(the default `fonts_dir` in `main.rs` is a relative checkout path you will usually
-replace).
+`src/lib.rs` (shell composition), and `public/fonts` (the Orbital OFL fonts that
+`main.rs` serves at `/fonts` from the site root).
 
 ```bash
 export CARGO_BUILD_JOBS=1
