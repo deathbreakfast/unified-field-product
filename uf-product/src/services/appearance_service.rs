@@ -33,8 +33,10 @@ impl From<AppearancePreferences> for AppearanceData {
     }
 }
 
-// Used from `#[server]` bodies (compiled under `ssr`) and unit tests; hydrate
-// stubs omit the server-fn body so this looks unused without the cfg.
+// Reference this only inside `cfg(feature = "ssr")` blocks. `#[server]` keeps or
+// drops its body based on leptos's own `ssr` feature, which feature unification
+// can enable without this crate's `ssr`, so a call in the bare server-fn body
+// breaks either hydrate builds (dead code) or unified bare builds (E0425).
 #[cfg(any(feature = "ssr", test))]
 fn is_hex_color(value: &str) -> bool {
     value.len() == 7
@@ -128,24 +130,24 @@ pub async fn save_my_appearance(
     /// Custom brand seed color as `#RRGGBB`, required when `brand_source` is `"custom"`.
     brand_seed_color: Option<String>,
 ) -> Result<(), ServerFnError> {
-    if color_mode != "light" && color_mode != "dark" {
-        return Err(ServerFnError::Args("Invalid color_mode".into()));
-    }
-    if brand_source != "product" && brand_source != "custom" {
-        return Err(ServerFnError::Args("Invalid brand_source".into()));
-    }
-    if brand_source == "custom" {
-        let seed = brand_seed_color.as_deref().unwrap_or("");
-        if !is_hex_color(seed) {
-            return Err(ServerFnError::Args("Custom brand requires #RRGGBB".into()));
-        }
-    }
-
     #[cfg(feature = "ssr")]
     {
         use chrono::Utc;
         use lepton_identity::generated::UserAppearance;
         use valence::RecordPredicate;
+
+        if color_mode != "light" && color_mode != "dark" {
+            return Err(ServerFnError::Args("Invalid color_mode".into()));
+        }
+        if brand_source != "product" && brand_source != "custom" {
+            return Err(ServerFnError::Args("Invalid brand_source".into()));
+        }
+        if brand_source == "custom" {
+            let seed = brand_seed_color.as_deref().unwrap_or("");
+            if !is_hex_color(seed) {
+                return Err(ServerFnError::Args("Custom brand requires #RRGGBB".into()));
+            }
+        }
 
         let ctx = crate::ssr::higgs().await?;
         let user_id_str = ctx
@@ -238,6 +240,30 @@ mod tests {
     fn is_hex_color_rejects_malformed_values() {
         for value in ["", "#fff", "#1234567", "123456", "#12gg56"] {
             assert!(!is_hex_color(value), "{value} should be rejected");
+        }
+    }
+
+    #[cfg(feature = "ssr")]
+    #[tokio::test]
+    async fn save_my_appearance_rejects_invalid_args_before_auth() {
+        let cases = [
+            ("blue", "product", None),
+            ("dark", "theme", None),
+            ("dark", "custom", None),
+            ("dark", "custom", Some("#12gg56")),
+        ];
+        for (color_mode, brand_source, seed) in cases {
+            let err = super::save_my_appearance(
+                color_mode.into(),
+                brand_source.into(),
+                seed.map(Into::into),
+            )
+            .await
+            .expect_err("invalid appearance args must be rejected");
+            assert!(
+                matches!(err, leptos::prelude::ServerFnError::Args(_)),
+                "{color_mode}/{brand_source}/{seed:?}: {err:?}"
+            );
         }
     }
 }
