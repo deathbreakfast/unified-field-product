@@ -1,4 +1,12 @@
-import { test, expect, seedAuth, waitForHydrated } from "./fixtures";
+import {
+  test,
+  expect,
+  readHelpVisits,
+  seedAuth,
+  seenKeys,
+  waitForHydrated,
+  walkTour,
+} from "./fixtures";
 
 async function openHelpMenu(page: import("@playwright/test").Page) {
   await page
@@ -187,6 +195,111 @@ test.describe("help-spotlight", () => {
     await waitForHydrated(page);
     await expect(page.getByTestId("help-step-welcome-featured")).toBeVisible({ timeout: 60_000 });
     await expect(page.locator("#welcome-featured-card")).toBeVisible();
+  });
+});
+
+test.describe("help-spotlight-deferred", () => {
+  const ROUTE = "/help-fixture/deferred";
+  const INTRO = { testid: "help-step-deferred-intro", anchor: null };
+  const BELOW_FOLD = {
+    testid: "help-step-deferred-below-fold",
+    anchor: "help-fixture-below-fold",
+  };
+  const MOUNTED = { testid: "help-step-deferred-mounted", anchor: "help-fixture-mounted" };
+  const CSS_HIDDEN = {
+    testid: "help-step-deferred-css-hidden",
+    anchor: "help-fixture-css-hidden",
+  };
+  const footer = (page: import("@playwright/test").Page) =>
+    page.locator('[data-testid="spotlight-footer"]:visible');
+
+  async function openFixture(page: import("@playwright/test").Page) {
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await seedAuth(page, "anonymous", { help_tour: true });
+    await page.goto(ROUTE, { waitUntil: "domcontentloaded" });
+    await waitForHydrated(page);
+    await expect(page.getByTestId("help-fixture-deferred")).toBeVisible();
+  }
+
+  /** First visit: intro + below-fold only. */
+  async function walkInitialTour(page: import("@playwright/test").Page) {
+    return walkTour(page, [INTRO, BELOW_FOLD], [MOUNTED.testid, CSS_HIDDEN.testid]);
+  }
+
+  test("help-spotlight-only-visible-anchors", async ({ page }) => {
+    await openFixture(page);
+    await expect(page.locator("#help-fixture-mounted")).toHaveCount(0);
+    await expect(page.locator("#help-fixture-css-hidden")).toBeHidden();
+
+    const visits = await walkInitialTour(page);
+    expect(seenKeys(visits, ROUTE)).toEqual(["deferred-below-fold", "deferred-intro"]);
+  });
+
+  test("help-spotlight-anchor-mounts-later", async ({ page }) => {
+    await openFixture(page);
+    await walkInitialTour(page);
+
+    await page.getByTestId("help-fixture-reveal-mount").click();
+    const visits = await walkTour(page, [MOUNTED], [INTRO.testid, CSS_HIDDEN.testid]);
+    expect(seenKeys(visits, ROUTE)).toEqual([
+      "deferred-below-fold",
+      "deferred-intro",
+      "deferred-mounted",
+    ]);
+  });
+
+  test("help-spotlight-css-hidden-anchor-waits", async ({ page }) => {
+    await openFixture(page);
+    await walkInitialTour(page);
+
+    const hidden = page.locator("#help-fixture-css-hidden");
+    await expect(hidden).toBeAttached();
+    await expect(hidden).toBeHidden();
+    await expect(page.getByTestId(CSS_HIDDEN.testid)).toHaveCount(0);
+    await expect(footer(page)).toHaveCount(0);
+    expect(seenKeys(await readHelpVisits(page), ROUTE)).not.toContain("deferred-css-hidden");
+
+    await page.getByTestId("help-fixture-reveal-css").click();
+    const visits = await walkTour(page, [CSS_HIDDEN], [INTRO.testid, MOUNTED.testid]);
+    expect(seenKeys(visits, ROUTE)).toContain("deferred-css-hidden");
+  });
+
+  test("help-spotlight-never-visible-stays-pending", async ({ page }) => {
+    await openFixture(page);
+    await walkInitialTour(page);
+
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await waitForHydrated(page);
+    await expect(page.getByTestId("help-fixture-deferred")).toBeVisible();
+    // Two poll intervals would have opened a tour by now if one were presentable.
+    await page.waitForTimeout(1_500);
+    await expect(footer(page)).toHaveCount(0);
+    const seen = seenKeys(await readHelpVisits(page), ROUTE);
+    expect(seen).not.toContain("deferred-mounted");
+    expect(seen).not.toContain("deferred-css-hidden");
+
+    await page.getByTestId("help-fixture-reveal-mount").click();
+    await walkTour(page, [MOUNTED], [INTRO.testid, BELOW_FOLD.testid, CSS_HIDDEN.testid]);
+  });
+
+  test("help-spotlight-replay-respects-visibility", async ({ page }) => {
+    await openFixture(page);
+    await walkInitialTour(page);
+    await page.getByTestId("help-fixture-reveal-mount").click();
+    await walkTour(page, [MOUNTED]);
+    await page.getByTestId("help-fixture-reveal-css").click();
+    await walkTour(page, [CSS_HIDDEN]);
+
+    // Reload resets the toggles; only the intro and below-fold anchors are on screen.
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await waitForHydrated(page);
+    await expect(footer(page)).toHaveCount(0);
+    await openHelpMenu(page);
+    await page.getByTestId("help-menu-replay-tour").click({ force: true });
+    await walkInitialTour(page);
+
+    await page.getByTestId("help-fixture-reveal-mount").click();
+    await walkTour(page, [MOUNTED], [CSS_HIDDEN.testid]);
   });
 });
 

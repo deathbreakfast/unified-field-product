@@ -48,6 +48,11 @@ pub fn AppsSearchHelp() -> impl IntoView {
 Keep `feature_highlight` keys stable. A new key on an existing route shows only
 that step to returning users until they finish it.
 
+A step with a `spotlight` id plays only while that element is on screen, so you
+can register steps for panels, wizard stages, or record states that render
+later. The step stays pending until its element appears. See
+`## Steps for UI that appears later` in the crate docs.
+
 ### 2. Mid — force-link inventory
 
 Call an empty `ensure_help_steps_linked()` from your app crate so `inventory`
@@ -71,6 +76,7 @@ for the default app-bar Help utility.
   segment each), for example `/apps/:app_name` or `/boson/tasks/:task_name/config`.
 - **Signed-out** — `uf.help.tour_steps` in `localStorage`; merged into Valence on first authenticated write.
 - **Replay** — Help → Replay spotlight tour affects the current route only.
+- **Visible anchors** — anchored steps show once their element has a box on screen; only shown steps are marked seen.
 - **Gates** — auto-play pauses while `RequireAuthenticated` empty states are active.
 
 ## Examples
@@ -78,7 +84,7 @@ for the default app-bar Help utility.
 | Example | What it shows |
 |---------|---------------|
 | [`examples/shell-chrome-host`](../examples/shell-chrome-host/) | Default shell + offerings; `cargo check -p shell-chrome-host --features ssr` |
-| [`uf-product-ui-e2e/end2end/tests/help_spotlight.spec.ts`](../uf-product-ui-e2e/end2end/tests/help_spotlight.spec.ts) | Tour once, replay, gate skip, apps/welcome coverage |
+| [`uf-product-ui-e2e/end2end/tests/help_spotlight.spec.ts`](../uf-product-ui-e2e/end2end/tests/help_spotlight.spec.ts) | Tour once, replay, gate skip, apps/welcome coverage, anchors that appear later |
 | [`uf-apps`](../uf-apps/) `help_steps.rs` | Directory + app-detail steps |
 | `uf-notifications` `help_steps.rs` | Bell and inbox steps on `/notifications` |
 

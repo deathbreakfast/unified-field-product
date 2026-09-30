@@ -81,6 +81,11 @@ real `AuthContext` (harness session keys — not a duplicate of lepton auth funn
 | `help-spotlight-replay-current-route` | happy | Replay reopens tour on current route |
 | `help-spotlight-replay-does-not-affect-other-route` | happy | Replay on `/apps` leaves `/welcome` quiet |
 | `help-spotlight-mobile-viewport` | happy | Tour + Help AdaptiveMenu on narrow viewport |
+| `help-spotlight-only-visible-anchors` | happy | `/help-fixture/deferred` tour skips unmounted and `display:none` anchors; only shown keys are seen |
+| `help-spotlight-anchor-mounts-later` | happy | Mounting an anchor opens a tour with just that step |
+| `help-spotlight-css-hidden-anchor-waits` | sad → happy | Hidden anchor's step waits, then shows once revealed |
+| `help-spotlight-never-visible-stays-pending` | sad | Never-revealed step stays unseen across reload |
+| `help-spotlight-replay-respects-visibility` | happy | Replay shows only steps whose anchors are on screen |
 | `help-report-bug-intro-and-form` | happy | Bug dialog intro → no-account form |
 | `help-report-security-private-copy` | happy | Security intro forbids public issues |
 | `help-report-feature-intro` | happy | Feature dialog opens from Help menu |

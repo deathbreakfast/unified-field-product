@@ -7,12 +7,20 @@ use uf_product::primitives::{
 };
 use uf_product::{use_access_gate_active, use_auth_state, AuthSession};
 
+use std::time::Duration;
+
+use super::anchor_probe::anchor_visible;
 use super::replay_bus::install_help_replay_bus;
 use crate::server::{help_list_visits_for_route, help_mark_steps_seen};
+use crate::service::presentable::{presentable_steps, presented_keys, should_open};
 use crate::service::{
     compute_pending, local_mark_steps_seen, read_local_visits, read_local_visits_for_route,
     HelpStepKey, HelpVisitRecord,
 };
+use crate::HelpStepDescriptor;
+
+/// How often the player re-checks the DOM for anchors of waiting steps.
+const ANCHOR_POLL: Duration = Duration::from_millis(400);
 
 /// Drives Orbital [`SpotlightTour`] for pending help steps on the current route.
 ///
@@ -20,6 +28,11 @@ use crate::service::{
 /// `feature_highlight` keys show automatically for returning users. Auto-play
 /// is skipped while [`uf_product::AccessGateActive`] is set (sign-in, email
 /// verification, and permission-required empty states).
+///
+/// A step with a `spotlight` id waits until that element is on screen. The
+/// player polls while steps are waiting and opens once the showable set is the
+/// same on two consecutive checks. Only the steps a tour showed are marked
+/// seen; the rest stay pending for when their UI appears.
 #[allow(clippy::unit_arg)]
 #[component]
 pub fn HelpTourPlayer() -> impl IntoView {
@@ -27,7 +40,11 @@ pub fn HelpTourPlayer() -> impl IntoView {
     let auth = use_auth_state();
     let open = RwSignal::new(false);
     let reload = RwSignal::new(0u32);
-    let pending_keys = RwSignal::new(Vec::<HelpStepKey>::new());
+    let presented = RwSignal::new(Vec::<&'static HelpStepDescriptor>::new());
+    let last_poll = StoredValue::new(Vec::<HelpStepKey>::new());
+    let has_pending = RwSignal::new(false);
+    let poll_tick = RwSignal::new(0u32);
+    let poll_handle = StoredValue::new(None::<IntervalHandle>);
     let replay_tick = RwSignal::new(0u32);
     // Start closed on both SSR and first hydrate paint, then open on the client
     // after ownership is live. Avoids Backdrop hydration mismatches.
@@ -81,26 +98,67 @@ pub fn HelpTourPlayer() -> impl IntoView {
         }
     };
 
+    // Leaving a route closes its tour without marking anything seen.
+    Effect::new(move |previous: Option<String>| {
+        let pathname = location.pathname.get();
+        if previous.is_some_and(|p| p != pathname) {
+            open.set(false);
+            presented.set(Vec::new());
+            last_poll.set_value(Vec::new());
+        }
+        pathname
+    });
+
     Effect::new(move |_| {
+        let _ = poll_tick.get();
         let pathname = location.pathname.get();
         let visits = resolve_visits();
+        let ready = client_ready.get();
+        let gated = access_gate.is_some_and(|g| g.get());
+        if open.get() {
+            return;
+        }
         let inventory = crate::collect_help_steps_for_route(&pathname);
         let pending = compute_pending(&inventory, &visits);
-        let keys: Vec<HelpStepKey> = pending
-            .iter()
-            .map(|d| HelpStepKey {
-                route: d.route.to_string(),
-                feature_highlight: d.feature_highlight.to_string(),
-                spotlight: d.spotlight.map(str::to_string),
-            })
-            .collect();
-        pending_keys.set(keys);
+        has_pending.set(!pending.is_empty());
+        let showable = presentable_steps(&pending, anchor_visible);
+        let keys = presented_keys(&showable);
+        let previous = last_poll.get_value();
+        if should_open(&previous, &keys, ready, gated) {
+            last_poll.set_value(Vec::new());
+            presented.set(showable);
+            open.set(true);
+        } else {
+            last_poll.set_value(keys);
+        }
+    });
+
+    // Poll only while steps are waiting and no tour is open.
+    Effect::new(move |_| {
         let gated = access_gate.is_some_and(|g| g.get());
-        open.set(client_ready.get() && !pending.is_empty() && !gated);
+        let want = client_ready.get() && has_pending.get() && !open.get() && !gated;
+        let running = poll_handle.with_value(Option::is_some);
+        if want && !running {
+            let tick = move || {
+                let _ = poll_tick.try_update(|n| *n = n.wrapping_add(1));
+            };
+            if let Ok(handle) = set_interval_with_handle(tick, ANCHOR_POLL) {
+                poll_handle.set_value(Some(handle));
+            }
+        } else if !want && running {
+            if let Some(Some(handle)) = poll_handle.try_update_value(Option::take) {
+                handle.clear();
+            }
+        }
+    });
+    on_cleanup(move || {
+        if let Some(Some(handle)) = poll_handle.try_update_value(Option::take) {
+            handle.clear();
+        }
     });
 
     let on_finish = Callback::new(move |_| {
-        let keys = pending_keys.get_untracked();
+        let keys = presented_keys(&presented.get_untracked());
         if keys.is_empty() {
             open.set(false);
             return;
@@ -115,6 +173,7 @@ pub fn HelpTourPlayer() -> impl IntoView {
         // while still inside the dismiss/click stack — that panics on disposed
         // signals and can take down the e2e SSR process (ERR_EMPTY_RESPONSE).
         leptos::task::spawn_local(async move {
+            presented.set(Vec::new());
             reload.update(|n| *n = n.wrapping_add(1));
             if authed {
                 let _ = help_mark_steps_seen(keys, local).await;
@@ -126,17 +185,14 @@ pub fn HelpTourPlayer() -> impl IntoView {
     view! {
         <div data-testid="help-tour-player">
             {move || {
-                let pathname = location.pathname.get();
-                let visits = resolve_visits();
-                let inventory = crate::collect_help_steps_for_route(&pathname);
-                let pending = compute_pending(&inventory, &visits);
+                let steps = presented.get();
                 let gated = access_gate.is_some_and(|g| g.get());
-                if !client_ready.get() || pending.is_empty() || gated {
+                if !client_ready.get() || steps.is_empty() || gated {
                     return view! { <></> }.into_any();
                 }
                 view! {
                     <SpotlightTour open=open on_finish=on_finish>
-                        {pending
+                        {steps
                             .into_iter()
                             .map(|d| {
                                 let title = d.title.to_string();

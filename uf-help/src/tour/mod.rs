@@ -9,6 +9,7 @@
 //! local storage always and Valence when authenticated, then pings
 //! [`notify_help_replay`] so the player reloads pending steps.
 
+mod anchor_probe;
 mod player;
 mod replay_bus;
 

@@ -145,6 +145,30 @@ export async function seedAuth(
             spotlight: "nav-notifications-inbox",
             replay: false,
           },
+          {
+            route: "/help-fixture/deferred",
+            feature_highlight: "deferred-intro",
+            spotlight: null,
+            replay: false,
+          },
+          {
+            route: "/help-fixture/deferred",
+            feature_highlight: "deferred-below-fold",
+            spotlight: "help-fixture-below-fold",
+            replay: false,
+          },
+          {
+            route: "/help-fixture/deferred",
+            feature_highlight: "deferred-mounted",
+            spotlight: "help-fixture-mounted",
+            replay: false,
+          },
+          {
+            route: "/help-fixture/deferred",
+            feature_highlight: "deferred-css-hidden",
+            spotlight: "help-fixture-css-hidden",
+            replay: false,
+          },
         ]),
       );
     } catch {
@@ -221,6 +245,78 @@ export async function waitForHydrated(page: Page) {
   await expect(page.getByTestId("orbital-boot-overlay")).toHaveCount(0, {
     timeout: 60_000,
   });
+}
+
+/** One expected tour step: the `help-step-*` testid and its spotlight id (null when centered). */
+export type TourStep = { testid: string; anchor: string | null };
+
+/** A row of `uf.help.tour_steps` in localStorage. */
+export type HelpVisit = {
+  route: string;
+  feature_highlight: string;
+  spotlight: string | null;
+  replay: boolean;
+};
+
+/** Parsed `uf.help.tour_steps` (empty when unset). */
+export async function readHelpVisits(page: Page): Promise<HelpVisit[]> {
+  return page.evaluate(() => {
+    try {
+      return JSON.parse(localStorage.getItem("uf.help.tour_steps") ?? "[]");
+    } catch {
+      return [];
+    }
+  });
+}
+
+/** `feature_highlight` keys marked seen (`replay: false`) for `route`, sorted. */
+export function seenKeys(visits: HelpVisit[], route: string): string[] {
+  return visits
+    .filter((v) => v.route === route && !v.replay)
+    .map((v) => v.feature_highlight)
+    .sort();
+}
+
+/**
+ * Walk the open tour, asserting each step in order: the step body is visible,
+ * an anchored step's element is visible and in the viewport, a centered step's
+ * panel sits near the viewport center, and no `forbidden` step renders. Ends
+ * when the footer is gone and returns the visit rows.
+ */
+export async function walkTour(
+  page: Page,
+  expected: TourStep[],
+  forbidden: string[] = [],
+): Promise<HelpVisit[]> {
+  const footer = page.locator('[data-testid="spotlight-footer"]:visible');
+  await expect(footer).toBeVisible({ timeout: 60_000 });
+  for (const step of expected) {
+    const body = page.getByTestId(step.testid);
+    await expect(body).toBeVisible({ timeout: 30_000 });
+    if (step.anchor) {
+      const anchor = page.locator(`#${step.anchor}`);
+      await expect(anchor).toBeVisible();
+      await expect(anchor).toBeInViewport({ timeout: 10_000 });
+    } else {
+      const panel = page.locator(".orbital-popover-shell.orbital-spotlight").filter({
+        has: body,
+      });
+      const box = await panel.boundingBox();
+      const vp = page.viewportSize();
+      expect(box).toBeTruthy();
+      expect(vp).toBeTruthy();
+      if (box && vp) {
+        expect(Math.abs(box.x + box.width / 2 - vp.width / 2)).toBeLessThan(vp.width * 0.2);
+        expect(Math.abs(box.y + box.height / 2 - vp.height / 2)).toBeLessThan(vp.height * 0.25);
+      }
+    }
+    for (const id of forbidden) {
+      await expect(page.getByTestId(id)).toHaveCount(0);
+    }
+    await footer.getByTestId("spotlight-tour-next").click({ force: true });
+  }
+  await expect(footer).toHaveCount(0, { timeout: 30_000 });
+  return readHelpVisits(page);
 }
 
 export const test = base;

@@ -1,6 +1,7 @@
 //! Help service layer: visits, local mirror, pending helpers.
 
 pub mod local_store;
+pub(crate) mod presentable;
 pub mod visits;
 
 pub use local_store::{

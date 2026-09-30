@@ -12,6 +12,7 @@
 //!   stable `feature_highlight` keys and optional DOM cutouts. [Get started](#author-a-spotlight-step)
 //! - **Help tour player** — Stock [`HelpTourPlayer`] auto-plays pending spotlight steps
 //!   beside shell chrome when `uf-integrations` feature `offering-help` is enabled.
+//!   Anchored steps [wait until their element is on screen](#steps-for-ui-that-appears-later).
 //!   [Get started](#mount-tour-player)
 //! - **App-bar Help control** — [`AppBarHelpButton`] opens report dialogs and replay for the current route.
 //! - **Visit progress** — Valence rows when signed in; [`LOCAL_STORAGE_KEY`] mirror when signed out.
@@ -101,6 +102,49 @@
 //! [`uf_product::AccessGateActive`] suppresses tours during auth gates. Replay from
 //! Help → Replay spotlight tour scopes to the current route only ([`help_request_replay_for_route`]).
 //!
+//! ## Steps for UI that appears later
+//!
+//! Give a step a `spotlight` id when it explains UI that isn't on screen at first: a panel
+//! behind a button, a wizard stage, or a section that only renders for some records. The
+//! player shows the step once the element is visible and leaves it pending until then, so
+//! one route can carry steps for every state of the page.
+//!
+//! **Prerequisites:** the same setup as [Author a spotlight step](#author-a-spotlight-step),
+//! with the `spotlight` id on the element that appears later.
+//!
+//! ```rust,ignore
+//! use leptos::prelude::*;
+//! use uf_help::help_spotlight_step;
+//!
+//! #[help_spotlight_step(
+//!     route = "/reports",
+//!     feature_highlight = "reports-panel",
+//!     title = "Report panel",
+//!     spotlight = "report-panel",
+//!     order = 20,
+//! )]
+//! #[component]
+//! pub fn ReportPanelHelp() -> impl IntoView {
+//!     view! { <p data-testid="help-step-reports-panel">"Filters and exports live here."</p> }
+//! }
+//!
+//! #[component]
+//! pub fn ReportsPage() -> impl IntoView {
+//!     let open = RwSignal::new(false);
+//!     view! {
+//!         <button on:click=move |_| open.set(true)>"Show report"</button>
+//!         <Show when=move || open.get()>
+//!             <section id="report-panel">"…"</section>
+//!         </Show>
+//!     }
+//! }
+//! ```
+//!
+//! On first visit the tour skips `reports-panel` and records only the steps it showed. After
+//! **Show report**, the player opens a tour with just that step. Until the panel mounts, the
+//! key has no visit row, so it stays pending across reloads. Replay follows the same rule and
+//! replays only the steps whose elements are on screen.
+//!
 //! ## Runtime semantics
 //!
 //! - **Route matching** — step `route` is exact pathname equality, or a
@@ -110,6 +154,11 @@
 //!   Permission index page). Valence rows store the inventory pattern, not the
 //!   live slug ([`inventory_route_keys_for_pathname`]).
 //! - **Pending** — no visit row, or visit with `replay == true` ([`compute_pending`]).
+//! - **Visible anchors** — a pending step with a `spotlight` id is shown only when that
+//!   element exists, has a non-zero box, and isn't `visibility: hidden`. Steps without an id
+//!   always show. While anchored steps wait, the player re-checks every 400 ms and opens once
+//!   the visible set holds steady across two checks. Only shown steps are marked seen; a
+//!   route change closes an open tour without marking it.
 //! - **Signed-out** — progress lives under [`LOCAL_STORAGE_KEY`]; on first signed-in
 //!   write, [`help_mark_steps_seen`] merges missing local rows into Valence
 //!   ([`merge_local_into_server`] on read keeps local-only rows visible until then).
@@ -126,7 +175,7 @@
 //! | Example | What it shows |
 //! |---------|---------------|
 //! | `examples/shell-chrome-host/` | Shell layout with default offerings; `cargo check -p shell-chrome-host --features ssr` |
-//! | `uf-product-ui-e2e/end2end/tests/help_spotlight.spec.ts` | Once (anon/authed), replay current route, access-gate skip, apps/welcome steps |
+//! | `uf-product-ui-e2e/end2end/tests/help_spotlight.spec.ts` | Once (anon/authed), replay current route, access-gate skip, apps/welcome steps, steps that wait for their anchor on `/help-fixture/deferred` |
 //! | `uf-apps` `help_steps.rs` | Seeded `/apps` steps + `uf_apps::ensure_help_linked` |
 //! | `uf-notifications` `help_steps.rs` | Bell / inbox steps on `/notifications` (link inventory the same way) |
 //!

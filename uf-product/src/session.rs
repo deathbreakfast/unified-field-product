@@ -2,7 +2,7 @@
 //!
 //! Maps the host axum-login / tower-sessions session into [`AuthSession`] for
 //! reactive UI state. Call [`init_auth_resource`] from the host app root after
-//! [`provide_auth_context`]. UI code should read profiles with
+//! [`crate::provide_auth_context`]. UI code should read profiles with
 //! [`crate::use_authenticated_user`] (display name, email, roles), not treat
 //! `AuthSession::is_authenticated()` as a user label.
 //!
