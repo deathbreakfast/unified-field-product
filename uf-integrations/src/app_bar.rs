@@ -260,7 +260,6 @@ pub fn UnifiedFieldAppBar(
                         justify=FlexJustify::End
                         full_width=true
                     >
-                        <div data-testid="app-bar-trailing-row">
                         {move || {
                             let utilities_view = match &utilities_children {
                                 Some(children) => children().into_any(),
@@ -302,7 +301,6 @@ pub fn UnifiedFieldAppBar(
                         </div>
                         <div data-testid="app-bar-user-menu">
                             {auth_menu.map(|ShellAuthMenu { children }| children())}
-                        </div>
                         </div>
                     </Flex>
                 </AppBarTrailing>

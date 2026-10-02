@@ -1,4 +1,30 @@
+import type { Page } from "@playwright/test";
 import { test, expect, seedAuth, waitForHydrated } from "./fixtures";
+
+/**
+ * Every trailing control must sit inside the app bar on one shared center line.
+ * A block wrapper around the trailing Flex once stacked search above the icons
+ * and pushed the bell/avatar onto a second row; visibility checks alone missed it.
+ */
+async function expectAppBarSingleRow(page: Page, testIds: string[]) {
+  const bar = await page.getByTestId("app-bar").boundingBox();
+  expect(bar, "app-bar bounding box").toBeTruthy();
+  const anchor = await page.getByTestId("app-bar-user-menu").boundingBox();
+  expect(anchor, "app-bar-user-menu bounding box").toBeTruthy();
+  const rowCenter = anchor!.y + anchor!.height / 2;
+  for (const id of [...testIds, "app-bar-user-menu"]) {
+    const box = await page.getByTestId(id).boundingBox();
+    expect(box, `${id} bounding box`).toBeTruthy();
+    expect(box!.y, `${id} top inside app bar`).toBeGreaterThanOrEqual(bar!.y - 1);
+    expect(box!.y + box!.height, `${id} bottom inside app bar`).toBeLessThanOrEqual(
+      bar!.y + bar!.height + 1,
+    );
+    expect(
+      Math.abs(box!.y + box!.height / 2 - rowCenter),
+      `${id} shares the trailing row center`,
+    ).toBeLessThanOrEqual(4);
+  }
+}
 
 test.describe("pw-shell", () => {
   test("pw-shell-layout-default-closed-happy", async ({ page }) => {
@@ -56,6 +82,38 @@ test.describe("pw-app-bar", () => {
     });
     await expect(page.getByTestId("app-bar-trailing")).toBeVisible();
     await expect(page.getByTestId("app-bar-user-menu")).toBeVisible();
+  });
+
+  test("pw-app-bar-trailing-single-row-happy", async ({ page }) => {
+    await seedAuth(page, "authenticated_verified");
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto("/");
+    await waitForHydrated(page);
+    await expect(page.getByTestId("notification-bell")).toBeVisible({
+      timeout: 60_000,
+    });
+    await expectAppBarSingleRow(page, [
+      "app-bar-search",
+      "app-bar-help",
+      "app-bar-apps",
+      "app-bar-appearance",
+      "notification-bell",
+    ]);
+  });
+
+  test("pw-app-bar-compact-trailing-single-row-happy", async ({ page }) => {
+    await seedAuth(page, "authenticated_verified");
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/");
+    await waitForHydrated(page);
+    await expect(page.getByTestId("app-bar-trailing-compact")).toBeVisible({
+      timeout: 60_000,
+    });
+    await expectAppBarSingleRow(page, [
+      "app-bar-trailing-compact",
+      "notification-bell",
+      "app-bar-user-menu",
+    ]);
   });
 
   test("pw-app-bar-mobile-visible-at-top-happy", async ({ page }) => {
