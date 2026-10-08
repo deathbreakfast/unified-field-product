@@ -200,6 +200,7 @@ uf_app! {
     version: "0.1.0",
     routes: NotificationsRoutes,
     route_path: "/notifications",
+    repository: "https://github.com/unified-field-dev/unified-field-product",
 }
 
 /// Notifications app routes: an auth-gated inbox page at `/notifications`.

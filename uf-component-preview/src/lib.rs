@@ -103,4 +103,5 @@ uf_app! {
     version: "0.1.0",
     routes: OrbitalComponentRoutes,
     route_path: "/orbital",
+    repository: "https://github.com/unified-field-dev/unified-field-product",
 }
