@@ -5766,6 +5766,7 @@ version = "0.3.0"
 dependencies = [
  "async-trait",
  "chrono",
+ "futures",
  "icondata",
  "inventory",
  "leptos",
@@ -5775,7 +5776,9 @@ dependencies = [
  "serde_json",
  "thiserror 2.0.21",
  "tokio",
+ "tracing",
  "uf-help-macros",
+ "uf-photon",
  "uf-product",
  "uf-product-macros 0.1.0",
  "uf-valence",

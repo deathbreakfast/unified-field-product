@@ -6,6 +6,8 @@ use crate::github::{
     check_rate_limit, resolve_github_token, BugReportPayload, CreateIssue, FeatureRequestPayload,
     GitHubFeedbackClient, HttpGitHubClient, PrivateVulnReport, SecurityReportPayload,
 };
+use crate::report_hook::publish::{publish_submitted, Submission, Target};
+use crate::report_hook::ReportKind;
 use crate::repository::parse_github_owner_repo;
 use crate::HelpError;
 
@@ -34,6 +36,18 @@ fn resolve_owner_repo(route: &str) -> Result<(String, String), HelpError> {
     parse_github_owner_repo(repo_url).ok_or(HelpError::Misconfigured("app repository url"))
 }
 
+/// App and repository for `route`, as the hook reports them.
+fn hook_target<'a>(route: &'a str, owner: &'a str, repo: &'a str) -> Target<'a> {
+    let app = crate::repository::resolve_help_app(route);
+    Target {
+        route,
+        app_id: app.map_or("", |a| a.id),
+        app_name: app.map_or("", |a| a.name),
+        owner,
+        repo,
+    }
+}
+
 /// Submit a labeled bug issue.
 pub async fn submit_bug(route: &str, payload: BugReportPayload) -> Result<String, HelpError> {
     require_nonempty("title", &payload.title)?;
@@ -57,10 +71,12 @@ pub async fn submit_bug(route: &str, payload: BugReportPayload) -> Result<String
     if let Some(v) = &payload.browser_os {
         let _ = write!(body, "\n## Browser / OS\n{v}\n");
     }
+    let hook_body = body.clone();
     if let Some(v) = &payload.contact_email {
         let _ = write!(body, "\n## Contact\n{v}\n");
     }
-    client
+    let hook_title = payload.title.clone();
+    let url = client
         .create_issue(
             &owner,
             &repo,
@@ -70,7 +86,17 @@ pub async fn submit_bug(route: &str, payload: BugReportPayload) -> Result<String
                 labels: vec!["bug".into()],
             },
         )
-        .await
+        .await?;
+    let target = hook_target(route, &owner, &repo);
+    publish_submitted(Submission::issue(
+        ReportKind::Bug,
+        &target,
+        &hook_title,
+        &hook_body,
+        &url,
+    ))
+    .await;
+    Ok(url)
 }
 
 /// Submit an enhancement issue.
@@ -93,10 +119,12 @@ pub async fn submit_feature(
     if let Some(v) = &payload.alternatives {
         let _ = write!(body, "\n## Alternatives\n{v}\n");
     }
+    let hook_body = body.clone();
     if let Some(v) = &payload.contact_email {
         let _ = write!(body, "\n## Contact\n{v}\n");
     }
-    client
+    let hook_title = payload.title.clone();
+    let url = client
         .create_issue(
             &owner,
             &repo,
@@ -106,7 +134,17 @@ pub async fn submit_feature(
                 labels: vec!["enhancement".into()],
             },
         )
-        .await
+        .await?;
+    let target = hook_target(route, &owner, &repo);
+    publish_submitted(Submission::issue(
+        ReportKind::Feature,
+        &target,
+        &hook_title,
+        &hook_body,
+        &url,
+    ))
+    .await;
+    Ok(url)
 }
 
 /// Submit a private vulnerability report (never a public issue).
@@ -142,7 +180,9 @@ pub async fn submit_security(route: &str, payload: SecurityReportPayload) -> Res
                 severity: payload.severity,
             },
         )
-        .await
+        .await?;
+    publish_submitted(Submission::security(&hook_target(route, &owner, &repo))).await;
+    Ok(())
 }
 
 #[cfg(test)]

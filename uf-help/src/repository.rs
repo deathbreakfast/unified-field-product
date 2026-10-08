@@ -6,6 +6,13 @@
 #[cfg(feature = "ssr")]
 #[must_use]
 pub fn resolve_help_repository(pathname: &str) -> Option<&'static str> {
+    resolve_help_app(pathname).and_then(|a| a.repository)
+}
+
+/// Longest-prefix match of `pathname` against registered app `route_path` values.
+#[cfg(feature = "ssr")]
+#[must_use]
+pub(crate) fn resolve_help_app(pathname: &str) -> Option<&'static uf_product::AppRegistration> {
     use uf_product::{AppRegistration, AppRegistry};
 
     let path = if pathname.is_empty() { "/" } else { pathname };
@@ -25,7 +32,7 @@ pub fn resolve_help_repository(pathname: &str) -> Option<&'static str> {
             best = Some(app);
         }
     }
-    best.and_then(|a| a.repository)
+    best
 }
 
 #[cfg(not(feature = "ssr"))]

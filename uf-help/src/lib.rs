@@ -199,6 +199,8 @@ mod app_bar_help;
 mod error;
 mod github;
 mod report;
+#[cfg(feature = "ssr")]
+pub mod report_hook;
 mod repository;
 mod server;
 mod service;
