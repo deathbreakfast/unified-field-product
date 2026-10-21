@@ -25,6 +25,14 @@ pub fn AdaptiveSheetPage() -> impl IntoView {
                     <span data-testid="demo-sheet-open-state">
                         {move || if full_open.get() { "open" } else { "closed" }}
                     </span>
+                    " · Small: "
+                    <span data-testid="demo-sheet-small-open-state">
+                        {move || if small_open.get() { "open" } else { "closed" }}
+                    </span>
+                    " · Info: "
+                    <span data-testid="demo-sheet-info-open-state">
+                        {move || if info_open.get() { "open" } else { "closed" }}
+                    </span>
                     " · Confirms: "
                     <span data-testid="demo-sheet-confirms">{move || confirms.get()}</span>
                 </Body1>
