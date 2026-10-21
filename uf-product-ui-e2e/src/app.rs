@@ -19,9 +19,9 @@ use uf_welcome::UfWelcomeRoutes;
 use crate::gate_demos::E2eAuthProvider;
 use crate::harness_auth_menu::HarnessAuthMenu;
 use crate::pages::{
-    AuthSignInPage, ComingSoonDemoPage, GateEmailPage, GatePermissionAllowPage, GatePermissionPage,
-    HelpFixtureDeferredPage, HomePage, NotFoundDemoPage, ScrollChromePage, UtilitiesOverridePage,
-    WorkspaceSearchHitPage,
+    AdaptiveSheetPage, AuthSignInPage, ComingSoonDemoPage, GateEmailPage, GatePermissionAllowPage,
+    GatePermissionPage, HelpFixtureDeferredPage, HomePage, NotFoundDemoPage, ScrollChromePage,
+    UtilitiesOverridePage, WorkspaceSearchHitPage,
 };
 use uf_product::telemetry::{PageViewTracker, UfAppRouteEntry};
 
@@ -79,6 +79,7 @@ pub fn App() -> impl IntoView {
                     <Routes fallback=|| view! { <NotFoundDemoPage /> }>
                         <ParentRoute path=path!("") view=ChromeShell>
                             <Route path=path!("") view=HomePage />
+                            <Route path=path!("adaptive-sheet") view=AdaptiveSheetPage />
                             <Route path=path!("scroll-chrome") view=ScrollChromePage />
                             <Route path=path!("workspace-search-hit") view=WorkspaceSearchHitPage />
                             <Route path=path!("gate/email") view=GateEmailPage />
