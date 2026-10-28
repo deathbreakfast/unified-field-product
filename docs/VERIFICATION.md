@@ -157,3 +157,23 @@ cargo doc -p uf-component-preview --features ssr --no-deps
 
 Enable `ssr` when documenting crates whose docs link SSR-only items. Do not claim
 workspace-wide link denial: only the `RUSTDOCFLAGS` invocations above enforce it.
+
+## CI parity runs
+
+A full CI-parity pass runs every `ci.yml` job and every committed
+`run-lanes.sh` Playwright suite on the branch head, each job on its own target.
+The per-run evidence is the job/suite table in `.tachyon/ci/latest/summary.md`.
+
+### 2026-10-28 — `mcp-server` ready-to-merge proof
+
+- Branch `mcp-server` after merging `main` (run-lanes lane runner) and
+  `feat/secaudit` (cargo audit/deny advisory clearance); code head
+  `cd30dac78a32b187b6153c9e395aa2506c142b3e`.
+- Toolchain: `rust-toolchain.toml` `nightly`, `wasm32-unknown-unknown` target,
+  `cargo-leptos` 0.3.6.
+- Jobs run: `fmt`, `clippy`, `test`, `test-heavy-uf-product`,
+  `test-heavy-uf-welcome`, `e2e`, `docs` (cargo doc + `cargo deny check` +
+  `cargo audit`), `leptos-lints`.
+- Suite run: `uf-product-ui-e2e/end2end/run-lanes.sh`, the full
+  `uf-product-ui-e2e` Playwright suite split across its three parallel lanes
+  (`lanes.conf` `LANES_DEFAULT=3`), including the new `adaptive-sheet.spec.ts`.
