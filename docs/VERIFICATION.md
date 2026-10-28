@@ -167,8 +167,10 @@ The per-run evidence is the job/suite table in `.tachyon/ci/latest/summary.md`.
 ### 2026-10-28 — `mcp-server` ready-to-merge proof
 
 - Branch `mcp-server` after merging `main` (run-lanes lane runner) and
-  `feat/secaudit` (cargo audit/deny advisory clearance); code head
-  `cd30dac78a32b187b6153c9e395aa2506c142b3e`.
+  `feat/secaudit` (cargo audit/deny advisory clearance), then dropping the
+  `uf-product/tests/reexports.rs` guard that referenced an Orbital export not
+  reachable through `uf_product::primitives` at the pinned revision; code head
+  `2e16e20`. Per-job results: `.tachyon/ci/latest/summary.md`.
 - Toolchain: `rust-toolchain.toml` `nightly`, `wasm32-unknown-unknown` target,
   `cargo-leptos` 0.3.6.
 - Jobs run: `fmt`, `clippy`, `test`, `test-heavy-uf-product`,
