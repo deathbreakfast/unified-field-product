@@ -6,6 +6,9 @@ yanked = "warn"
 ignore = [
     { id = "RUSTSEC-2024-0436", reason = "paste unmaintained; transitive via leptos (either_of)" },
     { id = "RUSTSEC-2026-0173", reason = "proc-macro-error2 unmaintained; transitive via leptos_macro" },
+    { id = "RUSTSEC-2026-0367", reason = "zip SUID/SGID bit preservation; transitive via orbital-datatable's zip = \"2\" dependency, fixed upstream by bumping to zip 9 on unified-field-dev/orbital's secaudit-orbital task (branch agent/secaudit-orbital, not yet merged to orbital main); remove once that merges and `cargo update -p orbital-datatable` picks it up here." },
+    { id = "RUSTSEC-2026-0368", reason = "zip symlink extraction escapes destination; same orbital-datatable zip = \"2\" dependency and fix as RUSTSEC-2026-0367." },
+    { id = "RUSTSEC-2026-0369", reason = "zip symlink permission application escapes destination; same orbital-datatable zip = \"2\" dependency and fix as RUSTSEC-2026-0367." },
 ]
 
 [licenses]
