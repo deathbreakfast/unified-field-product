@@ -28,6 +28,8 @@
 //!   [Get started](#appearance-preferences)
 //! - **Page-view telemetry** — Emit Spectra page views for registered apps from the main
 //!   router. [Get started](#page-view-telemetry)
+//! - **Adaptive sheet** — A dialog on wide screens and a bottom drawer on narrow ones, with
+//!   one body and one set of actions. [Get started](adaptive_sheet::AdaptiveSheet)
 //! - **Design-system re-exports** — Import [`components`], [`primitives`], [`models`], and
 //!   [`nav`] through one dependency path (sourced from `orbital-zone-a`).
 //! - **Shell chrome** — App bar, layout, and search UI live in `uf-integrations` (not this crate).
@@ -482,6 +484,7 @@ pub use orbital_zone_a::context;
 pub use orbital_zone_a::models;
 pub use orbital_zone_a::primitives;
 
+pub mod adaptive_sheet;
 pub mod app_bar_menu_extras;
 pub mod app_bar_utilities;
 pub mod auth_dialog;
@@ -516,6 +519,7 @@ pub use routes::AppRegistration;
 #[cfg(feature = "ssr")]
 pub use routes::AppRegistry;
 
+pub use adaptive_sheet::AdaptiveSheet;
 pub use app_bar_menu_extras::{
     app_bar_dark_mode_bind, provide_app_bar_menu_extras, use_app_bar_menu_extras,
     AppBarAppearanceMenuItems, AppBarCompactMenuExtras, AppBarMenuExtrasInjection,

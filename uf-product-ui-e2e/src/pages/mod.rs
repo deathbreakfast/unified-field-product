@@ -1,6 +1,7 @@
 //! Demo pages for product UI e2e.
 #![allow(missing_docs)]
 
+mod adaptive_sheet;
 mod auth;
 mod coming_soon;
 mod gates;
@@ -11,6 +12,7 @@ mod scroll_chrome;
 mod utilities_override;
 mod workspace_search_hit;
 
+pub use adaptive_sheet::AdaptiveSheetPage;
 pub use auth::AuthSignInPage;
 pub use coming_soon::ComingSoonDemoPage;
 pub use gates::{GateEmailPage, GatePermissionAllowPage, GatePermissionPage};
