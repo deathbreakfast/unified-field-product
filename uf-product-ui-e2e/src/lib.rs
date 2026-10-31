@@ -11,6 +11,7 @@ mod e2e_permissions;
 mod e2e_spectra;
 #[cfg(feature = "ssr")]
 mod e2e_valence;
+mod fam_fixture;
 mod gate_demos;
 mod harness_auth_menu;
 mod help_steps;

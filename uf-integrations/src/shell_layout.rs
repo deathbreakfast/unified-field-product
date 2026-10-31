@@ -1,5 +1,5 @@
-//! Product shell layout: Orbital `Layout` plus app-bar / left-nav slots and a
-//! permission toast bus.
+//! Product shell layout: Orbital `Layout` plus app-bar / left-nav / floating
+//! actions slots and a permission toast bus.
 //!
 //! Session loading lives in `uf-product` (`get_session` / `init_auth_resource`).
 //! Auth menu contents are host-provided via [`crate::provide_shell_auth_menu`].
@@ -13,6 +13,7 @@
 //! | Wrap page content in product chrome | [`UnifiedFieldShellLayout`] |
 //! | Fill app-bar / left-nav regions | [`ShellAppBar`], [`ShellLeftNav`] |
 //! | Tell the app bar to show the sidebar hamburger | [`ShellSidebarToggle`] |
+//! | Show a floating actions menu (FAB) of app-registered items | [`ShellFloatingActions`] |
 //!
 //! # Example
 //!
@@ -27,11 +28,13 @@ use leptos::prelude::*;
 use uf_product::components::{
     AppBarDensity, Layout, LayoutHeader, LayoutMain, LayoutSidebar, SidebarPresentation,
 };
-use uf_product::primitives::ToasterProvider;
+use uf_product::primitives::{FloatingActionsMenuConfig, ToasterProvider};
 use uf_product::services::permission_server_errors::{
     provide_permission_toast_bus, PermissionToastRequest,
 };
-use uf_product::{provide_access_gate_state, provide_auth_dialog_controller};
+use uf_product::{
+    provide_access_gate_state, provide_auth_dialog_controller, RegisteredFloatingActions,
+};
 
 /// When true, [`crate::UnifiedFieldAppBar`] should render the sidebar hamburger control.
 #[derive(Clone, Copy)]
@@ -49,6 +52,30 @@ pub struct ShellAppBar {
 pub struct ShellLeftNav {
     /// The sidebar navigation content.
     pub children: ChildrenFn,
+}
+
+/// Slot that turns on the shell's floating actions menu.
+///
+/// The menu holds every item apps registered as a
+/// [`FloatingActionContribution`](uf_product::FloatingActionContribution). Leave the
+/// slot out and the shell renders no FAB; pass it with no items registered and the
+/// shell renders none either.
+///
+/// ```rust,ignore
+/// view! {
+///     <UnifiedFieldShellLayout>
+///         <ShellFloatingActions slot />
+///         <Outlet />
+///     </UnifiedFieldShellLayout>
+/// }
+/// ```
+#[slot]
+pub struct ShellFloatingActions {
+    /// Menu config; defaults to
+    /// [`default_floating_actions_config`](uf_product::default_floating_actions_config)
+    /// (bottom-right, pinned to the viewport, labelled "Page actions").
+    #[prop(optional)]
+    pub config: Option<FloatingActionsMenuConfig>,
 }
 
 #[component]
@@ -72,6 +99,9 @@ pub fn UnifiedFieldShellLayout(
     /// Optional shell left nav.
     #[prop(optional)]
     shell_left_nav: Option<ShellLeftNav>,
+    /// Optional floating actions menu; omit for no FAB.
+    #[prop(optional)]
+    shell_floating_actions: Option<ShellFloatingActions>,
     /// Child content rendered inside the component.
     children: Children,
 ) -> impl IntoView {
@@ -139,6 +169,9 @@ pub fn UnifiedFieldShellLayout(
                     }.into_any()
                 }
             }}
+            {shell_floating_actions.map(|ShellFloatingActions { config }| {
+                view! { <RegisteredFloatingActions config=config.unwrap_or_else(uf_product::default_floating_actions_config) /> }
+            })}
             {
                 #[cfg(feature = "offering-help")]
                 {

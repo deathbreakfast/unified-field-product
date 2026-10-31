@@ -36,6 +36,8 @@
 //! - **Detail-extension slots** — Let an optional product contribute a panel into another
 //!   product's detail page (a Polaron org/team Overview tab, say) without either one
 //!   Cargo-depending on the other. [Get started](#detail-extension-slots)
+//! - **Floating actions items** — Let an app add an item to the shell's floating actions
+//!   menu on hosts that pass `ShellFloatingActions`. [Get started](#floating-actions-items)
 //!
 //! ## Getting started
 //!
@@ -436,6 +438,15 @@
 //! renders nothing — the host page stays valid whether or not the optional product is
 //! mounted.
 //!
+//! ## Floating actions items
+//!
+//! An app submits a [`FloatingActionContribution`] whose `render` returns an Orbital
+//! `FloatingActionsMenuItem`, and calls [`register_floating_action`] from a force-link
+//! touch point. A host that passes `ShellFloatingActions` to `UnifiedFieldShellLayout`
+//! (in `uf-integrations`) mounts [`RegisteredFloatingActions`], which shows the item in a
+//! viewport-pinned FAB. Hosts without the slot, and hosts where no app registered an
+//! item, show no FAB. See [`floating_actions`] for a full registration example.
+//!
 //! ## Feature flags
 //!
 //! | Feature | Effect |
@@ -490,6 +501,7 @@ pub mod app_bar_utilities;
 pub mod auth_dialog;
 pub mod components;
 pub mod detail_extensions;
+pub mod floating_actions;
 pub mod nav;
 pub mod paths;
 pub mod permissions;
@@ -539,6 +551,10 @@ pub use context::AuthContext;
 pub use detail_extensions::{
     collect_detail_extensions, register_detail_extensions, DetailExtensionContribution,
     DetailExtensionKind, DetailExtensionSlot,
+};
+pub use floating_actions::{
+    collect_floating_actions, default_floating_actions_config, register_floating_action,
+    FloatingActionContribution, RegisteredFloatingActions, DEFAULT_FLOATING_ACTIONS_LABEL,
 };
 
 /// Insert [`AuthContext`] into Leptos context. Call once near the host `Router`.
