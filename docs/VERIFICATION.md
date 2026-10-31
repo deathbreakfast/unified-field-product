@@ -38,6 +38,15 @@ cargo test -p uf-product --lib step_up_mode_ -- --nocapture
 cargo test -p uf-product --lib step_up_error_prefixes -- --nocapture
 ```
 
+Shell floating actions menu registry (`uf-product/src/floating_actions.rs`, part of
+`cargo test -p uf-product --features ssr` in CI): `collect_floating_actions_sorted_happy`,
+`floating_actions_menu_renders_items_happy`, `floating_actions_menu_empty_renders_nothing_sad`,
+`floating_actions_menu_custom_config_happy`.
+
+```bash
+cargo test -p uf-product --features ssr --lib floating_actions
+```
+
 Additional SSR checks (not in the default CI `test` job):
 
 ```bash
@@ -100,6 +109,15 @@ CI job `e2e` runs the same commands.
 cd uf-product-ui-e2e/end2end && npm ci && npx playwright install chromium
 cd ../..
 cargo leptos end-to-end --project uf-product-ui-e2e
+```
+
+Shell floating actions menu (`end2end/tests/floating_actions.spec.ts`):
+`pw-shell-fam-item-*-happy` and `pw-shell-fam-absent-*-sad`, each on desktop-light,
+desktop-dark and phone. The spec sets the viewport and color scheme per `describe`
+block, so one laned run covers all three:
+
+```bash
+cd uf-product-ui-e2e/end2end && ./run-lanes.sh --no-build tests/floating_actions.spec.ts
 ```
 
 ### Runtime scope (what this host boots)
