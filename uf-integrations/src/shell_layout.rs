@@ -170,7 +170,7 @@ pub fn UnifiedFieldShellLayout(
                 }
             }}
             {shell_floating_actions.map(|ShellFloatingActions { config }| {
-                view! { <RegisteredFloatingActions config=config.unwrap_or_else(uf_product::default_floating_actions_config) /> }
+                view! { <RegisteredFloatingActions nostrip:config=config /> }
             })}
             {
                 #[cfg(feature = "offering-help")]
