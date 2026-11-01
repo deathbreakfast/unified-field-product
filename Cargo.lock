@@ -340,7 +340,7 @@ dependencies = [
 [[package]]
 name = "boson-core"
 version = "0.1.4"
-source = "git+https://github.com/unified-field-dev/boson?branch=main#3af2ba3ba83b7369cd87f8aa4a8926bcdc009c90"
+source = "git+https://github.com/unified-field-dev/boson?branch=main#238083ca833fb5fad5be8d9b5e7f5dc2ca65be4d"
 dependencies = [
  "async-trait",
  "chrono",
@@ -353,7 +353,7 @@ dependencies = [
 [[package]]
 name = "boson-macros"
 version = "0.1.4"
-source = "git+https://github.com/unified-field-dev/boson?branch=main#3af2ba3ba83b7369cd87f8aa4a8926bcdc009c90"
+source = "git+https://github.com/unified-field-dev/boson?branch=main#238083ca833fb5fad5be8d9b5e7f5dc2ca65be4d"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -363,7 +363,7 @@ dependencies = [
 [[package]]
 name = "boson-runtime"
 version = "0.1.4"
-source = "git+https://github.com/unified-field-dev/boson?branch=main#3af2ba3ba83b7369cd87f8aa4a8926bcdc009c90"
+source = "git+https://github.com/unified-field-dev/boson?branch=main#238083ca833fb5fad5be8d9b5e7f5dc2ca65be4d"
 dependencies = [
  "async-trait",
  "boson-core",
@@ -377,7 +377,7 @@ dependencies = [
 [[package]]
 name = "boson-telemetry"
 version = "0.1.4"
-source = "git+https://github.com/unified-field-dev/boson?branch=main#3af2ba3ba83b7369cd87f8aa4a8926bcdc009c90"
+source = "git+https://github.com/unified-field-dev/boson?branch=main#238083ca833fb5fad5be8d9b5e7f5dc2ca65be4d"
 dependencies = [
  "serde_json",
 ]
@@ -385,7 +385,7 @@ dependencies = [
 [[package]]
 name = "boson-valence-identity"
 version = "0.1.0"
-source = "git+https://github.com/unified-field-dev/boson-valence-identity?branch=main#26ed6e7259c029613b9d32c3e888776e91c27d83"
+source = "git+https://github.com/unified-field-dev/boson-valence-identity?branch=main#d2a6794f0c393a16b82ebe2c174b2086de0534eb"
 dependencies = [
  "boson-core",
  "serde",
@@ -573,7 +573,7 @@ dependencies = [
 [[package]]
 name = "chronon-coordinator"
 version = "0.1.0"
-source = "git+https://github.com/unified-field-dev/chronon-coordinator?branch=main#43ee393f33270ee6d07bd610a85aa5804621c921"
+source = "git+https://github.com/unified-field-dev/chronon-coordinator?branch=main#befe0da3e85ae00ea1e85486a3b282b9e60c0a4c"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -602,7 +602,7 @@ dependencies = [
 [[package]]
 name = "chronon-core"
 version = "0.1.4"
-source = "git+https://github.com/unified-field-dev/chronon?branch=main#25f4c532d00dec8f9748014e7183b6c4a77c6f0b"
+source = "git+https://github.com/unified-field-dev/chronon?branch=main#1227a568423becd0ba8b28bea91a157881581b0b"
 dependencies = [
  "async-trait",
  "chrono",
@@ -616,7 +616,7 @@ dependencies = [
 [[package]]
 name = "chronon-executor"
 version = "0.1.4"
-source = "git+https://github.com/unified-field-dev/chronon?branch=main#25f4c532d00dec8f9748014e7183b6c4a77c6f0b"
+source = "git+https://github.com/unified-field-dev/chronon?branch=main#1227a568423becd0ba8b28bea91a157881581b0b"
 dependencies = [
  "chrono",
  "chronon-core",
@@ -631,7 +631,7 @@ dependencies = [
 [[package]]
 name = "chronon-scheduler"
 version = "0.1.4"
-source = "git+https://github.com/unified-field-dev/chronon?branch=main#25f4c532d00dec8f9748014e7183b6c4a77c6f0b"
+source = "git+https://github.com/unified-field-dev/chronon?branch=main#1227a568423becd0ba8b28bea91a157881581b0b"
 dependencies = [
  "chrono",
  "chrono-tz",
@@ -649,7 +649,7 @@ dependencies = [
 [[package]]
 name = "chronon-telemetry"
 version = "0.1.4"
-source = "git+https://github.com/unified-field-dev/chronon?branch=main#25f4c532d00dec8f9748014e7183b6c4a77c6f0b"
+source = "git+https://github.com/unified-field-dev/chronon?branch=main#1227a568423becd0ba8b28bea91a157881581b0b"
 dependencies = [
  "parking_lot",
  "tracing",
@@ -706,7 +706,7 @@ version = "3.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "faf9468729b8cbcea668e36183cb69d317348c2e08e994829fb56ebfdfbaac34"
 dependencies = [
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -1225,7 +1225,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -1414,7 +1414,7 @@ dependencies = [
 [[package]]
 name = "gauge"
 version = "0.1.0"
-source = "git+https://github.com/unified-field-dev/gauge?branch=main#9a6d4a1fb219d278e4e9b08ff4bd273b5dab252b"
+source = "git+https://github.com/unified-field-dev/gauge?branch=main#d628494add2aaaa52eb4f1415abf4917788ace54"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1428,6 +1428,7 @@ dependencies = [
  "higgs-host",
  "inventory",
  "lepton",
+ "lepton-identity",
  "leptos",
  "log",
  "record-history",
@@ -1645,7 +1646,7 @@ checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
 [[package]]
 name = "higgs"
 version = "0.1.0"
-source = "git+https://github.com/unified-field-dev/higgs?branch=main#c7315684804fc6c74653bf7edb5186788a1f1791"
+source = "git+https://github.com/unified-field-dev/higgs?branch=main#4cbf56306f8cb01fec2e66b84e3fa5fb431fee42"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1662,7 +1663,7 @@ dependencies = [
 [[package]]
 name = "higgs-core"
 version = "0.1.0"
-source = "git+https://github.com/unified-field-dev/higgs?branch=main#c7315684804fc6c74653bf7edb5186788a1f1791"
+source = "git+https://github.com/unified-field-dev/higgs?branch=main#4cbf56306f8cb01fec2e66b84e3fa5fb431fee42"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1680,7 +1681,7 @@ dependencies = [
 [[package]]
 name = "higgs-host"
 version = "0.1.0"
-source = "git+https://github.com/unified-field-dev/higgs?branch=main#c7315684804fc6c74653bf7edb5186788a1f1791"
+source = "git+https://github.com/unified-field-dev/higgs?branch=main#4cbf56306f8cb01fec2e66b84e3fa5fb431fee42"
 dependencies = [
  "anyhow",
  "axum",
@@ -1696,7 +1697,7 @@ dependencies = [
 [[package]]
 name = "higgs-identity"
 version = "0.1.0"
-source = "git+https://github.com/unified-field-dev/higgs?branch=main#c7315684804fc6c74653bf7edb5186788a1f1791"
+source = "git+https://github.com/unified-field-dev/higgs?branch=main#4cbf56306f8cb01fec2e66b84e3fa5fb431fee42"
 dependencies = [
  "async-trait",
  "serde",
@@ -2691,7 +2692,7 @@ checksum = "cf8baf1c55e62ffcace7a9f06f4bd9cd3f0c4beb022d3b367256b91b87513d98"
 [[package]]
 name = "meson"
 version = "0.1.0"
-source = "git+https://github.com/unified-field-dev/meson?branch=main#4c21801206e3e5f6a2a0835b2f1dc5d0e94ccc55"
+source = "git+https://github.com/unified-field-dev/meson?branch=main#470ceeeb284cfd6aa742ab33be845e98fd5de1fa"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -3534,7 +3535,7 @@ dependencies = [
 [[package]]
 name = "photon-axum"
 version = "0.1.3"
-source = "git+https://github.com/unified-field-dev/photon-leptos?branch=main#aa37d43e7db290221555140031b895e0fe679fec"
+source = "git+https://github.com/unified-field-dev/photon-leptos?branch=main#568697f097a0782f5914d639ad93148e6746f642"
 dependencies = [
  "axum",
  "futures",
@@ -3549,7 +3550,7 @@ dependencies = [
 [[package]]
 name = "photon-backend"
 version = "0.1.4"
-source = "git+https://github.com/unified-field-dev/photon?branch=main#f3b42a0cc98be04ae704346e9792d01d0dec73a1"
+source = "git+https://github.com/unified-field-dev/photon?branch=main#9411ea15886527734d059bc04c4a21dc5a1a648f"
 dependencies = [
  "anyhow",
  "async-stream",
@@ -3575,7 +3576,7 @@ dependencies = [
 [[package]]
 name = "photon-leptos"
 version = "0.1.3"
-source = "git+https://github.com/unified-field-dev/photon-leptos?branch=main#aa37d43e7db290221555140031b895e0fe679fec"
+source = "git+https://github.com/unified-field-dev/photon-leptos?branch=main#568697f097a0782f5914d639ad93148e6746f642"
 dependencies = [
  "cfg-if",
  "codee",
@@ -3596,7 +3597,7 @@ dependencies = [
 [[package]]
 name = "photon-leptos-macros"
 version = "0.1.3"
-source = "git+https://github.com/unified-field-dev/photon-leptos?branch=main#aa37d43e7db290221555140031b895e0fe679fec"
+source = "git+https://github.com/unified-field-dev/photon-leptos?branch=main#568697f097a0782f5914d639ad93148e6746f642"
 dependencies = [
  "darling",
  "proc-macro2",
@@ -3607,7 +3608,7 @@ dependencies = [
 [[package]]
 name = "photon-macros"
 version = "0.1.4"
-source = "git+https://github.com/unified-field-dev/photon?branch=main#f3b42a0cc98be04ae704346e9792d01d0dec73a1"
+source = "git+https://github.com/unified-field-dev/photon?branch=main#9411ea15886527734d059bc04c4a21dc5a1a648f"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -3617,7 +3618,7 @@ dependencies = [
 [[package]]
 name = "photon-runtime"
 version = "0.1.4"
-source = "git+https://github.com/unified-field-dev/photon?branch=main#f3b42a0cc98be04ae704346e9792d01d0dec73a1"
+source = "git+https://github.com/unified-field-dev/photon?branch=main#9411ea15886527734d059bc04c4a21dc5a1a648f"
 dependencies = [
  "futures",
  "photon-backend",
@@ -3633,7 +3634,7 @@ dependencies = [
 [[package]]
 name = "photon-telemetry"
 version = "0.1.4"
-source = "git+https://github.com/unified-field-dev/photon?branch=main#f3b42a0cc98be04ae704346e9792d01d0dec73a1"
+source = "git+https://github.com/unified-field-dev/photon?branch=main#9411ea15886527734d059bc04c4a21dc5a1a648f"
 dependencies = [
  "serde_json",
 ]
@@ -3887,7 +3888,7 @@ dependencies = [
  "once_cell",
  "socket2",
  "tracing",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -4105,7 +4106,7 @@ dependencies = [
 [[package]]
 name = "record-history"
 version = "0.1.0"
-source = "git+https://github.com/unified-field-dev/record-history?branch=main#6227879fdd20c4b8657c4bea611b9eb33278dc4b"
+source = "git+https://github.com/unified-field-dev/record-history?branch=main#8c990fe815b5b1c90a4751db87865fd6f1bd5f5d"
 dependencies = [
  "async-trait",
  "chrono",
@@ -4295,7 +4296,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -5117,7 +5118,7 @@ dependencies = [
  "getrandom 0.4.3",
  "once_cell",
  "rustix",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -5876,7 +5877,7 @@ dependencies = [
 [[package]]
 name = "uf-photon"
 version = "0.1.4"
-source = "git+https://github.com/unified-field-dev/photon?branch=main#f3b42a0cc98be04ae704346e9792d01d0dec73a1"
+source = "git+https://github.com/unified-field-dev/photon?branch=main#9411ea15886527734d059bc04c4a21dc5a1a648f"
 dependencies = [
  "photon-backend",
  "photon-macros",
@@ -5889,7 +5890,7 @@ dependencies = [
 [[package]]
 name = "uf-photon-core"
 version = "0.1.4"
-source = "git+https://github.com/unified-field-dev/photon?branch=main#f3b42a0cc98be04ae704346e9792d01d0dec73a1"
+source = "git+https://github.com/unified-field-dev/photon?branch=main#9411ea15886527734d059bc04c4a21dc5a1a648f"
 dependencies = [
  "serde",
  "serde_json",
@@ -5948,7 +5949,7 @@ dependencies = [
 [[package]]
 name = "uf-product-macros"
 version = "0.1.0"
-source = "git+https://github.com/unified-field-dev/unified-field-product?branch=main#c67303ee5f1fd77133d7e6adf68d09d6e1f5ded2"
+source = "git+https://github.com/unified-field-dev/unified-field-product?branch=main#2d83a89b228aa549b1170b59013d5e15f7dbf2a6"
 dependencies = [
  "darling",
  "proc-macro2",
@@ -6023,7 +6024,7 @@ dependencies = [
 [[package]]
 name = "uf-search-core"
 version = "0.1.0"
-source = "git+https://github.com/unified-field-dev/unified-field-product?branch=main#c67303ee5f1fd77133d7e6adf68d09d6e1f5ded2"
+source = "git+https://github.com/unified-field-dev/unified-field-product?branch=main#2d83a89b228aa549b1170b59013d5e15f7dbf2a6"
 dependencies = [
  "anyhow",
  "serde",
@@ -6066,7 +6067,7 @@ dependencies = [
 [[package]]
 name = "uf-valence"
 version = "0.1.5"
-source = "git+https://github.com/unified-field-dev/valence?branch=main#5bfe552e44374d8991c7262009991806ca9dce46"
+source = "git+https://github.com/unified-field-dev/valence?branch=main#6a27698507c61eb5ce0287e28798b8711f14a994"
 dependencies = [
  "uf-valence-backend-hybrid",
  "uf-valence-backend-indradb",
@@ -6080,7 +6081,7 @@ dependencies = [
 [[package]]
 name = "uf-valence-backend-hybrid"
 version = "0.1.5"
-source = "git+https://github.com/unified-field-dev/valence?branch=main#5bfe552e44374d8991c7262009991806ca9dce46"
+source = "git+https://github.com/unified-field-dev/valence?branch=main#6a27698507c61eb5ce0287e28798b8711f14a994"
 dependencies = [
  "async-trait",
  "serde",
@@ -6093,7 +6094,7 @@ dependencies = [
 [[package]]
 name = "uf-valence-backend-indradb"
 version = "0.1.5"
-source = "git+https://github.com/unified-field-dev/valence?branch=main#5bfe552e44374d8991c7262009991806ca9dce46"
+source = "git+https://github.com/unified-field-dev/valence?branch=main#6a27698507c61eb5ce0287e28798b8711f14a994"
 dependencies = [
  "async-trait",
  "indradb-lib",
@@ -6106,7 +6107,7 @@ dependencies = [
 [[package]]
 name = "uf-valence-backend-mem"
 version = "0.1.5"
-source = "git+https://github.com/unified-field-dev/valence?branch=main#5bfe552e44374d8991c7262009991806ca9dce46"
+source = "git+https://github.com/unified-field-dev/valence?branch=main#6a27698507c61eb5ce0287e28798b8711f14a994"
 dependencies = [
  "async-trait",
  "serde_json",
@@ -6117,7 +6118,7 @@ dependencies = [
 [[package]]
 name = "uf-valence-backend-postgres"
 version = "0.1.5"
-source = "git+https://github.com/unified-field-dev/valence?branch=main#5bfe552e44374d8991c7262009991806ca9dce46"
+source = "git+https://github.com/unified-field-dev/valence?branch=main#6a27698507c61eb5ce0287e28798b8711f14a994"
 dependencies = [
  "async-trait",
  "serde_json",
@@ -6130,7 +6131,7 @@ dependencies = [
 [[package]]
 name = "uf-valence-backend-sql"
 version = "0.1.5"
-source = "git+https://github.com/unified-field-dev/valence?branch=main#5bfe552e44374d8991c7262009991806ca9dce46"
+source = "git+https://github.com/unified-field-dev/valence?branch=main#6a27698507c61eb5ce0287e28798b8711f14a994"
 dependencies = [
  "serde",
  "serde_json",
@@ -6145,7 +6146,7 @@ dependencies = [
 [[package]]
 name = "uf-valence-backend-sqlite"
 version = "0.1.5"
-source = "git+https://github.com/unified-field-dev/valence?branch=main#5bfe552e44374d8991c7262009991806ca9dce46"
+source = "git+https://github.com/unified-field-dev/valence?branch=main#6a27698507c61eb5ce0287e28798b8711f14a994"
 dependencies = [
  "async-trait",
  "serde_json",
@@ -6159,7 +6160,7 @@ dependencies = [
 [[package]]
 name = "uf-valence-codegen"
 version = "0.1.5"
-source = "git+https://github.com/unified-field-dev/valence?branch=main#5bfe552e44374d8991c7262009991806ca9dce46"
+source = "git+https://github.com/unified-field-dev/valence?branch=main#6a27698507c61eb5ce0287e28798b8711f14a994"
 dependencies = [
  "anyhow",
  "prettyplease",
@@ -6173,7 +6174,7 @@ dependencies = [
 [[package]]
 name = "uf-valence-core"
 version = "0.1.5"
-source = "git+https://github.com/unified-field-dev/valence?branch=main#5bfe552e44374d8991c7262009991806ca9dce46"
+source = "git+https://github.com/unified-field-dev/valence?branch=main#6a27698507c61eb5ce0287e28798b8711f14a994"
 dependencies = [
  "async-trait",
  "chrono",
@@ -6192,7 +6193,7 @@ dependencies = [
 [[package]]
 name = "uf-valence-macros"
 version = "0.1.5"
-source = "git+https://github.com/unified-field-dev/valence?branch=main#5bfe552e44374d8991c7262009991806ca9dce46"
+source = "git+https://github.com/unified-field-dev/valence?branch=main#6a27698507c61eb5ce0287e28798b8711f14a994"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -6203,7 +6204,7 @@ dependencies = [
 [[package]]
 name = "uf-valence-schema-dsl"
 version = "0.1.5"
-source = "git+https://github.com/unified-field-dev/valence?branch=main#5bfe552e44374d8991c7262009991806ca9dce46"
+source = "git+https://github.com/unified-field-dev/valence?branch=main#6a27698507c61eb5ce0287e28798b8711f14a994"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -6213,7 +6214,7 @@ dependencies = [
 [[package]]
 name = "uf-valence-telemetry"
 version = "0.1.5"
-source = "git+https://github.com/unified-field-dev/valence?branch=main#5bfe552e44374d8991c7262009991806ca9dce46"
+source = "git+https://github.com/unified-field-dev/valence?branch=main#6a27698507c61eb5ce0287e28798b8711f14a994"
 dependencies = [
  "serde_json",
 ]
@@ -6562,7 +6563,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
