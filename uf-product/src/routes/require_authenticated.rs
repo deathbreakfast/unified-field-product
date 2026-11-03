@@ -53,6 +53,7 @@ enum GateAuth {
     Authenticated {
         user_id: String,
         email_verified: bool,
+        roles: Vec<String>,
     },
 }
 
@@ -62,6 +63,7 @@ fn gate_auth(session: &AuthSession) -> GateAuth {
         AuthSession::Authenticated(user) => GateAuth::Authenticated {
             user_id: user.user_id.clone(),
             email_verified: user.email_verified,
+            roles: user.roles.clone(),
         },
     }
 }
@@ -90,6 +92,11 @@ mod gate_auth_tests {
     #[test]
     fn gate_auth_changes_on_identity_or_verification_sad() {
         let base = gate_auth(&user("u-1", false, "Ada"));
+        let mut admin = user("u-1", false, "Ada");
+        if let AuthSession::Authenticated(u) = &mut admin {
+            u.roles = vec!["admin".into()];
+        }
+        assert!(base != gate_auth(&admin));
         assert!(base != gate_auth(&user("u-2", false, "Ada")));
         assert!(base != gate_auth(&user("u-1", true, "Ada")));
         let anon = gate_auth(&AuthSession::Anonymous(AnonymousUser { reason: None }));
@@ -291,8 +298,10 @@ fn permission_denied_gate(
 /// post-login can return via `?referer=`.
 ///
 /// Children stay mounted across auth refreshes (for example `trigger_refresh()` after
-/// an action) unless the user id, the signed-in state or the email-verified flag
-/// changes, so local UI state in the page survives.
+/// an action) unless the user id, the signed-in state, the email-verified flag or the
+/// roles change, so local UI state in the page survives. A named permission is
+/// re-checked on those same changes only; a grant revoked without one of them shows
+/// until reload, so server functions behind the page must still enforce access.
 ///
 /// ## Examples
 ///
