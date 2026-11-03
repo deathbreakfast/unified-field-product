@@ -34,6 +34,68 @@ impl Parse for AppField {
     }
 }
 
+/// `(label, path, icon_key, signed_in_only)` for one `navigation` entry.
+type NavEntry = (String, String, String, bool);
+
+fn nav_str(expr: &Expr, what: &str) -> Result<String> {
+    match expr {
+        Expr::Lit(lit) => match &lit.lit {
+            syn::Lit::Str(s) => Ok(s.value()),
+            _ => Err(syn::Error::new_spanned(
+                expr,
+                format!("navigation {what} must be a string literal"),
+            )),
+        },
+        _ => Err(syn::Error::new_spanned(
+            expr,
+            format!("navigation {what} must be a string literal"),
+        )),
+    }
+}
+
+/// Parse `[(label, path, icon_key, visibility), ...]`.
+fn parse_navigation(expr: &Expr) -> Result<Vec<NavEntry>> {
+    let Expr::Array(array) = expr else {
+        return Err(syn::Error::new_spanned(
+            expr,
+            "navigation must be an array of (label, path, icon_key, visibility) tuples",
+        ));
+    };
+    array
+        .elems
+        .iter()
+        .map(|elem| {
+            let Expr::Tuple(tuple) = elem else {
+                return Err(syn::Error::new_spanned(
+                    elem,
+                    "navigation entry must be a (label, path, icon_key, visibility) tuple",
+                ));
+            };
+            if tuple.elems.len() != 4 {
+                return Err(syn::Error::new_spanned(
+                    elem,
+                    "navigation entry must have 4 elements: (label, path, icon_key, visibility)",
+                ));
+            }
+            let parts: Vec<&Expr> = tuple.elems.iter().collect();
+            let label = nav_str(parts[0], "label")?;
+            let path = nav_str(parts[1], "path")?;
+            let icon = nav_str(parts[2], "icon key")?;
+            let signed_in_only = match nav_str(parts[3], "visibility")?.as_str() {
+                "always" => false,
+                "signed_in" => true,
+                other => {
+                    return Err(syn::Error::new_spanned(
+                        parts[3],
+                        format!("unknown navigation visibility \"{other}\"; use \"always\" or \"signed_in\""),
+                    ))
+                }
+            };
+            Ok((label, path, icon, signed_in_only))
+        })
+        .collect()
+}
+
 #[allow(clippy::too_many_lines)]
 pub fn expand_uf_app(input: TokenStream) -> TokenStream {
     let app_def = match syn::parse2::<UfAppDefinition>(input) {
@@ -54,6 +116,7 @@ pub fn expand_uf_app(input: TokenStream) -> TokenStream {
     let mut brand_seed = None;
     let mut repository = None;
     let mut crate_name = None;
+    let mut navigation = None;
 
     for field in &app_def.fields {
         match field.name.to_string().as_str() {
@@ -62,8 +125,9 @@ pub fn expand_uf_app(input: TokenStream) -> TokenStream {
             "description" => description = Some(&field.value),
             "icon" => icon = Some(&field.value),
             "version" => version = Some(&field.value),
+            "navigation" => navigation = Some(&field.value),
             // Accepted for forward compatibility; not yet expanded.
-            "permissions" | "navigation" => {}
+            "permissions" => {}
             "route_path" => route_path_param = Some(&field.value),
             "route_view" => route_view = Some(&field.value),
             "routes" => routes_component = Some(&field.value),
@@ -80,6 +144,21 @@ pub fn expand_uf_app(input: TokenStream) -> TokenStream {
             }
         }
     }
+
+    let nav_items = match navigation.map(parse_navigation).transpose() {
+        Ok(items) => items.unwrap_or_default(),
+        Err(e) => return e.to_compile_error(),
+    };
+    let nav_tokens = nav_items.iter().map(|(label, path, icon, signed_in_only)| {
+        quote! {
+            ::uf_product::routes::AppNavItem {
+                label: #label,
+                path: #path,
+                icon: #icon,
+                signed_in_only: #signed_in_only,
+            }
+        }
+    });
 
     // ID is required for route registration
     let id_value = match id {
@@ -217,6 +296,11 @@ pub fn expand_uf_app(input: TokenStream) -> TokenStream {
             /// Get the application version
             pub fn version() -> &'static str {
                 Self::VERSION
+            }
+
+            /// Sidebar links declared in the `navigation` field.
+            pub fn navigation() -> &'static [::uf_product::routes::AppNavItem] {
+                &[#(#nav_tokens),*]
             }
         }
     };
@@ -390,5 +474,68 @@ mod tests {
             out.contains("\"uf-apps\""),
             "expected crate_name literal: {out}"
         );
+    }
+
+    #[test]
+    fn uf_app_expands_navigation_happy_path() {
+        let out = expand_str(quote! {
+            name: "Magnon",
+            id: "magnon",
+            navigation: [
+                ("Home", "/magnon", "home", "always"),
+                ("My tasks", "/magnon/tasks", "task-list", "signed_in"),
+            ],
+        });
+        assert!(
+            out.contains("fn navigation"),
+            "expected navigation fn: {out}"
+        );
+        assert!(out.contains("\"My tasks\""), "expected second item: {out}");
+        assert!(out.contains("\"/magnon\""), "expected first item: {out}");
+        assert!(
+            out.contains("signed_in_only : true"),
+            "expected flag: {out}"
+        );
+    }
+
+    #[test]
+    fn uf_app_without_navigation_is_empty_happy_path() {
+        let out = expand_str(quote! { name: "Plain", id: "plain" });
+        assert!(
+            out.contains("fn navigation"),
+            "expected navigation fn: {out}"
+        );
+        assert!(out.contains("& []"), "expected empty slice: {out}");
+        assert!(!out.contains("compile_error"), "unexpected error: {out}");
+    }
+
+    #[test]
+    fn uf_app_navigation_wrong_arity_is_compile_error_sad() {
+        let out = expand_str(quote! {
+            name: "A", id: "a",
+            navigation: [("Home", "/a", "home")],
+        });
+        assert!(out.contains("compile_error"), "expected error: {out}");
+        assert!(out.contains("4 elements"), "expected arity message: {out}");
+    }
+
+    #[test]
+    fn uf_app_navigation_unknown_visibility_is_compile_error_sad() {
+        let out = expand_str(quote! {
+            name: "A", id: "a",
+            navigation: [("Home", "/a", "home", "sometimes")],
+        });
+        assert!(out.contains("compile_error"), "expected error: {out}");
+        assert!(out.contains("unknown navigation visibility"), "{out}");
+    }
+
+    #[test]
+    fn uf_app_navigation_non_literal_is_compile_error_sad() {
+        let out = expand_str(quote! {
+            name: "A", id: "a",
+            navigation: [(LABEL, "/a", "home", "always")],
+        });
+        assert!(out.contains("compile_error"), "expected error: {out}");
+        assert!(out.contains("must be a string literal"), "{out}");
     }
 }

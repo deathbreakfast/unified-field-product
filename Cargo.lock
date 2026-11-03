@@ -5797,6 +5797,7 @@ dependencies = [
  "orbital-primitives",
  "orbital-shell",
  "orbital-theme",
+ "tracing",
  "turf",
  "uf-appearance",
  "uf-help",
