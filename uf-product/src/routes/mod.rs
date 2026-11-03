@@ -16,6 +16,7 @@
 //! |---------|-----|
 //! | Gate page content behind login / permission | [`RequireAuthenticated`] |
 //! | Tell Help a sign-in (or other) gate is showing | [`provide_access_gate_state`], [`AccessGateActive`] |
+//! | Keep Help from auto-playing on a page that shares a route with tour steps | [`suppress_help_tour`] |
 //! | Discover apps registered by `uf_app!` (SSR) | [`AppRegistration`], [`AppRegistry`] |
 //! | Parse safe redirect targets from referer | [`parse_referer_from_search`], [`sanitize_referer_path`] |
 //! | Auth route + return path when no shell dialog | [`auth_signin_href`], [`auth_signup_href`] |
@@ -74,7 +75,9 @@ mod referer;
 mod registration;
 mod require_authenticated;
 
-pub use access_gate::{provide_access_gate_state, use_access_gate_active, AccessGateActive};
+pub use access_gate::{
+    provide_access_gate_state, suppress_help_tour, use_access_gate_active, AccessGateActive,
+};
 pub use referer::{
     auth_path_with_referer, auth_signin_href, auth_signup_href, parse_referer_from_search,
     sanitize_referer_path,
