@@ -57,12 +57,20 @@ test.describe("pw-app-bar", () => {
     await expect(bar).toBeVisible({ timeout: 60_000 });
     await bar.evaluate((el) => el.setAttribute("data-mounted-marker", "first"));
 
-    await page.getByTestId("nav-apps").click();
+    const openNav = async (testId: string) => {
+      const link = page.getByTestId(testId);
+      if (!(await link.isVisible())) {
+        await page.getByRole("button", { name: /expand navigation/i }).click();
+      }
+      await link.click();
+    };
+
+    await openNav("nav-apps");
     await expect(page).toHaveURL(/\/apps$/);
     await expect(bar).toContainText("Apps");
     await expect(bar).toHaveAttribute("data-mounted-marker", "first");
 
-    await page.getByTestId("nav-welcome").click();
+    await openNav("nav-welcome");
     await expect(page).toHaveURL(/\/welcome/);
     await expect(bar).toContainText("Welcome");
     await expect(bar).toHaveAttribute("data-mounted-marker", "first");
