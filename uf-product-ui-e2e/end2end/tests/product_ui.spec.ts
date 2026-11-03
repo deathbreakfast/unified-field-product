@@ -50,6 +50,25 @@ test.describe("pw-shell", () => {
 });
 
 test.describe("pw-app-bar", () => {
+  test("pw-app-bar-persists-across-app-navigation-happy", async ({ page }) => {
+    await page.goto("/");
+    await waitForHydrated(page);
+    const bar = page.getByTestId("app-bar");
+    await expect(bar).toBeVisible({ timeout: 60_000 });
+    await bar.evaluate((el) => el.setAttribute("data-mounted-marker", "first"));
+
+    await page.getByTestId("nav-apps").click();
+    await expect(page).toHaveURL(/\/apps$/);
+    await expect(bar).toContainText("Apps");
+    await expect(bar).toHaveAttribute("data-mounted-marker", "first");
+
+    await page.getByTestId("nav-welcome").click();
+    await expect(page).toHaveURL(/\/welcome/);
+    await expect(bar).toContainText("Welcome");
+    await expect(bar).toHaveAttribute("data-mounted-marker", "first");
+    await expect(page.getByTestId("unified-field-shell-layout")).toHaveCount(1);
+  });
+
   test("pw-app-bar-default-utilities-happy", async ({ page }) => {
     await page.goto("/");
     await waitForHydrated(page);

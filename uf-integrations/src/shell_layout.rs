@@ -37,6 +37,11 @@ use uf_product::{provide_access_gate_state, provide_auth_dialog_controller};
 #[derive(Clone, Copy)]
 pub struct ShellSidebarToggle(pub bool);
 
+/// Context marker provided by [`UnifiedFieldShellLayout`]. App layouts check for it
+/// and skip their own shell when a host shell is already mounted above them.
+#[derive(Clone, Copy)]
+pub struct ShellMounted;
+
 /// Slot for the app bar region of [`UnifiedFieldShellLayout`].
 #[slot]
 pub struct ShellAppBar {
@@ -85,6 +90,7 @@ pub fn UnifiedFieldShellLayout(
     let sidebar_open = RwSignal::new(false);
     let show_sidebar_toggle = shell_left_nav.is_some();
     provide_context(ShellSidebarToggle(show_sidebar_toggle));
+    provide_context(ShellMounted);
 
     view! {
         <ToasterProvider>

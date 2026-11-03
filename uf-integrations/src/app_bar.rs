@@ -76,24 +76,29 @@ impl BreadcrumbLink {
 #[component]
 fn AppBarBranding(
     /// App name.
-    app_name: String,
+    app_name: Signal<String>,
     /// Avatar letter.
-    avatar_letter: String,
+    avatar_letter: Signal<String>,
     /// Homepage URL.
     homepage_url: String,
 ) -> impl IntoView {
     view! {
         <Link href=homepage_url>
             <Flex align=FlexAlign::Center gap=FlexGap::Medium>
-                <Avatar config=AvatarConfig {
-                    initials: Some(avatar_letter),
-                    name: Some(app_name.clone()),
-                    shape: AvatarShape::Square,
-                    size: Some(32),
-                    color: AvatarColor::Brand,
-                    ..Default::default()
-                } />
-                <Title3>{app_name}</Title3>
+                {move || {
+                    let name = app_name.get();
+                    view! {
+                        <Avatar config=AvatarConfig {
+                            initials: Some(avatar_letter.get()),
+                            name: Some(name.clone()),
+                            shape: AvatarShape::Square,
+                            size: Some(32),
+                            color: AvatarColor::Brand,
+                            ..Default::default()
+                        } />
+                        <Title3>{name}</Title3>
+                    }
+                }}
             </Flex>
         </Link>
     }
@@ -173,11 +178,12 @@ pub fn AppBarTrailingSlot() -> impl IntoView {
 /// Unified Field product app bar — branding, search, and shell utilities.
 #[component]
 pub fn UnifiedFieldAppBar(
-    /// App name.
-    app_name: String,
-    /// Optional app ID.
-    #[prop(optional)]
-    app_id: Option<&'static str>,
+    /// App name. Pass a signal to change the name without remounting the bar.
+    #[prop(into)]
+    app_name: Signal<String>,
+    /// Optional app ID. Pass a signal to follow the current app.
+    #[prop(optional, into)]
+    app_id: Option<Signal<&'static str>>,
     /// Optional app logo initial.
     #[prop(optional)]
     app_logo_initial: Option<String>,
@@ -200,15 +206,18 @@ pub fn UnifiedFieldAppBar(
     #[prop(optional)]
     app_bar_utilities: Option<AppBarUtilities>,
 ) -> impl IntoView {
-    let avatar_letter = app_id
-        .map(|id| product_avatar_letter(id).to_string())
-        .or(app_logo_initial)
-        .unwrap_or_else(|| {
-            app_name
-                .chars()
-                .next()
-                .map_or_else(|| "?".to_string(), |c| c.to_uppercase().to_string())
-        });
+    let avatar_letter = Signal::derive(move || {
+        app_id
+            .map(|id| product_avatar_letter(id.get()).to_string())
+            .or_else(|| app_logo_initial.clone())
+            .unwrap_or_else(|| {
+                app_name
+                    .get()
+                    .chars()
+                    .next()
+                    .map_or_else(|| "?".to_string(), |c| c.to_uppercase().to_string())
+            })
+    });
     let homepage_url = homepage_url.unwrap_or_else(|| "/".to_string());
     let breadcrumbs = breadcrumbs.unwrap_or_default();
     let show_sidebar_toggle = show_sidebar_toggle
@@ -306,5 +315,42 @@ pub fn UnifiedFieldAppBar(
                 </AppBarTrailing>
             </AppBar>
         </HideOnScroll>
+    }
+}
+
+/// App bar that follows the current route, for hosts that keep one shell mounted.
+///
+/// Resolves the app from the location pathname with
+/// [`uf_product::telemetry::resolve_app_for_path`] and the host's route table, so
+/// moving between apps updates the name and avatar without remounting the bar
+/// (no data refetch, no notifications socket reconnect). Mount it inside
+/// [`crate::UnifiedFieldShellLayout`]; the stock app layouts then skip their own shell.
+#[component]
+pub fn RoutedAppBar(
+    /// Route table, the same one passed to `PageViewTracker`.
+    routes: &'static [uf_product::telemetry::UfAppRouteEntry],
+    /// Name shown when no entry in `routes` matches the path.
+    #[prop(into)]
+    fallback_name: String,
+) -> impl IntoView {
+    let pathname = leptos_router::hooks::use_location().pathname;
+    let current = Signal::derive(move || {
+        let path = pathname.get();
+        let entry = uf_product::telemetry::resolve_app_for_path(&path, routes);
+        (entry.route_prefix != "/").then_some(entry)
+    });
+    let app_name = Signal::derive(move || {
+        current
+            .get()
+            .map_or_else(|| fallback_name.clone(), |e| e.app_name.to_string())
+    });
+    let app_id = Signal::derive(move || current.get().map_or("shell", |e| e.app_id));
+
+    view! {
+        <UnifiedFieldAppBar app_name=app_name app_id=app_id homepage_url="/".to_string()>
+            <ShellAuthMenu slot:auth_menu>
+                <crate::HostAuthMenu />
+            </ShellAuthMenu>
+        </UnifiedFieldAppBar>
     }
 }

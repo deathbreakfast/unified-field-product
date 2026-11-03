@@ -242,7 +242,7 @@ mod workspace_search;
 
 pub use app_bar::{
     AppBarSearchSlot, AppBarTrailingSlot, AppBarUtilities, BreadcrumbLink, DefaultAppBarUtilities,
-    ShellAuthMenu, UnifiedFieldAppBar,
+    RoutedAppBar, ShellAuthMenu, UnifiedFieldAppBar,
 };
 pub use coming_soon_page::{coming_soon_fill_for_path, UnifiedFieldComingSoonPage};
 pub use host_auth_menu::{provide_shell_auth_menu, HostAuthMenu, ShellAuthMenuFactory};
@@ -253,5 +253,7 @@ pub use host_notification_bell::{
 };
 pub use not_found_page::UnifiedFieldNotFoundPage;
 pub use search_source_picker::SearchSourcePicker;
-pub use shell_layout::{ShellAppBar, ShellLeftNav, ShellSidebarToggle, UnifiedFieldShellLayout};
+pub use shell_layout::{
+    ShellAppBar, ShellLeftNav, ShellMounted, ShellSidebarToggle, UnifiedFieldShellLayout,
+};
 pub use workspace_search::{WorkspaceSearch, WorkspaceSearchDialog, WorkspaceSearchMobileTrigger};
