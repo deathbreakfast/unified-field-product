@@ -14,7 +14,9 @@ use crate::primitives::{
 ///
 /// Provided by [`provide_access_gate_state`] on the product shell. Help tours
 /// read this so they do not auto-play over sign-in, email-verification, or
-/// permission-required gates.
+/// permission-required gates. A product page that shares a route with tour
+/// steps but should not play them (a signed-out landing) calls
+/// [`suppress_help_tour`].
 #[derive(Clone, Copy)]
 pub struct AccessGateActive(RwSignal<bool>);
 
@@ -45,6 +47,19 @@ pub fn provide_access_gate_state() -> AccessGateActive {
     let state = AccessGateActive(RwSignal::new(false));
     provide_context(state);
     state
+}
+
+/// Keep Help from auto-playing a tour while the calling component is mounted.
+///
+/// For pages that share a route with help steps but should show none, such as a
+/// signed-out landing. Sets [`AccessGateActive`] now and clears it when the
+/// calling component's owner is cleaned up. Does nothing when the shell has not
+/// called [`provide_access_gate_state`].
+pub fn suppress_help_tour() {
+    if let Some(gate) = use_access_gate_active() {
+        gate.set(true);
+        on_cleanup(move || gate.set(false));
+    }
 }
 
 /// Optional access to a provided [`AccessGateActive`].
@@ -164,5 +179,25 @@ mod tests {
     fn access_gate_active_is_copy_happy_path() {
         fn assert_copy<T: Copy>() {}
         assert_copy::<AccessGateActive>();
+    }
+
+    #[test]
+    fn suppress_help_tour_sets_flag_until_owner_cleanup() {
+        let shell = Owner::new();
+        shell.set();
+        let gate = provide_access_gate_state();
+        assert!(!gate.get());
+        let page = shell.child();
+        page.with(suppress_help_tour);
+        assert!(gate.get());
+        page.cleanup();
+        assert!(!gate.get());
+    }
+
+    #[test]
+    fn suppress_help_tour_without_gate_is_noop() {
+        let owner = Owner::new();
+        owner.set();
+        suppress_help_tour();
     }
 }
