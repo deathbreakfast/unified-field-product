@@ -12,6 +12,8 @@
 //!
 //! - **Shell layout** — [`UnifiedFieldShellLayout`] wraps Orbital's layout with app-bar
 //!   and left-nav slots for product shells. [Get started](#shell-layout)
+//! - **App sidebar links** — [`AppNavLinks`] renders the `navigation` declared in `uf_app!`
+//!   inside the product's `NavigationBody`, hiding `signed_in` items for anonymous sessions.
 //! - **Auth menu slot** — [`provide_shell_auth_menu`] and [`HostAuthMenu`] inject a
 //!   host-provided sign-in menu without hard-depending on auth crates.
 //!   [Get started](#auth-menu-slot)
@@ -232,6 +234,7 @@
 // prop-level docs are ratcheted per component.
 #![allow(missing_docs)]
 mod app_bar;
+mod app_nav;
 mod coming_soon_page;
 mod host_auth_menu;
 mod host_notification_bell;
@@ -244,6 +247,7 @@ pub use app_bar::{
     AppBarSearchSlot, AppBarTrailingSlot, AppBarUtilities, BreadcrumbLink, DefaultAppBarUtilities,
     RoutedAppBar, ShellAuthMenu, UnifiedFieldAppBar,
 };
+pub use app_nav::{icon_for, AppNavLinks};
 pub use coming_soon_page::{coming_soon_fill_for_path, UnifiedFieldComingSoonPage};
 pub use host_auth_menu::{provide_shell_auth_menu, HostAuthMenu, ShellAuthMenuFactory};
 pub use host_notification_bell::{
