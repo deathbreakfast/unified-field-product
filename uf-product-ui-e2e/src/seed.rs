@@ -73,6 +73,9 @@ pub struct SeedRequest {
     /// When true, keep previously minted rows and append new ones (Photon push probes).
     #[serde(default)]
     pub append: bool,
+    /// Clear the e2e user's saved Help tour visits so the tour shows again.
+    #[serde(default)]
+    pub help_tour: bool,
 }
 
 fn default_auth() -> String {
@@ -222,6 +225,48 @@ async fn wipe_recipient_notifications(system: &valence::Valence, recipient: Reco
     deleted
 }
 
+/// Hard-delete the e2e user's Help tour visit rows. Finishing a tour now persists
+/// server-side, so specs that expect a first-visit tour start from a clean slate.
+async fn wipe_help_tour_visits() {
+    use uf_product::generated::HelpTourStepVisit;
+
+    const TABLE: &str = "help_tour_step_visit";
+    let system = e2e_system_valence();
+    let owner = system.with_actor(Actor::User {
+        user_id: recipient_user_id_str(),
+    });
+    let recipient = RecordId::new("user", recipient_user_id_str());
+    let rows = match HelpTourStepVisit::query(&owner, valence::use_!(r"**Test:** Fixture **Help Tour Step Visit** list for `seed` so the suite can reset tour progress between scenarios. CI and developers running the suite only."))
+        .where_user(RecordPredicate::Equals(recipient))
+        .limit(500)
+        .await
+    {
+        Ok(rows) => rows,
+        Err(err) => {
+            log::warn!("e2e seed: help tour visit query failed: {err}");
+            return;
+        }
+    };
+    let Ok(backend) = system.backend_for_table(TABLE) else {
+        log::warn!("e2e seed: no backend for {TABLE}");
+        return;
+    };
+    for row in &rows {
+        let Some(thing) = row.id() else { continue };
+        let full = thing.to_string();
+        let bare = full
+            .split(':')
+            .next_back()
+            .unwrap_or(&full)
+            .trim_matches(|c| c == '⟨' || c == '⟩')
+            .to_string();
+        match valence::delete_record(backend.as_ref(), TABLE, &bare, valence::use_!(r"**Test:** Fixture Help tour visit hard-delete for `seed` so the suite can reset tour progress between scenarios. CI and developers running the suite only.")).await {
+            Ok(()) | Err(valence::Error::NotFound(_)) => valence::read_cache::invalidate(TABLE, &bare),
+            Err(err) => log::warn!("e2e seed: help tour visit delete {bare} failed: {err}"),
+        }
+    }
+}
+
 pub async fn seed_data(
     session: Session,
     Json(body): Json<SeedRequest>,
@@ -231,6 +276,10 @@ pub async fn seed_data(
         log::error!("e2e seed: write auth kind failed: {err}");
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
+
+    if body.help_tour {
+        wipe_help_tour_visits().await;
+    }
 
     let viewer = body
         .usage_viewer
