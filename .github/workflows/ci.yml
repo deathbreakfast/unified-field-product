@@ -147,21 +147,24 @@ jobs:
         if: steps.playwright-cache.outputs.cache-hit == 'true'
         working-directory: uf-product-ui-e2e/end2end
         run: npx playwright install-deps chromium
-      # `cargo leptos end-to-end` exits 0 when the host fails to compile, so build first.
-      - name: cargo leptos build
+      # run-lanes.sh builds with lanes.conf's BUILD_CMD (the same cargo leptos line),
+      # then exits non-zero on a failed build, a failed test, or a missing or
+      # duplicated test. `cargo leptos end-to-end` exits 0 on both a failed build
+      # and a killed run, so it is not used here.
+      - name: Playwright e2e (parallel lanes)
+        working-directory: uf-product-ui-e2e/end2end
         env:
           CI: true
-        run: cargo leptos build --project uf-product-ui-e2e
-      - name: cargo leptos end-to-end
-        env:
-          CI: true
-        run: cargo leptos end-to-end --project uf-product-ui-e2e
+          LANES: 4
+          CARGO_BUILD_JOBS: 4
+        run: ./run-lanes.sh
       - name: Upload Playwright artifacts on failure
         if: failure()
         uses: actions/upload-artifact@v6
         with:
           name: playwright-artifacts-uf-product-${{ github.run_id }}
           path: |
+            uf-product-ui-e2e/end2end/lanes-out/
             uf-product-ui-e2e/end2end/playwright-report/
             uf-product-ui-e2e/end2end/test-results/
           if-no-files-found: ignore
