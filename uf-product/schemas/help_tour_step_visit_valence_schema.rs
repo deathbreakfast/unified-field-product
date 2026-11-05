@@ -65,9 +65,8 @@ valence_schema! {
                 required: false,
             },
             replay: {
-                r#type: FieldType::Bool,
+                r#type: FieldType::String,
                 required: true,
-                default: false,
             },
             first_seen_at: {
                 r#type: FieldType::DateTime,
