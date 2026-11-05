@@ -62,7 +62,7 @@ test.describe("pw-app-bar", () => {
       const backdrop = page.locator(".orbital-backdrop");
       // Phone: the overlay drawer can stay open after a nav click; close it first.
       if (await backdrop.first().isVisible()) {
-        await page.keyboard.press("Escape");
+        await page.getByRole("button", { name: /collapse navigation/i }).click();
         await expect(backdrop).toHaveCount(0);
       }
       if (!(await link.isVisible())) {
