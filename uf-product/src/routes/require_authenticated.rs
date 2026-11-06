@@ -43,6 +43,67 @@ fn permission_check_allows(result: &Result<Option<bool>, ServerFnError>) -> bool
     matches!(result, Ok(Some(true)))
 }
 
+/// The slice of [`AuthSession`] the gate reacts to.
+///
+/// A refresh that returns the same user with updated profile fields maps to an
+/// equal value, so a `Memo` over it does not notify and gated children stay mounted.
+#[derive(Clone, PartialEq)]
+enum GateAuth {
+    Anonymous,
+    Authenticated {
+        user_id: String,
+        email_verified: bool,
+        roles: Vec<String>,
+    },
+}
+
+fn gate_auth(session: &AuthSession) -> GateAuth {
+    match session {
+        AuthSession::Anonymous(_) => GateAuth::Anonymous,
+        AuthSession::Authenticated(user) => GateAuth::Authenticated {
+            user_id: user.user_id.clone(),
+            email_verified: user.email_verified,
+            roles: user.roles.clone(),
+        },
+    }
+}
+
+#[cfg(test)]
+mod gate_auth_tests {
+    use super::{gate_auth, GateAuth};
+    use crate::{AnonymousUser, AuthSession, AuthenticatedUser};
+
+    fn user(id: &str, verified: bool, name: &str) -> AuthSession {
+        AuthSession::Authenticated(AuthenticatedUser {
+            user_id: id.into(),
+            email: None,
+            display_name: Some(name.into()),
+            avatar_url: None,
+            roles: vec![],
+            email_verified: verified,
+        })
+    }
+
+    #[test]
+    fn gate_auth_ignores_profile_changes_for_same_user_happy_path() {
+        assert!(gate_auth(&user("u-1", true, "Ada")) == gate_auth(&user("u-1", true, "Ada L")));
+    }
+
+    #[test]
+    fn gate_auth_changes_on_identity_or_verification_sad() {
+        let base = gate_auth(&user("u-1", false, "Ada"));
+        let mut admin = user("u-1", false, "Ada");
+        if let AuthSession::Authenticated(u) = &mut admin {
+            u.roles = vec!["admin".into()];
+        }
+        assert!(base != gate_auth(&admin));
+        assert!(base != gate_auth(&user("u-2", false, "Ada")));
+        assert!(base != gate_auth(&user("u-1", true, "Ada")));
+        let anon = gate_auth(&AuthSession::Anonymous(AnonymousUser { reason: None }));
+        assert!(anon == GateAuth::Anonymous && anon != base);
+    }
+}
+
 #[cfg(test)]
 mod permission_gate_tests {
     //! Named gates must fail closed while Gauge is not wired as a git dep.
@@ -236,6 +297,12 @@ fn permission_denied_gate(
 /// [`crate::routes::auth_signin_href`] / [`crate::routes::auth_signup_href`] so
 /// post-login can return via `?referer=`.
 ///
+/// Children stay mounted across auth refreshes (for example `trigger_refresh()` after
+/// an action) unless the user id, the signed-in state, the email-verified flag or the
+/// roles change, so local UI state in the page survives. A named permission is
+/// re-checked on those same changes only; a grant revoked without one of them shows
+/// until reload, so server functions behind the page must still enforce access.
+///
 /// ## Examples
 ///
 /// Basic authenticated page (pair with shell auth menu + dialog):
@@ -292,11 +359,12 @@ pub fn RequireAuthenticated(
     let location_search = location.search;
     let auth_dialog = crate::use_auth_dialog_controller();
     let access_gate = super::access_gate::use_access_gate_active();
+    let gate = Memo::new(move |_| gate_auth(&auth.get()));
     let permission_check = Resource::new(
-        move || auth.get(),
+        move || gate.get(),
         move |session| async move {
             match (session, permission_name) {
-                (AuthSession::Authenticated(_), Some(name)) => {
+                (GateAuth::Authenticated { .. }, Some(name)) => {
                     has_permission_by_name(name.to_string()).await.map(Some)
                 }
                 _ => Ok(None),
@@ -311,8 +379,8 @@ pub fn RequireAuthenticated(
 
     view! {
         {move || {
-            match auth.get() {
-                AuthSession::Anonymous(_) => {
+            match gate.get() {
+                GateAuth::Anonymous => {
                     publish_access_gate(true);
                     anonymous_gate(
                         navigate.clone(),
@@ -321,8 +389,8 @@ pub fn RequireAuthenticated(
                         location_search,
                     )
                 }
-                AuthSession::Authenticated(user) => {
-                    if requires_email_verification && !user.email_verified {
+                GateAuth::Authenticated { email_verified, .. } => {
+                    if requires_email_verification && !email_verified {
                         publish_access_gate(true);
                         email_verification_gate(navigate.clone())
                     } else if let Some(permission_name) = permission_name {

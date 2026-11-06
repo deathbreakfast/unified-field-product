@@ -621,7 +621,9 @@ pub use context::use_auth_state;
 /// ```
 pub use context::use_authenticated_user;
 pub use models::auth::{AnonymousUser, AuthSession, AuthenticatedUser};
-pub use routes::{provide_access_gate_state, use_access_gate_active, AccessGateActive};
+pub use routes::{
+    provide_access_gate_state, suppress_help_tour, use_access_gate_active, AccessGateActive,
+};
 
 #[cfg(any(feature = "hydrate", feature = "ssr"))]
 pub use session::{get_session, init_auth_resource};
