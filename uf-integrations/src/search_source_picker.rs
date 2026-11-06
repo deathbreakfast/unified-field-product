@@ -99,6 +99,9 @@ fn SearchSourceOptionRow(item: SearchSourceItem) -> impl IntoView {
 /// - initial results when mounted/opened,
 /// - filtered results as the user types.
 ///
+/// Rows are shown as the server returned them; set `local_filter` to also
+/// filter by title on the client.
+///
 /// # Examples
 ///
 /// ```rust,ignore
@@ -155,6 +158,12 @@ pub fn SearchSourcePicker(
     /// When true, the control is non-interactive (matches disabled app-bar utilities).
     #[prop(default = false)]
     disabled: bool,
+    /// Also filter options by title against the typed text on the client.
+    /// Leave `false` when the sources search on the server, so a match whose
+    /// title lacks the query (an email hit, say) stays visible. Set `true` for
+    /// sources that return every row regardless of the query.
+    #[prop(default = false)]
+    local_filter: bool,
 ) -> impl IntoView {
     let query = RwSignal::new(String::new());
     let selected_options = RwSignal::new(Vec::<String>::new());
@@ -234,6 +243,7 @@ pub fn SearchSourcePicker(
         disabled: Signal::from(disabled),
         clearable: true,
         multiselect: Signal::from(multiselect),
+        disable_filter: !local_filter,
         ..Default::default()
     };
 

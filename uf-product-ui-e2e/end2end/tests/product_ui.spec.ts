@@ -275,6 +275,30 @@ test.describe("pw-search-picker", () => {
     await combobox.fill("zz-no-match");
     await expect(page.getByRole("option")).toHaveCount(0);
   });
+
+  test("pw-search-picker-server-match-title-lacks-query-happy", async ({ page }) => {
+    await page.goto("/");
+    await waitForHydrated(page);
+    const combobox = page.getByTestId("server-match-search").getByRole("combobox");
+    await expect(combobox).toBeVisible({ timeout: 60_000 });
+    await combobox.click();
+    await combobox.fill("ops@example.com");
+    await expect(page.getByRole("option", { name: /Beacon Gamma/i })).toBeVisible({
+      timeout: 30_000,
+    });
+  });
+
+  test("pw-search-picker-local-filter-hides-server-match-sad", async ({ page }) => {
+    await page.goto("/");
+    await waitForHydrated(page);
+    const combobox = page
+      .getByTestId("server-match-local-filter-search")
+      .getByRole("combobox");
+    await expect(combobox).toBeVisible({ timeout: 60_000 });
+    await combobox.click();
+    await combobox.fill("ops@example.com");
+    await expect(page.getByRole("option", { name: /Beacon Gamma/i })).toHaveCount(0);
+  });
 });
 
 test.describe("pw-pages", () => {
