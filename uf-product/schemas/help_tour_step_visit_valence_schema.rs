@@ -7,7 +7,7 @@ valence_schema! {
     HelpTourStepVisit {
         repository: "https://github.com/unified-field-dev/unified-field-product",
         table: "help_tour_step_visit",
-        version: "0.1.0",
+        version: "0.2.0",
         database: crate::embedded_surreal::IDENTITY_DEFAULT_STORAGE,
         description: "Per-user per-step help tour progress for product spotlight tours",
 
