@@ -298,6 +298,11 @@ test.describe("pw-search-picker", () => {
       .getByRole("combobox");
     await expect(combobox).toBeVisible({ timeout: 60_000 });
     await combobox.click();
+    // A title match proves the row came back from on_search.
+    await combobox.fill("Gamma");
+    await expect(page.getByRole("option", { name: /Beacon Gamma/i })).toBeVisible({
+      timeout: 30_000,
+    });
     await combobox.fill("ops@example.com");
     await expect(page.getByRole("option", { name: /Beacon Gamma/i })).toHaveCount(0);
   });

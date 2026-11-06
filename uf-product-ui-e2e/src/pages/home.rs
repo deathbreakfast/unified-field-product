@@ -39,6 +39,8 @@ pub fn HomePage() -> impl IntoView {
     let selected = RwSignal::new(None::<String>);
     let server_options = RwSignal::new(Vec::<SearchSourceItem>::new());
     let server_sig: Signal<Vec<SearchSourceItem>> = server_options.into();
+    let local_options = RwSignal::new(Vec::<SearchSourceItem>::new());
+    let local_sig: Signal<Vec<SearchSourceItem>> = local_options.into();
     let options_sig: Signal<Vec<SearchSourceItem>> = options.into();
 
     view! {
@@ -104,11 +106,11 @@ pub fn HomePage() -> impl IntoView {
                 <div data-testid="server-match-local-filter-search">
                     <SearchSourcePicker
                         search_sources=sources
-                        options=server_sig
+                        options=local_sig
                         local_filter=true
                         placeholder="Search by email (local filter)…"
                         on_search=Callback::new(move |(_keys, q): (Vec<SearchSourceKey>, String)| {
-                            server_options.set(if q.trim().is_empty() {
+                            local_options.set(if q.trim().is_empty() {
                                 Vec::new()
                             } else {
                                 vec![server_match_item()]
