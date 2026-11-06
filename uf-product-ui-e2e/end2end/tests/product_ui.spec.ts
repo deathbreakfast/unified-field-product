@@ -273,7 +273,9 @@ test.describe("pw-search-picker", () => {
     const combobox = search.getByRole("combobox");
     await combobox.click();
     await combobox.fill("zz-no-match");
-    await expect(page.getByRole("option")).toHaveCount(0);
+    // The unfiltered list now shows the disabled "No results" row.
+    await expect(page.getByRole("option", { name: /Beacon/i })).toHaveCount(0);
+    await expect(page.getByRole("option", { name: "No results" })).toBeVisible();
   });
 
   test("pw-search-picker-server-match-title-lacks-query-happy", async ({ page }) => {
