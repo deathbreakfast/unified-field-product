@@ -51,6 +51,8 @@ test.describe("pw-shell", () => {
 
 test.describe("pw-app-bar", () => {
   test("pw-app-bar-persists-across-app-navigation-happy", async ({ page }) => {
+    // Seeding marks the Help tour steps seen; otherwise /apps opens a spotlight backdrop.
+    await seedAuth(page, "authenticated_verified");
     await page.goto("/");
     await waitForHydrated(page);
     const bar = page.getByTestId("app-bar");
