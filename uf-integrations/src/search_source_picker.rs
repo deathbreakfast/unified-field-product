@@ -214,7 +214,6 @@ pub fn SearchSourcePicker(
     let query = RwSignal::new(String::new());
     let selected_options = RwSignal::new(Vec::<String>::new());
     let last_emitted_selection = RwSignal::new(None::<String>);
-    let selected_items = RwSignal::new(Vec::<SearchSourceItem>::new());
 
     Effect::new(move |_| {
         if let Some(cb) = &on_request_initial {
@@ -276,13 +275,19 @@ pub fn SearchSourcePicker(
         }
     });
 
-    // Keep the selected items so `value_view` survives a search replacing the rows.
-    Effect::new(move |_| {
+    // Keep the selected items so `value_view` survives a search replacing the rows:
+    // the memo's previous value stands in for rows that are no longer listed.
+    let selected_items = Memo::new(move |prev: Option<&Vec<SearchSourceItem>>| {
         let keys = selected_options.get();
         let rows = options.get();
-        let next = value
-            .with(|v| resolve_selected(&keys, &rows, &selected_items.get_untracked(), v.as_ref()));
-        selected_items.set(next);
+        value.with(|v| {
+            resolve_selected(
+                &keys,
+                &rows,
+                prev.map(Vec::as_slice).unwrap_or_default(),
+                v.as_ref(),
+            )
+        })
     });
 
     let placeholder_text = move || {
