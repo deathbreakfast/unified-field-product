@@ -88,6 +88,13 @@ pub fn UnifiedFieldShellLayout(
     let _access_gate = provide_access_gate_state();
     // Closed by default so Auto overlay mode does not open a drawer on first paint.
     let sidebar_open = RwSignal::new(false);
+    // A persistent shell no longer remounts on app-to-app navigation, so close the
+    // overlay drawer when the route changes instead of relying on a remount to reset it.
+    let pathname = leptos_router::hooks::use_location().pathname;
+    Effect::new(move |_| {
+        pathname.track();
+        sidebar_open.set(false);
+    });
     let show_sidebar_toggle = shell_left_nav.is_some();
     provide_context(ShellSidebarToggle(show_sidebar_toggle));
     provide_context(ShellMounted);
