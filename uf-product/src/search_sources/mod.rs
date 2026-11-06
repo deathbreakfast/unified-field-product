@@ -55,6 +55,7 @@
 //!                     title: user.email().to_string(),
 //!                     description: Some("User account".to_string()),
 //!                     kind: "user".to_string(),
+//!                     image_url: None,
 //!                 })
 //!                 .collect())
 //!         })
