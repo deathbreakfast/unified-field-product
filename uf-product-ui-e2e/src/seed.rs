@@ -8,6 +8,7 @@ use serde_json::json;
 use spectra::try_log_event_at;
 use tower_sessions::Session;
 use uf_notifications_core::{send_notification, Notification, SendNotification};
+use uf_product::generated::HelpTourStepVisit;
 use uf_product::telemetry::usage::{E2E_USAGE_VIEWER_SESSION_KEY, PAGE_VIEW_LOG_TABLE};
 use uf_product::workspace_search::{SearchDocumentDraft, SearchDocumentWriter};
 use valence::{Actor, Model, RecordId, RecordPredicate};
@@ -64,6 +65,9 @@ pub struct SeedRequest {
     /// When true, allow `e2e.permission.allow` via harness PermissionBackend.
     #[serde(default)]
     pub permission_allow: bool,
+    /// When true, forget the e2e user's stored Help tour progress so tour scenarios see a first visit.
+    #[serde(default)]
+    pub help_tour: bool,
     /// Optional page-view events into mem Spectra (usage cards).
     #[serde(default)]
     pub page_views: Vec<SeedPageView>,
@@ -101,15 +105,17 @@ fn recipient_user_id_str() -> String {
         .unwrap_or_else(|| E2E_VERIFIED_SESSION_USER.to_string())
 }
 
+fn bare_record_id(thing: impl std::fmt::Display) -> String {
+    let s = thing.to_string();
+    s.split(':')
+        .next_back()
+        .unwrap_or(&s)
+        .trim_matches(|c| c == '⟨' || c == '⟩')
+        .to_string()
+}
+
 fn bare_notification_id(row: &Notification) -> Option<String> {
-    row.id().map(|thing| {
-        let s = thing.to_string();
-        s.split(':')
-            .next_back()
-            .unwrap_or(&s)
-            .trim_matches(|c| c == '⟨' || c == '⟩')
-            .to_string()
-    })
+    row.id().map(bare_record_id)
 }
 
 const NOTIFICATION_TABLE: &str = "notification";
@@ -219,6 +225,46 @@ async fn wipe_recipient_notifications(system: &valence::Valence, recipient: Reco
         );
     }
 
+    deleted
+}
+
+/// Hard-delete the e2e user's stored Help tour visits. Tour progress now persists server-side,
+/// so without this a completed tour leaks into every later scenario sharing the e2e user.
+async fn wipe_help_tour_visits(system: &valence::Valence, recipient: RecordId) -> usize {
+    const TABLE: &str = "help_tour_step_visit";
+    let owner = e2e_system_valence().with_actor(Actor::User {
+        user_id: recipient_user_id_str(),
+    });
+    let rows = match HelpTourStepVisit::query(&owner, valence::use_!(r"**Test:** Fixture **Help Tour Step Visit** list for `seed` so the suite can reset tour progress between scenarios. CI and developers running the suite only."))
+        .where_user(RecordPredicate::Equals(recipient))
+        .await
+    {
+        Ok(rows) => rows,
+        Err(err) => {
+            log::warn!("e2e seed: help tour visit query failed: {err}");
+            return 0;
+        }
+    };
+    let mut deleted = 0usize;
+    for row in &rows {
+        let Some(id) = row.id().map(bare_record_id) else {
+            continue;
+        };
+        let backend = match system.backend_for_table(TABLE) {
+            Ok(backend) => backend,
+            Err(err) => {
+                log::warn!("e2e seed: help tour visit backend lookup failed: {err}");
+                continue;
+            }
+        };
+        match valence::delete_record(backend.as_ref(), TABLE, &id, valence::use_!(r"**Test:** Fixture help tour visit hard-delete for `seed` so the suite can reset tour progress between runs. CI and developers running the suite only.")).await {
+            Ok(()) => {
+                valence::read_cache::invalidate(TABLE, &id);
+                deleted = deleted.saturating_add(1);
+            }
+            Err(err) => log::warn!("e2e seed: help tour visit {id} delete failed: {err}"),
+        }
+    }
     deleted
 }
 
@@ -411,6 +457,11 @@ pub async fn seed_data(
     } else {
         wipe_recipient_notifications(&system, recipient.clone()).await
     };
+
+    if body.help_tour {
+        let cleared = wipe_help_tour_visits(&system, recipient.clone()).await;
+        log::info!("e2e seed: cleared {cleared} help tour visits");
+    }
 
     let mut minted = Vec::with_capacity(body.notifications.len());
     for row in &body.notifications {
