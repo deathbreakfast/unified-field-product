@@ -50,6 +50,35 @@ test.describe("pw-shell", () => {
 });
 
 test.describe("pw-app-bar", () => {
+  test("pw-app-bar-persists-across-app-navigation-happy", async ({ page }) => {
+    // Seeding marks the Help tour steps seen; otherwise /apps opens a spotlight backdrop.
+    await seedAuth(page, "authenticated_verified");
+    await page.goto("/");
+    await waitForHydrated(page);
+    const bar = page.getByTestId("app-bar");
+    await expect(bar).toBeVisible({ timeout: 60_000 });
+    await bar.evaluate((el) => el.setAttribute("data-mounted-marker", "first"));
+
+    const openNav = async (testId: string) => {
+      const link = page.getByTestId(testId);
+      if (!(await link.isVisible())) {
+        await page.getByRole("button", { name: /expand navigation/i }).click();
+      }
+      await link.click();
+    };
+
+    await openNav("nav-apps");
+    await expect(page).toHaveURL(/\/apps$/);
+    await expect(bar).toContainText("Apps");
+    await expect(bar).toHaveAttribute("data-mounted-marker", "first");
+
+    await openNav("nav-welcome");
+    await expect(page).toHaveURL(/\/welcome/);
+    await expect(bar).toContainText("Welcome");
+    await expect(bar).toHaveAttribute("data-mounted-marker", "first");
+    await expect(page.getByTestId("unified-field-shell-layout")).toHaveCount(1);
+  });
+
   test("pw-app-bar-default-utilities-happy", async ({ page }) => {
     await page.goto("/");
     await waitForHydrated(page);
