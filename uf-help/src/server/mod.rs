@@ -122,7 +122,10 @@ pub async fn help_mark_steps_seen(
     {
         mark_steps_seen_ssr(&steps, &local_visits)
             .await
-            .map_err(crate::HelpError::into_server_fn_error)
+            .map_err(|e| {
+                tracing::error!(error = %e, steps = steps.len(), "help_mark_steps_seen failed");
+                e.into_server_fn_error()
+            })
     }
     #[cfg(not(feature = "ssr"))]
     {

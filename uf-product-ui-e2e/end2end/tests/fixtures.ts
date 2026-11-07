@@ -180,6 +180,7 @@ export async function seedAuth(
     data: {
       auth,
       usage_viewer: opts?.usage_viewer,
+      help_tour: helpTour,
       welcome_admin: opts?.welcome_admin ?? false,
       permission_allow: opts?.permission_allow ?? false,
       page_views: opts?.page_views ?? [],

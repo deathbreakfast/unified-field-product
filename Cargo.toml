@@ -192,7 +192,7 @@ uuid = { version = "1", features = ["v4", "serde"] }
 url = "2"
 dashmap = "5"
 log = "0.4"
-tracing = { version = "0.1", default-features = false, features = ["std", "attributes"] }
+tracing = { version = "0.1", default-features = false, features = ["std", "attributes", "log"] }
 
 [[workspace.metadata.leptos]]
 name = "shell-chrome-host"
