@@ -7,8 +7,8 @@ use serde::Deserialize;
 use serde_json::json;
 use spectra::try_log_event_at;
 use tower_sessions::Session;
-use uf_product::generated::HelpTourStepVisit;
 use uf_notifications_core::{send_notification, Notification, SendNotification};
+use uf_product::generated::HelpTourStepVisit;
 use uf_product::telemetry::usage::{E2E_USAGE_VIEWER_SESSION_KEY, PAGE_VIEW_LOG_TABLE};
 use uf_product::workspace_search::{SearchDocumentDraft, SearchDocumentWriter};
 use valence::{Actor, Model, RecordId, RecordPredicate};
@@ -250,8 +250,12 @@ async fn wipe_help_tour_visits(system: &valence::Valence, recipient: RecordId) -
         let Some(id) = row.id().map(bare_record_id) else {
             continue;
         };
-        let Ok(backend) = system.backend_for_table(TABLE) else {
-            continue;
+        let backend = match system.backend_for_table(TABLE) {
+            Ok(backend) => backend,
+            Err(err) => {
+                log::warn!("e2e seed: help tour visit backend lookup failed: {err}");
+                continue;
+            }
         };
         match valence::delete_record(backend.as_ref(), TABLE, &id, valence::use_!(r"**Test:** Fixture help tour visit hard-delete for `seed` so the suite can reset tour progress between runs. CI and developers running the suite only.")).await {
             Ok(()) => {
