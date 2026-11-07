@@ -319,6 +319,57 @@ test.describe("pw-search-picker", () => {
     });
   });
 
+  test("pw-search-picker-custom-row-renders-happy", async ({ page }) => {
+    await page.goto("/");
+    await waitForHydrated(page);
+    const combobox = page.getByTestId("custom-row-search").getByRole("combobox");
+    await expect(combobox).toBeVisible({ timeout: 60_000 });
+    await combobox.click();
+    const rows = page.getByTestId("custom-row");
+    await expect(rows).toHaveCount(2, { timeout: 30_000 });
+    await expect(rows.filter({ hasText: "Ada Lovelace" }).getByTestId("custom-row-image")).toHaveCount(1);
+    await expect(page.getByText("hidden-by-custom-row")).toHaveCount(0);
+  });
+
+  test("pw-search-picker-custom-row-no-image-sad", async ({ page }) => {
+    await page.goto("/");
+    await waitForHydrated(page);
+    const combobox = page.getByTestId("custom-row-search").getByRole("combobox");
+    await expect(combobox).toBeVisible({ timeout: 60_000 });
+    await combobox.click();
+    const plain = page.getByTestId("custom-row").filter({ hasText: "Bo Plain" });
+    await expect(plain).toBeVisible({ timeout: 30_000 });
+    await expect(plain.getByTestId("custom-row-image")).toHaveCount(0);
+  });
+
+  test("pw-search-picker-custom-row-keyboard-select-happy", async ({ page }) => {
+    await page.goto("/");
+    await waitForHydrated(page);
+    const search = page.getByTestId("custom-row-search");
+    const combobox = search.getByRole("combobox");
+    await expect(combobox).toBeVisible({ timeout: 60_000 });
+    await combobox.click();
+    await expect(page.getByTestId("custom-row")).toHaveCount(2, { timeout: 30_000 });
+    await expect(search.getByTestId("custom-value")).toHaveCount(0);
+    await combobox.press("ArrowDown");
+    await combobox.press("Enter");
+    await expect(search.getByTestId("custom-value")).toHaveText(/Ada Lovelace|Bo Plain/);
+    await expect(combobox).toHaveValue(/Ada Lovelace|Bo Plain/);
+  });
+
+  test("pw-search-picker-default-rows-have-no-selected-row-sad", async ({ page }) => {
+    await page.goto("/");
+    await waitForHydrated(page);
+    const search = page.getByTestId("shell-chrome-search");
+    const combobox = search.getByRole("combobox");
+    await expect(combobox).toBeVisible({ timeout: 60_000 });
+    await combobox.click();
+    await expect(page.getByRole("option", { name: /Beacon Alpha/i })).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId("custom-row")).toHaveCount(0);
+    await page.getByRole("option", { name: /Beacon Alpha/i }).click();
+    await expect(search.getByTestId("search-source-picker-selected")).toHaveCount(0);
+  });
+
   test("pw-search-picker-local-filter-hides-server-match-sad", async ({ page }) => {
     await page.goto("/");
     await waitForHydrated(page);
