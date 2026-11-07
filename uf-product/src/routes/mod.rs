@@ -70,6 +70,7 @@
 //! Route path listing: `app_route_paths`. Axum middleware gate: `auth_shell_host`.
 
 mod access_gate;
+mod nav_item;
 mod referer;
 #[cfg(feature = "ssr")]
 mod registration;
@@ -78,6 +79,7 @@ mod require_authenticated;
 pub use access_gate::{
     provide_access_gate_state, suppress_help_tour, use_access_gate_active, AccessGateActive,
 };
+pub use nav_item::AppNavItem;
 pub use referer::{
     auth_path_with_referer, auth_signin_href, auth_signup_href, parse_referer_from_search,
     sanitize_referer_path,

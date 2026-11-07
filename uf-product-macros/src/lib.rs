@@ -186,7 +186,8 @@ mod server;
 /// | `route_path` | yes | Primary prefix, e.g. `"/counter"` |
 /// | `permission_manifest` | no | Path to an `AppPermissionManifestProvider` |
 /// | `brand_seed` | no | Optional `#RRGGBB` override |
-/// | `permissions`, `navigation` | no | Accepted for forward compatibility; not expanded yet |
+/// | `navigation` | no | Array of `(label, path, icon_key, visibility)` string tuples; `visibility` is `"always"` or `"signed_in"`. Expands to `AppMetadata::navigation()` |
+/// | `permissions` | no | Accepted for forward compatibility; not expanded yet |
 ///
 /// \* Codegen skips packages that omit `routes`.
 ///
@@ -204,6 +205,26 @@ mod server;
 ///     routes: CounterRoutes,
 ///     route_path: "/counter",
 /// }
+/// ```
+///
+/// Declare the sidebar once and render it with `uf_integrations::AppNavLinks`:
+///
+/// ```rust,ignore
+/// uf_app! {
+///     name: "Magnon",
+///     id: "magnon",
+///     description: "Tasks and goals",
+///     icon: "📋",
+///     version: "0.1.0",
+///     route_path: "/magnon",
+///     navigation: [
+///         ("Home", "/magnon", "home", "always"),
+///         ("My tasks", "/magnon/tasks", "task-list", "signed_in"),
+///     ],
+/// }
+///
+/// // In the layout, inside NavigationBody:
+/// // <AppNavLinks items=AppMetadata::navigation() />
 /// ```
 #[proc_macro]
 pub fn uf_app(input: TokenStream) -> TokenStream {
