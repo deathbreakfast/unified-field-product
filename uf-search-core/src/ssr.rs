@@ -202,6 +202,7 @@ mod tests {
             title: "Apps".into(),
             description: Some("Apps directory".into()),
             kind: "app".into(),
+            image_url: None,
         };
         assert_eq!(item.source_id, "apps");
         assert_eq!(item.kind, "app");
@@ -216,6 +217,7 @@ mod tests {
             title: "X".into(),
             description: None,
             kind: "app".into(),
+            image_url: None,
         };
         assert!(item.description.is_none());
     }
@@ -246,6 +248,7 @@ mod registry_query_tests {
                     title: "Alpha One".into(),
                     description: None,
                     kind: "stub".into(),
+                    image_url: None,
                 }];
                 items.truncate(max_results as usize);
                 Ok(items)
@@ -268,6 +271,7 @@ mod registry_query_tests {
                         title: "Beta One".into(),
                         description: None,
                         kind: "stub".into(),
+                        image_url: None,
                     },
                     SearchSourceItem {
                         source_id: "beta".into(),
@@ -275,6 +279,7 @@ mod registry_query_tests {
                         title: "Beta Two".into(),
                         description: None,
                         kind: "stub".into(),
+                        image_url: None,
                     },
                 ];
                 items.truncate(max_results as usize);

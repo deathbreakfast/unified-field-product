@@ -22,6 +22,7 @@ fn mock_preview_principals(query: Option<&str>, limit_per_source: u32) -> Vec<Se
             title: "Ada Lovelace (ada001)".to_string(),
             description: Some("User account".to_string()),
             kind: "user".to_string(),
+            image_url: None,
         },
         SearchSourceItem {
             source_id: "user_search_source".to_string(),
@@ -29,6 +30,7 @@ fn mock_preview_principals(query: Option<&str>, limit_per_source: u32) -> Vec<Se
             title: "Grace Hopper (grace0)".to_string(),
             description: Some("User account".to_string()),
             kind: "user".to_string(),
+            image_url: None,
         },
         SearchSourceItem {
             source_id: "permission_group_search_source".to_string(),
@@ -36,6 +38,7 @@ fn mock_preview_principals(query: Option<&str>, limit_per_source: u32) -> Vec<Se
             title: "Ops Reviewers".to_string(),
             description: Some("Mock permission group".to_string()),
             kind: "permission_group".to_string(),
+            image_url: None,
         },
         SearchSourceItem {
             source_id: "permission_group_search_source".to_string(),
@@ -43,6 +46,7 @@ fn mock_preview_principals(query: Option<&str>, limit_per_source: u32) -> Vec<Se
             title: "Docs Readers".to_string(),
             description: Some("Mock permission group".to_string()),
             kind: "permission_group".to_string(),
+            image_url: None,
         },
     ];
     all.into_iter()

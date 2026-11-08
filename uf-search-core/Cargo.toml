@@ -23,6 +23,7 @@ default = []
 ssr = ["dep:anyhow", "dep:valence", "dep:quark"]
 
 [dev-dependencies]
+serde_json = { workspace = true }
 tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }
 
 [[example]]

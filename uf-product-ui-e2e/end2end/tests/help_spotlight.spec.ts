@@ -9,11 +9,19 @@ import {
 } from "./fixtures";
 
 async function openHelpMenu(page: import("@playwright/test").Page) {
-  await page
-    .getByTestId("app-bar-help")
-    .getByRole("button", { name: /^Help$/i })
-    .click({ force: true });
-  await expect(page.getByTestId("help-menu-panel")).toBeVisible();
+  const trigger = page.getByTestId("app-bar-help").getByRole("button", { name: /^Help$/i });
+  // The app bar can still be laying out right after a tour closes, so the
+  // trigger is briefly present but not visible. Retry only the click, and skip
+  // it once the menu is open so a retry cannot toggle the panel closed.
+  const panel = page.getByTestId("help-menu-panel");
+  await expect(async () => {
+    if (await panel.isVisible()) {
+      return;
+    }
+    await expect(trigger).toBeVisible({ timeout: 5_000 });
+    await trigger.click({ timeout: 5_000 });
+    await expect(panel).toBeVisible({ timeout: 5_000 });
+  }).toPass({ timeout: 30_000 });
 }
 
 async function completeVisibleTour(page: import("@playwright/test").Page) {
@@ -195,6 +203,29 @@ test.describe("help-spotlight", () => {
     await waitForHydrated(page);
     await expect(page.getByTestId("help-step-welcome-featured")).toBeVisible({ timeout: 60_000 });
     await expect(page.locator("#welcome-featured-card")).toBeVisible();
+  });
+});
+
+test.describe("help-tour-finish", () => {
+  test("help-tour-finish-mark-seen-ok", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 720 });
+    const statuses: number[] = [];
+    const consoleErrors: string[] = [];
+    page.on("response", (r) => {
+      if (r.url().includes("help_mark_steps_seen")) statuses.push(r.status());
+    });
+    page.on("console", (m) => {
+      if (m.type() === "error") consoleErrors.push(m.text());
+    });
+    await seedAuth(page, "authenticated_verified", { help_tour: true });
+    await page.goto("/welcome", { waitUntil: "domcontentloaded" });
+    await waitForHydrated(page);
+    await expect(page.getByTestId("help-step-welcome-featured")).toBeVisible({ timeout: 60_000 });
+    await completeVisibleTour(page);
+    await expect.poll(() => statuses.length, { timeout: 15_000 }).toBeGreaterThan(0);
+    expect(statuses.every((s) => s === 200)).toBe(true);
+    await page.getByTestId("nav-notifications-inbox").click({ force: true }).catch(() => {});
+    expect(consoleErrors.filter((e) => /closure invoked recursively/.test(e))).toEqual([]);
   });
 });
 
