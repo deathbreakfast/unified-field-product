@@ -69,8 +69,42 @@ fn group_options(
     groups
 }
 
+/// Resolve selected option keys to items: the current rows first, then the items
+/// already resolved (a new search can drop a selected row), then the external value.
+/// Keys that match none of them are dropped.
+fn resolve_selected(
+    keys: &[String],
+    options: &[SearchSourceItem],
+    previous: &[SearchSourceItem],
+    value: Option<&SearchSourceItem>,
+) -> Vec<SearchSourceItem> {
+    keys.iter()
+        .filter_map(|key| {
+            options
+                .iter()
+                .chain(previous)
+                .chain(value)
+                .find(|item| option_key(item) == *key)
+                .cloned()
+        })
+        .collect()
+}
+
 #[component]
-fn SearchSourceOptionRow(item: SearchSourceItem) -> impl IntoView {
+fn SearchSourceOptionRow(
+    item: SearchSourceItem,
+    option_view: Option<Callback<SearchSourceItem, AnyView>>,
+) -> impl IntoView {
+    if let Some(render) = option_view {
+        let key = option_key(&item);
+        let text = item.title.clone();
+        return view! {
+            <ComboboxOption text=text value=key>
+                {render.run(item)}
+            </ComboboxOption>
+        }
+        .into_any();
+    }
     let key = option_key(&item);
     let title = item.title.clone();
     let kind = item.kind.clone();
@@ -86,6 +120,7 @@ fn SearchSourceOptionRow(item: SearchSourceItem) -> impl IntoView {
             </Flex>
         </ComboboxOption>
     }
+    .into_any()
 }
 
 /// Search Source Picker
@@ -101,6 +136,11 @@ fn SearchSourceOptionRow(item: SearchSourceItem) -> impl IntoView {
 ///
 /// Rows are shown as the server returned them; set `local_filter` to also
 /// filter by title on the client.
+///
+/// Set `option_view` to draw each option yourself (an avatar row, say) instead of
+/// the default title and description. Selection, grouping and keyboard behavior
+/// are unchanged. Set `value_view` to show each selected item in a row under the
+/// input; the input itself keeps showing the title text.
 ///
 /// # Examples
 ///
@@ -164,6 +204,12 @@ pub fn SearchSourcePicker(
     /// sources that return every row regardless of the query.
     #[prop(default = false)]
     local_filter: bool,
+    /// Custom view for each option. Defaults to the title and description rows.
+    #[prop(optional)]
+    option_view: Option<Callback<SearchSourceItem, AnyView>>,
+    /// Custom view for each selected item, shown in a row under the input.
+    #[prop(optional)]
+    value_view: Option<Callback<SearchSourceItem, AnyView>>,
 ) -> impl IntoView {
     let query = RwSignal::new(String::new());
     let selected_options = RwSignal::new(Vec::<String>::new());
@@ -229,6 +275,21 @@ pub fn SearchSourcePicker(
         }
     });
 
+    // Keep the selected items so `value_view` survives a search replacing the rows:
+    // the memo's previous value stands in for rows that are no longer listed.
+    let selected_items = Memo::new(move |prev: Option<&Vec<SearchSourceItem>>| {
+        let keys = selected_options.get();
+        let rows = options.get();
+        value.with(|v| {
+            resolve_selected(
+                &keys,
+                &rows,
+                prev.map(Vec::as_slice).unwrap_or_default(),
+                v.as_ref(),
+            )
+        })
+    });
+
     let placeholder_text = move || {
         placeholder
             .get()
@@ -269,7 +330,7 @@ pub fn SearchSourcePicker(
                                     key=|item| option_key(item)
                                     let:item
                                 >
-                                    <SearchSourceOptionRow item=item />
+                                    <SearchSourceOptionRow item=item option_view=option_view />
                                 </For>
                             </ComboboxOptionGroup>
                         }
@@ -281,6 +342,48 @@ pub fn SearchSourcePicker(
                     </ComboboxOption>
                 </Show>
             </Combobox>
+            {value_view.map(|render| view! {
+                <div data-testid="search-source-picker-selected">
+                    <Flex gap=FlexGap::Small>
+                        <For
+                            each=move || selected_items.get()
+                            key=option_key
+                            let:item
+                        >
+                            {render.run(item)}
+                        </For>
+                    </Flex>
+                </div>
+            })}
         </div>
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn item(id: &str) -> SearchSourceItem {
+        SearchSourceItem {
+            source_id: "s".into(),
+            id: id.into(),
+            title: id.into(),
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn resolve_selected_prefers_rows_then_previous_then_value_happy_path() {
+        let keys = vec!["s:a".to_string(), "s:b".to_string(), "s:c".to_string()];
+        let got = resolve_selected(&keys, &[item("a")], &[item("b")], Some(&item("c")));
+        let ids: Vec<_> = got.iter().map(|i| i.id.as_str()).collect();
+        assert_eq!(ids, ["a", "b", "c"]);
+    }
+
+    #[test]
+    fn resolve_selected_drops_unknown_keys_sad_path() {
+        let keys = vec!["s:gone".to_string()];
+        assert!(resolve_selected(&keys, &[item("a")], &[], None).is_empty());
+        assert!(resolve_selected(&[], &[item("a")], &[item("a")], None).is_empty());
     }
 }
