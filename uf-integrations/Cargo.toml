@@ -35,6 +35,7 @@ orbital-theme = { workspace = true, default-features = false }
 uf-search-core = { workspace = true, default-features = false }
 orbital-paging = { workspace = true, default-features = false, features = ["leptos"] }
 inventory = { workspace = true }
+tracing = { workspace = true }
 
 [features]
 default = ["full"]

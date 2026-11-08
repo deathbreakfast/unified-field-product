@@ -514,6 +514,7 @@ pub use permissions::PermissionSpec;
 
 #[cfg(feature = "ssr")]
 pub use quark::inventory;
+pub use routes::AppNavItem;
 #[cfg(feature = "ssr")]
 pub use routes::AppRegistration;
 #[cfg(feature = "ssr")]
