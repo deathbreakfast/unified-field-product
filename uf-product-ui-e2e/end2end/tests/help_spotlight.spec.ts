@@ -198,6 +198,29 @@ test.describe("help-spotlight", () => {
   });
 });
 
+test.describe("help-tour-finish", () => {
+  test("help-tour-finish-mark-seen-ok", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 720 });
+    const statuses: number[] = [];
+    const consoleErrors: string[] = [];
+    page.on("response", (r) => {
+      if (r.url().includes("help_mark_steps_seen")) statuses.push(r.status());
+    });
+    page.on("console", (m) => {
+      if (m.type() === "error") consoleErrors.push(m.text());
+    });
+    await seedAuth(page, "authenticated_verified", { help_tour: true });
+    await page.goto("/welcome", { waitUntil: "domcontentloaded" });
+    await waitForHydrated(page);
+    await expect(page.getByTestId("help-step-welcome-featured")).toBeVisible({ timeout: 60_000 });
+    await completeVisibleTour(page);
+    await expect.poll(() => statuses.length, { timeout: 15_000 }).toBeGreaterThan(0);
+    expect(statuses.every((s) => s === 200)).toBe(true);
+    await page.getByTestId("nav-notifications-inbox").click({ force: true }).catch(() => {});
+    expect(consoleErrors.filter((e) => /closure invoked recursively/.test(e))).toEqual([]);
+  });
+});
+
 test.describe("help-spotlight-deferred", () => {
   const ROUTE = "/help-fixture/deferred";
   const INTRO = { testid: "help-step-deferred-intro", anchor: null };
