@@ -11,11 +11,16 @@ import {
 async function openHelpMenu(page: import("@playwright/test").Page) {
   const trigger = page.getByTestId("app-bar-help").getByRole("button", { name: /^Help$/i });
   // The app bar can still be laying out right after a tour closes, so the
-  // trigger is briefly present but not visible. Retry until the menu opens.
+  // trigger is briefly present but not visible. Retry only the click, and skip
+  // it once the menu is open so a retry cannot toggle the panel closed.
+  const panel = page.getByTestId("help-menu-panel");
   await expect(async () => {
+    if (await panel.isVisible()) {
+      return;
+    }
     await expect(trigger).toBeVisible({ timeout: 5_000 });
-    await trigger.click({ force: true, timeout: 5_000 });
-    await expect(page.getByTestId("help-menu-panel")).toBeVisible({ timeout: 5_000 });
+    await trigger.click({ timeout: 5_000 });
+    await expect(panel).toBeVisible({ timeout: 5_000 });
   }).toPass({ timeout: 30_000 });
 }
 
