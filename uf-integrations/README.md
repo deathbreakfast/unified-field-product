@@ -49,6 +49,13 @@ fn AppShell(children: Children) -> impl IntoView {
 Pass `<AppBarUtilities slot>...</AppBarUtilities>` on `UnifiedFieldAppBar` to replace
 the default offering pack with host children.
 
+To keep one shell mounted while people move between apps, put `RoutedAppBar` in the
+shell's `ShellAppBar` slot and nest the app routes (`UfAppsRoutes`, `UfWelcomeRoutes`,
+`NotificationsRoutes`) under the route that renders the shell. `RoutedAppBar` reads the
+current app from the same route table you give `PageViewTracker`, so the app bar and its
+notifications socket stay mounted and only the name and avatar change. The app layouts
+detect the mounted shell and render just their routed content; the host's left nav applies.
+
 Runnable host with layout, app bar, search picker, coming-soon, and 404 on one tree:
 [`examples/shell-chrome-host`](../examples/shell-chrome-host/).
 

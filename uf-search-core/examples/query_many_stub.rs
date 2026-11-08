@@ -42,6 +42,7 @@ impl SearchSourceProvider for StubBeaconProvider {
                     title: "Beacon Alpha".into(),
                     description: Some("Teaching stub hit".into()),
                     kind: "beacon".into(),
+                    image_url: None,
                 },
                 SearchSourceItem {
                     source_id: "beacons".into(),
@@ -49,6 +50,7 @@ impl SearchSourceProvider for StubBeaconProvider {
                     title: "Beacon Beta".into(),
                     description: None,
                     kind: "beacon".into(),
+                    image_url: None,
                 },
             ];
             let hits: Vec<_> = all

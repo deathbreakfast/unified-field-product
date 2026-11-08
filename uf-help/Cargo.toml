@@ -51,5 +51,6 @@ ssr = [
     "dep:chrono",
     "dep:reqwest",
     "dep:valence",
+    "dep:tracing",
 ]
-photon = ["ssr", "dep:photon", "dep:tracing", "dep:futures"]
+photon = ["ssr", "dep:photon", "dep:futures"]
