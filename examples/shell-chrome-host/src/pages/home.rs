@@ -17,6 +17,7 @@ pub fn HomePage() -> impl IntoView {
             title: "Beacon Alpha".into(),
             description: Some("Stub option for the shell host".into()),
             kind: "beacon".into(),
+            image_url: None,
         },
         SearchSourceItem {
             source_id: "beacons".into(),
@@ -24,6 +25,7 @@ pub fn HomePage() -> impl IntoView {
             title: "Beacon Beta".into(),
             description: None,
             kind: "beacon".into(),
+            image_url: None,
         },
     ]);
     let options_sig: Signal<Vec<SearchSourceItem>> = options.into();

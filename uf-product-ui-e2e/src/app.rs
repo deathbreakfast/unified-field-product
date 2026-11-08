@@ -6,8 +6,8 @@ use leptos_router::components::{Outlet, ParentRoute, Redirect, Route, Router, Ro
 use leptos_router::path;
 use uf_apps::UfAppsRoutes;
 use uf_integrations::{
-    provide_shell_auth_menu, HostAuthMenu, ShellAppBar, ShellAuthMenu, ShellFloatingActions,
-    ShellLeftNav, UnifiedFieldAppBar, UnifiedFieldShellLayout,
+    provide_shell_auth_menu, RoutedAppBar, ShellAppBar, ShellFloatingActions, ShellLeftNav,
+    UnifiedFieldShellLayout,
 };
 use uf_notifications::NotificationsRoutes;
 use uf_product::components::{
@@ -87,6 +87,9 @@ pub fn App() -> impl IntoView {
                             <Route path=path!("gate/permission") view=GatePermissionPage />
                             <Route path=path!("gate/permission-allow") view=GatePermissionAllowPage />
                             <Route path=path!("help-fixture/deferred") view=HelpFixtureDeferredPage />
+                            <UfAppsRoutes />
+                            <UfWelcomeRoutes />
+                            <NotificationsRoutes />
                         </ParentRoute>
                         <Route path=path!("utilities-override") view=UtilitiesOverridePage />
                         <Route path=path!("coming-soon") view=ComingSoonDemoPage />
@@ -100,9 +103,6 @@ pub fn App() -> impl IntoView {
                             />
                             <Route path=path!("signin") view=AuthSignInPage />
                         </ParentRoute>
-                        <UfAppsRoutes />
-                        <UfWelcomeRoutes />
-                        <NotificationsRoutes />
                     </Routes>
                 </Router>
             </E2eAuthProvider>
@@ -118,11 +118,7 @@ fn ChromeShell() -> impl IntoView {
     view! {
         <UnifiedFieldShellLayout>
             <ShellAppBar slot>
-                <UnifiedFieldAppBar app_name="Product UI e2e".to_string()>
-                    <ShellAuthMenu slot:auth_menu>
-                        <HostAuthMenu />
-                    </ShellAuthMenu>
-                </UnifiedFieldAppBar>
+                <RoutedAppBar routes=E2E_ROUTE_TABLE fallback_name="Product UI e2e" />
             </ShellAppBar>
             <ShellLeftNav slot>
                 // Thin testid wrapper only — layout comes from Orbital Navigation.
