@@ -1,7 +1,7 @@
 use leptos::prelude::*;
 use leptos_router::components::Outlet;
 use uf_integrations::{
-    HostAuthMenu, ShellAppBar, ShellAuthMenu, ShellLeftNav, UnifiedFieldAppBar,
+    HostAuthMenu, ShellAppBar, ShellAuthMenu, ShellLeftNav, ShellMounted, UnifiedFieldAppBar,
     UnifiedFieldShellLayout,
 };
 use uf_product::components::{
@@ -15,8 +15,14 @@ use crate::AppMetadata;
 /// [`Outlet`] for the inbox page.
 ///
 /// Auth menu comes from the host via [`uf_integrations::provide_shell_auth_menu`].
+///
+/// When the host already mounted a shell above (see [`uf_integrations::ShellMounted`]),
+/// this layout renders only the routed content so the host's app bar and nav stay mounted.
 #[component]
 pub fn NotificationsLayout() -> impl IntoView {
+    if use_context::<ShellMounted>().is_some() {
+        return view! { <Outlet /> }.into_any();
+    }
     let app_name = AppMetadata::name().to_string();
     let selected_value = RwSignal::new(None::<String>);
     let open_categories = RwSignal::new(Vec::<String>::new());
@@ -47,4 +53,5 @@ pub fn NotificationsLayout() -> impl IntoView {
             <Outlet />
         </UnifiedFieldShellLayout>
     }
+    .into_any()
 }
