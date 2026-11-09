@@ -355,7 +355,7 @@ async fn list_visits_ssr(pathname: &str) -> Result<Vec<HelpVisitRecord>, crate::
             route: row.route().clone(),
             feature_highlight: row.feature_highlight().clone(),
             spotlight: row.spotlight().cloned(),
-            replay: crate::service::replay_from_stored(row.replay()),
+            replay: *row.replay(),
         }));
     }
 
@@ -422,11 +422,10 @@ async fn upsert_visit(
         .await
         .map_err(|e| crate::HelpError::Storage(e.to_string()))?;
 
-    let replay_s = crate::service::replay_to_stored(replay);
     if let Some(row) = existing {
         let mut mutable = row
             .get_mutable(v, valence::use_!(r"In **server**, we **update this data** so later steps see the latest values for this workflow. Callers allowed for **server** use the updated data; this is not a public export of unrelated fields."))
-            .set_replay(replay_s)
+            .set_replay(replay)
             .map_err(|e| crate::HelpError::Storage(e.to_string()))?;
         if let Some(spotlight) = &step.spotlight {
             mutable = mutable
@@ -445,7 +444,7 @@ async fn upsert_visit(
             step.route.clone(),
             step.feature_highlight.clone(),
             step.spotlight.clone(),
-            replay_s,
+            replay,
             now,
             now,
         )
@@ -492,7 +491,7 @@ async fn request_replay_ssr(pathname: &str) -> Result<(), crate::HelpError> {
 
         for row in rows {
             row.get_mutable(&v, valence::use_!(r"In **server**, we **update this data** so later steps see the latest values for this workflow. Callers allowed for **server** use the updated data; this is not a public export of unrelated fields."))
-                .set_replay(crate::service::replay_to_stored(true))
+                .set_replay(true)
                 .map_err(|e| crate::HelpError::Storage(e.to_string()))?
                 .set_updated_at(now)
                 .map_err(|e| crate::HelpError::Storage(e.to_string()))?
