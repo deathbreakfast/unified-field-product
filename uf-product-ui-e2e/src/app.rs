@@ -6,7 +6,8 @@ use leptos_router::components::{Outlet, ParentRoute, Redirect, Route, Router, Ro
 use leptos_router::path;
 use uf_apps::UfAppsRoutes;
 use uf_integrations::{
-    provide_shell_auth_menu, RoutedAppBar, ShellAppBar, ShellLeftNav, UnifiedFieldShellLayout,
+    provide_shell_auth_menu, RoutedAppBar, ShellAppBar, ShellFloatingActions, ShellLeftNav,
+    UnifiedFieldShellLayout,
 };
 use uf_notifications::NotificationsRoutes;
 use uf_product::components::{
@@ -69,6 +70,7 @@ pub fn App() -> impl IntoView {
     uf_notifications::ensure_notification_bell_linked();
     uf_notifications::ensure_help_steps_linked();
     crate::help_steps::ensure_help_steps_linked();
+    crate::fam_fixture::ensure_fam_fixture_linked();
 
     view! {
         <OrbitalTemplate>
@@ -138,6 +140,7 @@ fn ChromeShell() -> impl IntoView {
                     </Navigation>
                 </div>
             </ShellLeftNav>
+            <ShellFloatingActions slot />
             <Outlet />
         </UnifiedFieldShellLayout>
     }

@@ -258,6 +258,7 @@ pub use host_notification_bell::{
 pub use not_found_page::UnifiedFieldNotFoundPage;
 pub use search_source_picker::SearchSourcePicker;
 pub use shell_layout::{
-    ShellAppBar, ShellLeftNav, ShellMounted, ShellSidebarToggle, UnifiedFieldShellLayout,
+    ShellAppBar, ShellFloatingActions, ShellLeftNav, ShellMounted, ShellSidebarToggle,
+    UnifiedFieldShellLayout,
 };
 pub use workspace_search::{WorkspaceSearch, WorkspaceSearchDialog, WorkspaceSearchMobileTrigger};

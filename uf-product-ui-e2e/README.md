@@ -28,6 +28,8 @@ real `AuthContext` (harness session keys — not a duplicate of lepton auth funn
 | `pw-workspace-search-mobile-select-happy` | happy | Compact trigger → Dialog → navigate |
 | `pw-workspace-search-mobile-no-match-sad` | sad | Compact Dialog no matches |
 | `pw-workspace-search-unauth-sad` | sad | Anonymous: AppBar search disabled (`Sign in to search`) |
+| `pw-shell-fam-item-{desktop-light,desktop-dark,phone}-happy` | happy | `/` shows the "Page actions" FAB; opening it shows the fixture item; selecting it posts the "E2E fixture action ran" toast and closes the menu |
+| `pw-shell-fam-absent-{desktop-light,desktop-dark,phone}-sad` | sad | `/utilities-override` (shell without `ShellFloatingActions`) renders no FAB and no fixture item |
 | `pw-coming-soon-page-happy` | happy | Coming soon page testid |
 | `pw-not-found-page-happy` | happy | Not found page testid |
 | `pw-auth-gate-unauthenticated-sad` | sad | Sign-in gate dialog on `/welcome` |
