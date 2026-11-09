@@ -475,7 +475,6 @@ pub async fn seed_data(
                 url: row.url.clone(),
                 data_json: None,
                 subject: None,
-                subject: None,
             },
             &system,
         )
