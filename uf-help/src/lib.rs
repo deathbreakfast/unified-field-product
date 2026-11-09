@@ -226,8 +226,8 @@ pub use server::{
 };
 pub use service::{
     apply_replay_for_route, compute_pending, local_mark_steps_seen, local_request_replay_for_route,
-    merge_local_into_server, read_local_visits, read_local_visits_for_route, replay_from_stored,
-    replay_to_stored, write_local_visits, HelpStepKey, HelpVisitRecord, LOCAL_STORAGE_KEY,
+    merge_local_into_server, read_local_visits, read_local_visits_for_route, write_local_visits,
+    HelpStepKey, HelpVisitRecord, LOCAL_STORAGE_KEY,
 };
 pub use step_inventory::{
     collect_help_steps, collect_help_steps_for_route, inventory_route_keys_for_pathname,

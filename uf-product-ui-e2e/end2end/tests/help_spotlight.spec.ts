@@ -41,6 +41,8 @@ async function completeVisibleTour(page: import("@playwright/test").Page) {
     }
   }
   await expect(footer).toHaveCount(0, { timeout: 30_000 });
+  // Progress saves to the server in the background; let it land before the next navigation.
+  await page.waitForLoadState("networkidle");
 }
 
 test.describe("help-spotlight", () => {

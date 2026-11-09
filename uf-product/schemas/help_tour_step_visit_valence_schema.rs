@@ -7,7 +7,7 @@ valence_schema! {
     HelpTourStepVisit {
         repository: "https://github.com/unified-field-dev/unified-field-product",
         table: "help_tour_step_visit",
-        version: "0.2.0",
+        version: "0.3.0",
         database: crate::embedded_surreal::IDENTITY_DEFAULT_STORAGE,
         description: "Per-user per-step help tour progress for product spotlight tours",
 
@@ -65,8 +65,9 @@ valence_schema! {
                 required: false,
             },
             replay: {
-                r#type: FieldType::String,
+                r#type: FieldType::Boolean,
                 required: true,
+                default: false,
             },
             first_seen_at: {
                 r#type: FieldType::DateTime,
