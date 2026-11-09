@@ -121,24 +121,22 @@ fn ChromeShell() -> impl IntoView {
                 <RoutedAppBar routes=E2E_ROUTE_TABLE fallback_name="Product UI e2e" />
             </ShellAppBar>
             <ShellLeftNav slot>
-                // Thin testid wrapper only — layout comes from Orbital Navigation.
-                <div data-testid="shell-chrome-left-nav">
-                    <Navigation config=NavigationConfig::new().with_selected_value(selected_value).with_open_categories(open_categories)>
-                        <NavigationMaterial slot />
-                        <NavigationBody slot>
-                            <NavigationLink path="/" value="/" icon=icondata::AiHomeOutlined exact=true test_id="nav-home">"Home"</NavigationLink>
-                            <NavigationLink path="/notifications" value="/notifications" icon=icondata::AiInboxOutlined test_id="nav-notifications-inbox">"Inbox"</NavigationLink>
-                            <NavigationLink path="/coming-soon" value="/coming-soon" icon=icondata::AiClockCircleOutlined test_id="nav-coming-soon">"Coming soon"</NavigationLink>
-                            <NavigationLink path="/404" value="/404" icon=icondata::AiFileUnknownOutlined test_id="nav-not-found">"Not found"</NavigationLink>
-                            <NavigationLink path="/utilities-override" value="/utilities-override" icon=icondata::AiToolOutlined test_id="nav-utilities-override">"Utilities override"</NavigationLink>
-                            <NavigationLink path="/apps" value="/apps" icon=icondata::AiAppstoreOutlined test_id="nav-apps">"Apps"</NavigationLink>
-                            <NavigationLink path="/welcome" value="/welcome" icon=icondata::AiSmileOutlined test_id="nav-welcome">"Welcome"</NavigationLink>
-                            <NavigationLink path="/gate/email" value="/gate/email" icon=icondata::AiMailOutlined test_id="nav-gate-email">"Email gate"</NavigationLink>
-                            <NavigationLink path="/gate/permission" value="/gate/permission" icon=icondata::AiLockOutlined test_id="nav-gate-permission">"Permission gate"</NavigationLink>
-                            <NavigationLink path="/gate/permission-allow" value="/gate/permission-allow" icon=icondata::AiSafetyCertificateOutlined test_id="nav-gate-permission-allow">"Permission allow"</NavigationLink>
-                        </NavigationBody>
-                    </Navigation>
-                </div>
+                // Test id sits on Navigation itself so the drawer CSS sees it as a direct child.
+                <Navigation data_testid="shell-chrome-left-nav" config=NavigationConfig::new().with_selected_value(selected_value).with_open_categories(open_categories)>
+                    <NavigationMaterial slot />
+                    <NavigationBody slot>
+                        <NavigationLink path="/" value="/" icon=icondata::AiHomeOutlined exact=true test_id="nav-home">"Home"</NavigationLink>
+                        <NavigationLink path="/notifications" value="/notifications" icon=icondata::AiInboxOutlined test_id="nav-notifications-inbox">"Inbox"</NavigationLink>
+                        <NavigationLink path="/coming-soon" value="/coming-soon" icon=icondata::AiClockCircleOutlined test_id="nav-coming-soon">"Coming soon"</NavigationLink>
+                        <NavigationLink path="/404" value="/404" icon=icondata::AiFileUnknownOutlined test_id="nav-not-found">"Not found"</NavigationLink>
+                        <NavigationLink path="/utilities-override" value="/utilities-override" icon=icondata::AiToolOutlined test_id="nav-utilities-override">"Utilities override"</NavigationLink>
+                        <NavigationLink path="/apps" value="/apps" icon=icondata::AiAppstoreOutlined test_id="nav-apps">"Apps"</NavigationLink>
+                        <NavigationLink path="/welcome" value="/welcome" icon=icondata::AiSmileOutlined test_id="nav-welcome">"Welcome"</NavigationLink>
+                        <NavigationLink path="/gate/email" value="/gate/email" icon=icondata::AiMailOutlined test_id="nav-gate-email">"Email gate"</NavigationLink>
+                        <NavigationLink path="/gate/permission" value="/gate/permission" icon=icondata::AiLockOutlined test_id="nav-gate-permission">"Permission gate"</NavigationLink>
+                        <NavigationLink path="/gate/permission-allow" value="/gate/permission-allow" icon=icondata::AiSafetyCertificateOutlined test_id="nav-gate-permission-allow">"Permission allow"</NavigationLink>
+                    </NavigationBody>
+                </Navigation>
             </ShellLeftNav>
             <ShellFloatingActions slot />
             <Outlet />

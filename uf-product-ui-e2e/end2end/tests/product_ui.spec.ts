@@ -47,6 +47,38 @@ test.describe("pw-shell", () => {
     await page.getByRole("button", { name: /expand navigation/i }).click();
     await expect(page.getByTestId("shell-chrome-left-nav")).toBeVisible();
   });
+
+  test("pw-shell-route-change-wide-keeps-sidebar-happy", async ({ page }) => {
+    // Seeding marks the Help tour steps seen; its overlay would dismiss the drawer.
+    await seedAuth(page, "authenticated_verified");
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await page.goto("/");
+    await expect(page.getByTestId("unified-field-shell-layout")).toBeVisible({
+      timeout: 60_000,
+    });
+    await waitForHydrated(page);
+    await page.getByRole("button", { name: /expand navigation/i }).click();
+    await expect(page.getByTestId("shell-chrome-left-nav")).toBeVisible();
+    await page.getByTestId("nav-apps").click();
+    await expect(page).toHaveURL(/\/apps$/);
+    await expect(page.getByTestId("shell-chrome-left-nav")).toBeVisible();
+  });
+
+  test("pw-shell-route-change-narrow-closes-drawer-sad", async ({ page }) => {
+    // Seeding marks the Help tour steps seen; its overlay would dismiss the drawer.
+    await seedAuth(page, "authenticated_verified");
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/");
+    await expect(page.getByTestId("unified-field-shell-layout")).toBeVisible({
+      timeout: 60_000,
+    });
+    await waitForHydrated(page);
+    await page.getByRole("button", { name: /expand navigation/i }).click();
+    await expect(page.getByTestId("nav-apps")).toBeVisible();
+    await page.getByTestId("nav-apps").click();
+    await expect(page).toHaveURL(/\/apps$/);
+    await expect(page.getByTestId("nav-apps")).toBeHidden();
+  });
 });
 
 test.describe("pw-app-bar", () => {

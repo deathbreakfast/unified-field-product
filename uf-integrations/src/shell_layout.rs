@@ -25,6 +25,7 @@
 //! mounts [`uf_help::HelpTourPlayer`] beside the layout so hosts do not wire
 //! the player by hand.
 use leptos::prelude::*;
+use orbital_core_components::{use_breakpoint_down, DEFAULT_SIDEBAR_OVERLAY_BREAKPOINT};
 use uf_product::components::{
     AppBarDensity, Layout, LayoutHeader, LayoutMain, LayoutSidebar, SidebarPresentation,
 };
@@ -120,10 +121,14 @@ pub fn UnifiedFieldShellLayout(
     let sidebar_open = RwSignal::new(false);
     // A persistent shell no longer remounts on app-to-app navigation, so close the
     // overlay drawer when the route changes instead of relying on a remount to reset it.
+    // At wide widths `sidebar_open` drives the inline column, which stays as the user left it.
     let pathname = leptos_router::hooks::use_location().pathname;
+    let overlay_mode = use_breakpoint_down(DEFAULT_SIDEBAR_OVERLAY_BREAKPOINT);
     Effect::new(move |_| {
         pathname.track();
-        sidebar_open.set(false);
+        if overlay_mode.get_untracked() {
+            sidebar_open.set(false);
+        }
     });
     let show_sidebar_toggle = shell_left_nav.is_some();
     provide_context(ShellSidebarToggle(show_sidebar_toggle));
