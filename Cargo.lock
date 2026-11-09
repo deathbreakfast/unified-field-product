@@ -5971,7 +5971,7 @@ dependencies = [
 [[package]]
 name = "uf-product-macros"
 version = "0.1.0"
-source = "git+https://github.com/unified-field-dev/unified-field-product?branch=main#75e4198c01193940f3c7298588ba02174a9915f6"
+source = "git+https://github.com/unified-field-dev/unified-field-product?branch=main#0227ca5998784a5cae58639af27a17940d451100"
 dependencies = [
  "darling",
  "proc-macro2",
@@ -6047,7 +6047,7 @@ dependencies = [
 [[package]]
 name = "uf-search-core"
 version = "0.1.0"
-source = "git+https://github.com/unified-field-dev/unified-field-product?branch=main#75e4198c01193940f3c7298588ba02174a9915f6"
+source = "git+https://github.com/unified-field-dev/unified-field-product?branch=main#0227ca5998784a5cae58639af27a17940d451100"
 dependencies = [
  "anyhow",
  "serde",
