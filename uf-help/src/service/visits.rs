@@ -86,22 +86,6 @@ pub fn merge_local_into_server(
     out
 }
 
-/// Parse Valence `replay` string (`"true"` / `"false"`) into a bool.
-#[must_use]
-pub fn replay_from_stored(value: &str) -> bool {
-    value.eq_ignore_ascii_case("true")
-}
-
-/// Encode a bool as the Valence string form.
-#[must_use]
-pub fn replay_to_stored(replay: bool) -> String {
-    if replay {
-        "true".to_string()
-    } else {
-        "false".to_string()
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
