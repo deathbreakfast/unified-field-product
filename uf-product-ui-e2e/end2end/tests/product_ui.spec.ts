@@ -50,6 +50,35 @@ test.describe("pw-shell", () => {
 });
 
 test.describe("pw-app-bar", () => {
+  test("pw-app-bar-persists-across-app-navigation-happy", async ({ page }) => {
+    // Seeding marks the Help tour steps seen; otherwise /apps opens a spotlight backdrop.
+    await seedAuth(page, "authenticated_verified");
+    await page.goto("/");
+    await waitForHydrated(page);
+    const bar = page.getByTestId("app-bar");
+    await expect(bar).toBeVisible({ timeout: 60_000 });
+    await bar.evaluate((el) => el.setAttribute("data-mounted-marker", "first"));
+
+    const openNav = async (testId: string) => {
+      const link = page.getByTestId(testId);
+      if (!(await link.isVisible())) {
+        await page.getByRole("button", { name: /expand navigation/i }).click();
+      }
+      await link.click();
+    };
+
+    await openNav("nav-apps");
+    await expect(page).toHaveURL(/\/apps$/);
+    await expect(bar).toContainText("Apps");
+    await expect(bar).toHaveAttribute("data-mounted-marker", "first");
+
+    await openNav("nav-welcome");
+    await expect(page).toHaveURL(/\/welcome/);
+    await expect(bar).toContainText("Welcome");
+    await expect(bar).toHaveAttribute("data-mounted-marker", "first");
+    await expect(page.getByTestId("unified-field-shell-layout")).toHaveCount(1);
+  });
+
   test("pw-app-bar-default-utilities-happy", async ({ page }) => {
     await page.goto("/");
     await waitForHydrated(page);
@@ -273,7 +302,89 @@ test.describe("pw-search-picker", () => {
     const combobox = search.getByRole("combobox");
     await combobox.click();
     await combobox.fill("zz-no-match");
-    await expect(page.getByRole("option")).toHaveCount(0);
+    // The unfiltered list now shows the disabled "No results" row.
+    await expect(page.getByRole("option", { name: /Beacon/i })).toHaveCount(0);
+    await expect(page.getByRole("option", { name: "No results" })).toBeVisible();
+  });
+
+  test("pw-search-picker-server-match-title-lacks-query-happy", async ({ page }) => {
+    await page.goto("/");
+    await waitForHydrated(page);
+    const combobox = page.getByTestId("server-match-search").getByRole("combobox");
+    await expect(combobox).toBeVisible({ timeout: 60_000 });
+    await combobox.click();
+    await combobox.fill("ops@example.com");
+    await expect(page.getByRole("option", { name: /Beacon Gamma/i })).toBeVisible({
+      timeout: 30_000,
+    });
+  });
+
+  test("pw-search-picker-custom-row-renders-happy", async ({ page }) => {
+    await page.goto("/");
+    await waitForHydrated(page);
+    const combobox = page.getByTestId("custom-row-search").getByRole("combobox");
+    await expect(combobox).toBeVisible({ timeout: 60_000 });
+    await combobox.click();
+    const rows = page.getByTestId("custom-row");
+    await expect(rows).toHaveCount(2, { timeout: 30_000 });
+    await expect(rows.filter({ hasText: "Ada Lovelace" }).getByTestId("custom-row-image")).toHaveCount(1);
+    await expect(page.getByText("hidden-by-custom-row")).toHaveCount(0);
+  });
+
+  test("pw-search-picker-custom-row-no-image-sad", async ({ page }) => {
+    await page.goto("/");
+    await waitForHydrated(page);
+    const combobox = page.getByTestId("custom-row-search").getByRole("combobox");
+    await expect(combobox).toBeVisible({ timeout: 60_000 });
+    await combobox.click();
+    const plain = page.getByTestId("custom-row").filter({ hasText: "Bo Plain" });
+    await expect(plain).toBeVisible({ timeout: 30_000 });
+    await expect(plain.getByTestId("custom-row-image")).toHaveCount(0);
+  });
+
+  test("pw-search-picker-custom-row-keyboard-select-happy", async ({ page }) => {
+    await page.goto("/");
+    await waitForHydrated(page);
+    const search = page.getByTestId("custom-row-search");
+    const combobox = search.getByRole("combobox");
+    await expect(combobox).toBeVisible({ timeout: 60_000 });
+    await combobox.click();
+    await expect(page.getByTestId("custom-row")).toHaveCount(2, { timeout: 30_000 });
+    await expect(search.getByTestId("custom-value")).toHaveCount(0);
+    await combobox.press("ArrowDown");
+    await combobox.press("Enter");
+    await expect(search.getByTestId("custom-value")).toHaveText(/Ada Lovelace|Bo Plain/);
+    await expect(combobox).toHaveValue(/Ada Lovelace|Bo Plain/);
+  });
+
+  test("pw-search-picker-default-rows-have-no-selected-row-sad", async ({ page }) => {
+    await page.goto("/");
+    await waitForHydrated(page);
+    const search = page.getByTestId("shell-chrome-search");
+    const combobox = search.getByRole("combobox");
+    await expect(combobox).toBeVisible({ timeout: 60_000 });
+    await combobox.click();
+    await expect(page.getByRole("option", { name: /Beacon Alpha/i })).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId("custom-row")).toHaveCount(0);
+    await page.getByRole("option", { name: /Beacon Alpha/i }).click();
+    await expect(search.getByTestId("search-source-picker-selected")).toHaveCount(0);
+  });
+
+  test("pw-search-picker-local-filter-hides-server-match-sad", async ({ page }) => {
+    await page.goto("/");
+    await waitForHydrated(page);
+    const combobox = page
+      .getByTestId("server-match-local-filter-search")
+      .getByRole("combobox");
+    await expect(combobox).toBeVisible({ timeout: 60_000 });
+    await combobox.click();
+    // A title match proves the row came back from on_search.
+    await combobox.fill("Gamma");
+    await expect(page.getByRole("option", { name: /Beacon Gamma/i })).toBeVisible({
+      timeout: 30_000,
+    });
+    await combobox.fill("ops@example.com");
+    await expect(page.getByRole("option", { name: /Beacon Gamma/i })).toHaveCount(0);
   });
 });
 

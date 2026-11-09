@@ -237,6 +237,7 @@ async fn wipe_help_tour_visits(system: &valence::Valence, recipient: RecordId) -
     });
     let rows = match HelpTourStepVisit::query(&owner, valence::use_!(r"**Test:** Fixture **Help Tour Step Visit** list for `seed` so the suite can reset tour progress between scenarios. CI and developers running the suite only."))
         .where_user(RecordPredicate::Equals(recipient))
+        .limit(500)
         .await
     {
         Ok(rows) => rows,
@@ -473,6 +474,7 @@ pub async fn seed_data(
                 message: row.message.clone(),
                 url: row.url.clone(),
                 data_json: None,
+                subject: None,
             },
             &system,
         )

@@ -211,10 +211,10 @@ export async function seedAuth(
 /** Read numeric unread badge from the bell container (0 when absent). */
 export async function readBellBadgeCount(page: Page): Promise<number> {
   const region = page.getByTestId("notification-bell-container");
-  const spans = region.locator("span");
-  const n = await spans.count();
-  for (let i = 0; i < n; i++) {
-    const text = ((await spans.nth(i).textContent()) ?? "").trim();
+  // One read: the bell stays mounted and the badge can vanish between count() and textContent().
+  const texts = await region.locator("span").allTextContents();
+  for (const raw of texts) {
+    const text = raw.trim();
     if (/^\d+$/.test(text)) {
       return parseInt(text, 10);
     }
