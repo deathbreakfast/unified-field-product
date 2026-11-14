@@ -114,9 +114,8 @@ fn AppBarBreadcrumbs(
         return ().into_any();
     }
 
-    // Parents are links and the last crumb is the current page, with a
-    // divider between each. BreadcrumbButton has no href, so parents render
-    // as plain links rather than a button inside a link.
+    // Parents are BreadcrumbButton links and the last crumb is the current
+    // page, with a divider between each.
     let last = breadcrumbs.len() - 1;
     view! {
         <Breadcrumb>
@@ -131,7 +130,7 @@ fn AppBarBreadcrumbs(
                 } else {
                     view! {
                         <BreadcrumbItem>
-                            <Link href=breadcrumb.url>{breadcrumb.title}</Link>
+                            <BreadcrumbButton href=breadcrumb.url>{breadcrumb.title}</BreadcrumbButton>
                         </BreadcrumbItem>
                     }
                     .into_any()
