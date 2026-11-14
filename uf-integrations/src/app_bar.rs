@@ -35,7 +35,7 @@ use uf_product::components::{
 };
 use uf_product::primitives::{
     Avatar, AvatarColor, AvatarConfig, AvatarShape, Box, Breadcrumb, BreadcrumbButton,
-    BreadcrumbItem, Flex, FlexAlign, FlexGap, FlexJustify, Link,
+    BreadcrumbDivider, BreadcrumbItem, Flex, FlexAlign, FlexGap, FlexJustify, Link,
 };
 use uf_product::provide_app_bar_menu_extras;
 use uf_product::theme::product_avatar_letter;
@@ -114,15 +114,31 @@ fn AppBarBreadcrumbs(
         return ().into_any();
     }
 
+    // Parents are links and the last crumb is the current page, with a
+    // divider between each. BreadcrumbButton has no href, so parents render
+    // as plain links rather than a button inside a link.
+    let last = breadcrumbs.len() - 1;
     view! {
         <Breadcrumb>
-            {breadcrumbs.into_iter().map(|breadcrumb| {
+            {breadcrumbs.into_iter().enumerate().map(|(i, breadcrumb)| {
+                let item = if i == last {
+                    view! {
+                        <BreadcrumbItem>
+                            <BreadcrumbButton current=true>{breadcrumb.title}</BreadcrumbButton>
+                        </BreadcrumbItem>
+                    }
+                    .into_any()
+                } else {
+                    view! {
+                        <BreadcrumbItem>
+                            <Link href=breadcrumb.url>{breadcrumb.title}</Link>
+                        </BreadcrumbItem>
+                    }
+                    .into_any()
+                };
                 view! {
-                    <BreadcrumbItem>
-                        <Link href=breadcrumb.url>
-                            <BreadcrumbButton>{breadcrumb.title}</BreadcrumbButton>
-                        </Link>
-                    </BreadcrumbItem>
+                    {(i > 0).then(|| view! { <BreadcrumbDivider /> })}
+                    {item}
                 }
             }).collect::<Vec<_>>()}
         </Breadcrumb>
