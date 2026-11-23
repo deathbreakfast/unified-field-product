@@ -11,5 +11,10 @@ pub use uf_notifications_api::{
     subscribe_get_unread_count, NotificationDto, NotificationReadFilter, Page,
 };
 
+pub use crate::sender::{
+    get_notification_rows_page, get_unread_notification_rows_page, sender_label, NotificationRow,
+    UNKNOWN_SENDER,
+};
+
 #[cfg(feature = "dev-tools")]
 pub use uf_notifications_api::create_test_notification;

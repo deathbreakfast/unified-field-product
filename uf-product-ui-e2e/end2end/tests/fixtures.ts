@@ -16,6 +16,8 @@ export type SeedNotification = {
   message?: string;
   kind?: string;
   url?: string;
+  /** Mint with a `sender` whose profile display name is set to this value. */
+  sender_name?: string;
 };
 
 export async function seedAuth(

@@ -18,6 +18,12 @@
 //! Anonymous and System actors so a mistaken `system_valence()` call cannot dump every
 //! user's documents.
 //!
+//! ## Revocation at query time
+//!
+//! A row can outlive the access that produced it (a team you were removed from).
+//! Register a [`WorkspaceSearchHitValidator`] for the row's `(app_id, source_table)`;
+//! [`query`] runs it under the caller's session Valence and drops rows it rejects.
+//!
 //! ## Indexing policy
 //!
 //! Owner-scoped resource titles are allowed. Do **not** put emails, phone numbers,
@@ -30,6 +36,7 @@
 //! | Upsert / delete index rows | [`SearchDocumentWriter`], [`SearchDocumentDraft`] |
 //! | Query my hits (library) | [`query`], [`WorkspaceSearchHit`] |
 //! | Query from UI | [`query_workspace_search`] |
+//! | Drop stale rows at query time | [`WorkspaceSearchHitValidator`] |
 //! | Errors | [`WorkspaceSearchError`] |
 //! | TTL window | [`SEARCH_DOCUMENT_TTL_SECS`] |
 //! | Teaching SE / Iter | [`demo`] |
@@ -67,6 +74,8 @@ mod link;
 #[cfg(feature = "ssr")]
 mod query;
 #[cfg(feature = "ssr")]
+mod validator;
+#[cfg(feature = "ssr")]
 mod writer;
 
 pub use dto::WorkspaceSearchHit;
@@ -79,6 +88,8 @@ pub use draft::SearchDocumentDraft;
 pub use error::WorkspaceSearchError;
 #[cfg(feature = "ssr")]
 pub use query::query;
+#[cfg(feature = "ssr")]
+pub use validator::{HitValidatorFuture, WorkspaceSearchHitValidator};
 #[cfg(feature = "ssr")]
 pub use writer::{document_id, SearchDocumentWriter, SEARCH_DOCUMENT_TTL_SECS};
 

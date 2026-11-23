@@ -3,6 +3,7 @@
 use axum::http::StatusCode;
 use axum::Json;
 use chrono::{TimeZone, Utc};
+use lepton_identity::generated::UserProfile;
 use serde::Deserialize;
 use serde_json::json;
 use spectra::try_log_event_at;
@@ -15,7 +16,9 @@ use valence::{Actor, Model, RecordId, RecordPredicate};
 
 use crate::e2e_permissions::{E2E_PERMISSION_ALLOW_FLAG, E2E_PERMISSION_ALLOW_SESSION_KEY};
 use crate::e2e_spectra::e2e_spectra;
-use crate::e2e_valence::{e2e_system_valence, e2e_valence, store_minted_ids, take_minted_ids};
+use crate::e2e_valence::{
+    e2e_system_valence, e2e_valence, seed_user, store_minted_ids, take_minted_ids,
+};
 use crate::gate_demos::{write_e2e_auth_kind, E2eAuthKind, E2E_VERIFIED_SESSION_USER};
 use std::sync::atomic::Ordering;
 use uf_welcome::E2E_WELCOME_ADMIN_SESSION_KEY;
@@ -41,6 +44,70 @@ pub struct SeedNotification {
     pub message: String,
     #[serde(default)]
     pub url: Option<String>,
+    /// When set, the row's `sender` is [`E2E_SENDER_USER_ID`] and that user's profile
+    /// display name is (re)written to this value before the row is minted.
+    #[serde(default)]
+    pub sender_name: Option<String>,
+}
+
+/// Fixture user that sends notifications carrying a `sender`.
+const E2E_SENDER_USER_ID: &str = "e2e-sender";
+
+/// Mint a notification whose `sender` is the fixture sender user, after writing that
+/// user's profile display name. `send_notification` always records the acting actor as
+/// sender (none for System), so the row is built directly here.
+async fn mint_sent_notification(
+    system: &valence::Valence,
+    recipient: RecordId,
+    row: &SeedNotification,
+    sender_name: &str,
+) -> Result<String, StatusCode> {
+    seed_user(E2E_SENDER_USER_ID, system).await;
+    let sender = RecordId::new("user", E2E_SENDER_USER_ID);
+    let now = Utc::now();
+    let profile = UserProfile::new(
+        sender.clone(),
+        sender_name.to_string(),
+        sender_name.to_string(),
+        now,
+        now,
+        None,
+    )
+    .map_err(|err| {
+        log::error!("e2e seed: build sender profile failed: {err}");
+        StatusCode::BAD_REQUEST
+    })?;
+    UserProfile::upsert(E2E_SENDER_USER_ID, profile, system, valence::use_!(r"**Test:** Fixture **User Profile** save for `seed` so the suite can give a notification sender a display name. CI and developers running the suite only."))
+        .await
+        .map_err(|err| {
+            log::error!("e2e seed: upsert sender profile failed: {err}");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+    let id = uuid::Uuid::new_v4().to_string();
+    let notification = Notification::new(
+        recipient,
+        row.kind.clone(),
+        row.title.clone(),
+        row.message.clone(),
+        row.url.clone(),
+        None,
+        None,
+        now,
+        Some(sender),
+        None,
+    )
+    .map_err(|err| {
+        log::error!("e2e seed: build sent notification failed: {err}");
+        StatusCode::BAD_REQUEST
+    })?;
+    Notification::upsert(&id, notification, system, valence::use_!(r"**Test:** Fixture **Notification** save for `seed` so the suite can arrange a notification with a sender. CI and developers running the suite only."))
+        .await
+        .map_err(|err| {
+            log::error!("e2e seed: upsert sent notification failed: {err}");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+    Ok(id)
 }
 
 fn default_kind() -> String {
@@ -466,6 +533,11 @@ pub async fn seed_data(
 
     let mut minted = Vec::with_capacity(body.notifications.len());
     for row in &body.notifications {
+        if let Some(sender_name) = &row.sender_name {
+            let id = mint_sent_notification(&system, recipient.clone(), row, sender_name).await?;
+            minted.push(id);
+            continue;
+        }
         let dto = send_notification(
             SendNotification {
                 user_id: recipient.clone(),

@@ -37,7 +37,8 @@ fn record_id_tail(session_user_id: &str) -> &str {
         .unwrap_or(session_user_id)
 }
 
-async fn seed_user(id: &str, valence: &Valence) {
+/// Upsert an active person `User` with id `id` (idempotent).
+pub async fn seed_user(id: &str, valence: &Valence) {
     let now = chrono::Utc::now();
     let user = User::new(
         Some(UserUserType::Person),
