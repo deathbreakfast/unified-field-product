@@ -44,6 +44,7 @@ inventory = { workspace = true }
 wasm-bindgen = { workspace = true, optional = true }
 async-trait = { workspace = true, optional = true }
 chrono = { workspace = true, optional = true }
+uuid = { version = "1", features = ["v4"], optional = true }
 spectra = { workspace = true, optional = true, features = ["mem"] }
 spectra-core = { workspace = true, optional = true }
 valence = { workspace = true, optional = true }
@@ -102,6 +103,7 @@ ssr = [
     "higgs/ssr",
     "dep:higgs-identity",
     "dep:lepton-identity",
+    "dep:uuid",
     "dep:photon",
     "photon/runtime",
     "dep:photon-axum",

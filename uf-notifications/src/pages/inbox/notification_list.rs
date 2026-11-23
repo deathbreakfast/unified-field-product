@@ -10,7 +10,7 @@ use uf_product::components::{
 use uf_product::primitives::Flex;
 
 use super::NotificationItem;
-use crate::server::{get_notifications_page, NotificationReadFilter};
+use crate::server::{get_notification_rows_page, NotificationReadFilter};
 
 /// Number of notifications per page.
 const NOTIFICATIONS_PAGE_SIZE: u32 = 20;
@@ -45,7 +45,7 @@ pub fn NotificationList(
         };
 
         let fetch_notifications =
-            move |offset: u32, limit: u32| get_notifications_page(offset, limit, q.clone(), rf);
+            move |offset: u32, limit: u32| get_notification_rows_page(offset, limit, q.clone(), rf);
 
         let navigate = navigate.clone();
         view! {
@@ -72,14 +72,15 @@ pub fn NotificationList(
                         <Flex vertical=true gap=SpacingSize::Size120.flex_gap()>
                             <For
                                 each=move || items.get()
-                                key=|n| n.notification_id
-                                let:notification
+                                key=|row| row.notification.notification_id
+                                let:row
                             >
                                 {
                                     let navigate = navigate.clone();
                                     view! {
                                         <NotificationItem
-                                            notification=notification
+                                            notification=row.notification
+                                            sender_name=row.sender_name
                                             read_overrides=read_overrides
                                             navigate=navigate
                                         />

@@ -155,6 +155,7 @@ mod layout;
 mod lazy_routes;
 mod pages;
 mod safe_url;
+mod sender;
 /// Client-callable notification server functions, re-exported from `uf-notifications-api`.
 pub mod server;
 mod surface_layout;

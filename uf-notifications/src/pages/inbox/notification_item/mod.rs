@@ -30,6 +30,8 @@ use helpers::{item_style_sheet, mark_read_label};
 pub fn NotificationItem(
     /// Notification to render.
     notification: NotificationDto,
+    /// Sender's current display name (or "Someone").
+    sender_name: String,
     /// Two-way signal holding the read overrides.
     read_overrides: RwSignal<HashMap<Uuid, bool>>,
     /// Navigation callback used to change routes.
@@ -111,7 +113,10 @@ pub fn NotificationItem(
                     <CardContent>
                         <Flex vertical=true gap=FlexGap::Size(4)>
                             <Body1 block=true wrap=true>{message}</Body1>
-                            <Caption1>{created_at}</Caption1>
+                            <Flex gap=FlexGap::Small>
+                                <Caption1 attr:data-testid="notification-sender">{sender_name}</Caption1>
+                                <Caption1>{created_at}</Caption1>
+                            </Flex>
                         </Flex>
                     </CardContent>
                 </CardButtonArea>

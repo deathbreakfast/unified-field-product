@@ -1,6 +1,8 @@
 //! `NotificationBell` — the top-level composition component.
 
-use crate::server::{get_unread_count, get_unread_notifications_page, subscribe_get_unread_count};
+use crate::server::{
+    get_unread_count, get_unread_notification_rows_page, subscribe_get_unread_count,
+};
 use crate::surface_layout::{BELL_DROPDOWN_MAX_WIDTH, BELL_DROPDOWN_MIN_WIDTH};
 use leptos::prelude::*;
 use leptos_router::hooks::use_navigate;
@@ -38,7 +40,7 @@ fn NotificationBellAuthenticated() -> impl IntoView {
         scroll_el,
         PAGE_SIZE,
         refresh.into(),
-        page_fetch_from_tuple(get_unread_notifications_page),
+        page_fetch_from_tuple(get_unread_notification_rows_page),
     );
 
     let items = paged.items;
