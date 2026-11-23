@@ -344,19 +344,46 @@ async fn list_visits_ssr(pathname: &str) -> Result<Vec<HelpVisitRecord>, crate::
         route_keys.push(pathname.to_string());
     }
 
-    let mut out = Vec::new();
+    let mut rows = Vec::new();
     for key in route_keys {
-        let rows = HelpTourStepVisit::query(&v, valence::use_!(r"In **server**, we **list Help Tour Step Visit** so the product can show or process the matching set for this workflow. Callers allowed for **server** use the list—not anonymous visitors."))
+        rows.extend(
+            HelpTourStepVisit::query(&v, valence::use_!(r"In **server**, we **list Help Tour Step Visit** so the product can show or process the matching set for this workflow. Callers allowed for **server** use the list—not anonymous visitors."))
+                .where_user(RecordPredicate::Equals(user.clone()))
+                .where_route(StringPredicate::Equals(key))
+                .await
+                .map_err(|e| crate::HelpError::Storage(e.to_string()))?,
+        );
+    }
+    // Seen state is keyed by highlight, so also load rows saved under other routes
+    // for every highlight this route registers. Valence has no one-of predicate,
+    // so read the user's rows once and filter here instead of one query per highlight.
+    let highlights: Vec<&str> = crate::collect_help_steps_for_route(pathname)
+        .iter()
+        .map(|d| d.feature_highlight)
+        .collect();
+    if !highlights.is_empty() {
+        let user_rows = HelpTourStepVisit::query(&v, valence::use_!(r"We read which **Help tour steps you've already seen**, on any page, so a tip you've dismissed doesn't show up again on another page that has the same tip."))
             .where_user(RecordPredicate::Equals(user.clone()))
-            .where_route(StringPredicate::Equals(key))
             .await
             .map_err(|e| crate::HelpError::Storage(e.to_string()))?;
-        out.extend(rows.into_iter().map(|row| HelpVisitRecord {
+        rows.extend(
+            user_rows
+                .into_iter()
+                .filter(|row| highlights.contains(&row.feature_highlight().as_str())),
+        );
+    }
+
+    let mut out: Vec<HelpVisitRecord> = Vec::new();
+    for row in rows {
+        let record = HelpVisitRecord {
             route: row.route().clone(),
             feature_highlight: row.feature_highlight().clone(),
             spotlight: row.spotlight().cloned(),
             replay: *row.replay(),
-        }));
+        };
+        if !out.contains(&record) {
+            out.push(record);
+        }
     }
 
     Ok(out)
@@ -414,15 +441,30 @@ async fn upsert_visit(
     use uf_product::generated::HelpTourStepVisit;
     use valence::{Model, RecordPredicate, StringPredicate};
 
+    // Seen state is keyed by highlight alone. Update every row for it (older
+    // builds stored one per route) so a stale duplicate cannot disagree.
     let existing = HelpTourStepVisit::query(v, valence::use_!(r"In **server**, we **list Help Tour Step Visit** so the product can show or process the matching set for this workflow. Callers allowed for **server** use the list—not anonymous visitors."))
         .where_user(RecordPredicate::Equals(user.clone()))
-        .where_route(StringPredicate::Equals(step.route.clone()))
         .where_feature_highlight(StringPredicate::Equals(step.feature_highlight.clone()))
-        .first()
         .await
         .map_err(|e| crate::HelpError::Storage(e.to_string()))?;
 
-    if let Some(row) = existing {
+    if existing.is_empty() {
+        let new_row = HelpTourStepVisit::new(
+            user.clone(),
+            step.route.clone(),
+            step.feature_highlight.clone(),
+            step.spotlight.clone(),
+            replay,
+            now,
+            now,
+        )
+        .map_err(|e| crate::HelpError::Storage(e.to_string()))?;
+        HelpTourStepVisit::create(new_row, v, valence::use_!(r"When **server** needs to persist work, we **save Help Tour Step Visit** so the next step in that feature can continue with the latest values. People and services allowed for **server** use this data for that workflow—not as a general export of unrelated personal fields."))
+            .await
+            .map_err(|e| crate::HelpError::Storage(e.to_string()))?;
+    }
+    for row in existing {
         let mut mutable = row
             .get_mutable(v, valence::use_!(r"In **server**, we **update this data** so later steps see the latest values for this workflow. Callers allowed for **server** use the updated data; this is not a public export of unrelated fields."))
             .set_replay(replay)
@@ -436,20 +478,6 @@ async fn upsert_visit(
             .set_updated_at(now)
             .map_err(|e| crate::HelpError::Storage(e.to_string()))?
             .commit()
-            .await
-            .map_err(|e| crate::HelpError::Storage(e.to_string()))?;
-    } else {
-        let new_row = HelpTourStepVisit::new(
-            user.clone(),
-            step.route.clone(),
-            step.feature_highlight.clone(),
-            step.spotlight.clone(),
-            replay,
-            now,
-            now,
-        )
-        .map_err(|e| crate::HelpError::Storage(e.to_string()))?;
-        HelpTourStepVisit::create(new_row, v, valence::use_!(r"When **server** needs to persist work, we **save Help Tour Step Visit** so the next step in that feature can continue with the latest values. People and services allowed for **server** use this data for that workflow—not as a general export of unrelated personal fields."))
             .await
             .map_err(|e| crate::HelpError::Storage(e.to_string()))?;
     }

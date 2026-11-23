@@ -58,25 +58,33 @@ pub fn HelpTourPlayer() -> impl IntoView {
         }
     });
 
-    // Server visits for signed-in users. Anon always uses localStorage on the
-    // client — do not trust SSR-serialized empty visits after hydrate.
-    let server_visits = Resource::new(
-        move || {
-            (
-                location.pathname.get(),
-                reload.get(),
-                replay_tick.get(),
-                auth.get(),
-            )
-        },
-        |(pathname, _, _, session)| async move {
-            if matches!(session, AuthSession::Authenticated(_)) {
-                help_list_visits_for_route(pathname).await.ok()
-            } else {
-                None
+    // Server visits for signed-in users, fetched on the client only. Anon always
+    // uses localStorage — do not trust SSR-serialized empty visits after hydrate.
+    // A plain signal rather than a Resource: a Resource read here registers with
+    // whatever `<Suspense>` wraps the shell (a host's auth boundary), so the
+    // refetch after a tour closes swapped the whole app, app bar included, for
+    // that boundary's fallback. The last list stays until the next one lands.
+    let server_visits = RwSignal::new(None::<Vec<HelpVisitRecord>>);
+    let fetch_generation = StoredValue::new(0u64);
+    Effect::new(move |_| {
+        let pathname = location.pathname.get();
+        let _ = reload.get();
+        let _ = replay_tick.get();
+        let session = auth.get();
+        fetch_generation.update_value(|n| *n = n.wrapping_add(1));
+        let generation = fetch_generation.get_value();
+        if !matches!(session, AuthSession::Authenticated(_)) {
+            server_visits.set(None);
+            return;
+        }
+        leptos::task::spawn_local(async move {
+            let visits = help_list_visits_for_route(pathname).await.ok();
+            // Drop a response that a newer fetch has already superseded.
+            if fetch_generation.try_get_value() == Some(generation) {
+                let _ = server_visits.try_set(visits);
             }
-        },
-    );
+        });
+    });
 
     let resolve_visits = move || -> Vec<HelpVisitRecord> {
         let pathname = location.pathname.get();
@@ -86,12 +94,12 @@ pub fn HelpTourPlayer() -> impl IntoView {
         let local = read_local_visits_for_route(&pathname);
         if matches!(session, AuthSession::Authenticated(_)) {
             match server_visits.get() {
-                Some(Some(server)) => {
+                Some(server) => {
                     // Server rows win on conflict; keep local-only rows so a
                     // route-scoped / in-flight Valence list cannot drop device progress.
                     crate::service::merge_local_into_server(&server, &local)
                 }
-                Some(None) | None => local,
+                None => local,
             }
         } else {
             local
