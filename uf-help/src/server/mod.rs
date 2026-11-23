@@ -355,14 +355,21 @@ async fn list_visits_ssr(pathname: &str) -> Result<Vec<HelpVisitRecord>, crate::
         );
     }
     // Seen state is keyed by highlight, so also load rows saved under other routes
-    // for every highlight this route registers.
-    for step in crate::collect_help_steps_for_route(pathname) {
+    // for every highlight this route registers. Valence has no one-of predicate,
+    // so read the user's rows once and filter here instead of one query per highlight.
+    let highlights: Vec<&str> = crate::collect_help_steps_for_route(pathname)
+        .iter()
+        .map(|d| d.feature_highlight)
+        .collect();
+    if !highlights.is_empty() {
+        let user_rows = HelpTourStepVisit::query(&v, valence::use_!(r"We read which **Help tour steps you've already seen**, on any page, so a tip you've dismissed doesn't show up again on another page that has the same tip."))
+            .where_user(RecordPredicate::Equals(user.clone()))
+            .await
+            .map_err(|e| crate::HelpError::Storage(e.to_string()))?;
         rows.extend(
-            HelpTourStepVisit::query(&v, valence::use_!(r"In **server**, we **list Help Tour Step Visit** so the product can show or process the matching set for this workflow. Callers allowed for **server** use the list—not anonymous visitors."))
-                .where_user(RecordPredicate::Equals(user.clone()))
-                .where_feature_highlight(StringPredicate::Equals(step.feature_highlight.to_string()))
-                .await
-                .map_err(|e| crate::HelpError::Storage(e.to_string()))?,
+            user_rows
+                .into_iter()
+                .filter(|row| highlights.contains(&row.feature_highlight().as_str())),
         );
     }
 
