@@ -573,17 +573,20 @@ test.describe("pw-notifications-sender", () => {
         { title: "SenderNameProbe", message: "sent by a person", sender_name: "Ada Sender" },
       ],
     });
+    // Open the bell on `/`: on the inbox page "Notifications" also names the page,
+    // which trips openBellDropdown's exact-text wait.
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    await waitForHydrated(page);
+    await openBellDropdown(page);
+    const bell = page.getByTestId("notification-bell-dropdown");
+    await expect(bell.getByText("SenderNameProbe")).toBeVisible({ timeout: 30_000 });
+    await expect(bell.getByTestId("notification-sender")).toHaveText("Ada Sender");
+
     await page.goto("/notifications", { waitUntil: "domcontentloaded" });
     await waitForHydrated(page);
     await expect(page.getByText("SenderNameProbe")).toBeVisible({ timeout: 60_000 });
     const inbox = page.getByTestId("notifications-inbox-page");
     await expect(inbox.getByTestId("notification-sender")).toHaveText("Ada Sender");
-
-    await openBellDropdown(page);
-    const bell = page.getByTestId("notification-bell-dropdown");
-    await expect(bell.getByTestId("notification-sender")).toHaveText("Ada Sender", {
-      timeout: 30_000,
-    });
   });
 
   test("pw-notifications-sender-fallback-sad", async ({ page }) => {
