@@ -27,7 +27,7 @@
 
 use leptos::prelude::*;
 
-use crate::AuthContext;
+use crate::{AuthContext, AuthSession};
 
 /// Message carried by [`unauthenticated_error`].
 pub const UNAUTHENTICATED_ERROR: &str = "unauthenticated";
@@ -64,9 +64,22 @@ impl SessionExpiry {
     /// Create a handle bound to the [`AuthContext`] in scope, if any.
     #[must_use]
     pub fn new() -> Self {
+        let auth = use_context::<AuthContext>();
+        let expired = RwSignal::new(false);
+        // Every session load sets the signal, even when the value is unchanged. A load
+        // that comes back signed in means the report was a false alarm, so drop the
+        // flag; otherwise a later deliberate sign-out would reopen sign-in.
+        if let Some(session) = auth.as_ref().map(AuthContext::session) {
+            Effect::new(move |_| {
+                let signed_in = session.with(|s| matches!(s, AuthSession::Authenticated(_)));
+                if signed_in && expired.get_untracked() {
+                    expired.set(false);
+                }
+            });
+        }
         Self {
-            expired: RwSignal::new(false),
-            reload_token: use_context::<AuthContext>().map(|auth| auth.reload_token()),
+            expired,
+            reload_token: auth.map(|auth| auth.reload_token()),
         }
     }
 
