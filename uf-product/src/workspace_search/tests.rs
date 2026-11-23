@@ -512,3 +512,76 @@ fn futures_executor_block<F: std::future::Future>(fut: F) -> F::Output {
         .expect("rt")
         .block_on(fut)
 }
+
+// ── Per-hit validators ───────────────────────────────────────────────────────
+
+const PROBE_TABLE: &str = "validator_probe";
+
+fn drop_revoked<'a>(_valence: &'a Valence, source_id: &'a str) -> super::HitValidatorFuture<'a> {
+    Box::pin(async move { !source_id.starts_with("revoked") })
+}
+
+inventory::submit! {
+    super::WorkspaceSearchHitValidator::new("demo", PROBE_TABLE, drop_revoked)
+}
+
+fn probe_draft(source_id: &str, title: &str) -> SearchDocumentDraft {
+    SearchDocumentDraft {
+        source_table: PROBE_TABLE.into(),
+        ..draft_for("alice", source_id, title, &format!("/demo/{source_id}"))
+    }
+}
+
+#[tokio::test]
+async fn query_validator_drops_revoked_hit_sad() {
+    let system_v = mem_valence(system());
+    SearchDocumentWriter::upsert(&system_v, probe_draft("revoked-1", "ProbeRevokedOnly"))
+        .await
+        .expect("upsert");
+    let alice_v = system_v.with_actor(alice());
+    let hits = query(&alice_v, "ProbeRevokedOnly", 10)
+        .await
+        .expect("query");
+    assert!(hits.is_empty(), "revoked row must be dropped: {hits:?}");
+}
+
+#[tokio::test]
+async fn query_validator_keeps_valid_hit_happy() {
+    let system_v = mem_valence(system());
+    SearchDocumentWriter::upsert(&system_v, probe_draft("kept-1", "ProbeKeptRow"))
+        .await
+        .expect("upsert");
+    let alice_v = system_v.with_actor(alice());
+    let hits = query(&alice_v, "ProbeKeptRow", 10).await.expect("query");
+    assert_eq!(hits.len(), 1);
+    assert_eq!(hits[0].link, "/demo/kept-1");
+}
+
+#[tokio::test]
+async fn query_validator_limit_counts_kept_hits_happy() {
+    let system_v = mem_valence(system());
+    for id in ["revoked-a", "revoked-b", "kept-a"] {
+        SearchDocumentWriter::upsert(&system_v, probe_draft(id, "ProbeLimitMix"))
+            .await
+            .expect("upsert");
+    }
+    let alice_v = system_v.with_actor(alice());
+    let hits = query(&alice_v, "ProbeLimitMix", 1).await.expect("query");
+    assert_eq!(hits.len(), 1, "dropped rows must not use up the limit");
+    assert_eq!(hits[0].link, "/demo/kept-a");
+}
+
+#[tokio::test]
+async fn query_validator_ignores_other_tables_happy() {
+    let system_v = mem_valence(system());
+    // Same source_id prefix, but `indexed_demo_item` has no validator registered.
+    SearchDocumentWriter::upsert(
+        &system_v,
+        draft_for("alice", "revoked-demo", "ProbeOtherTable", "/demo/revoked-demo"),
+    )
+    .await
+    .expect("upsert");
+    let alice_v = system_v.with_actor(alice());
+    let hits = query(&alice_v, "ProbeOtherTable", 10).await.expect("query");
+    assert_eq!(hits.len(), 1);
+}

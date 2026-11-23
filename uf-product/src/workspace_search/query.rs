@@ -10,6 +10,10 @@ const ABSOLUTE_MAX_RESULTS: u32 = 50;
 
 /// Search the caller's index documents.
 ///
+/// Each row passes through the [`super::WorkspaceSearchHitValidator`]s registered for
+/// its `(app_id, source_table)` first; rows a validator rejects are dropped and do not
+/// count toward `max_results`.
+///
 /// Requires a [`Actor::User`] on `valence`. Anonymous and System actors are rejected
 /// ([`WorkspaceSearchError::Unauthenticated`] / [`WorkspaceSearchError::InvalidActor`]).
 ///
@@ -79,16 +83,24 @@ pub async fn query(
         message: e.to_string(),
     })?;
 
-    Ok(rows
-        .into_iter()
-        .take(limit as usize)
-        .map(|row| WorkspaceSearchHit {
+    let mut hits = Vec::new();
+    for row in rows {
+        if hits.len() >= limit as usize {
+            break;
+        }
+        if !super::validator::keep_hit(valence, row.app_id(), row.source_table(), row.source_id())
+            .await
+        {
+            continue;
+        }
+        hits.push(WorkspaceSearchHit {
             id: row.id().map(|r| r.id().to_string()).unwrap_or_default(),
             title: row.title().to_string(),
             description: None,
             app_id: row.app_id().to_string(),
             kind: row.kind().to_string(),
             link: row.link().to_string(),
-        })
-        .collect())
+        });
+    }
+    Ok(hits)
 }
