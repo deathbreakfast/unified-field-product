@@ -498,6 +498,7 @@ pub use orbital_zone_a::context;
 pub use orbital_zone_a::models;
 pub use orbital_zone_a::primitives;
 
+#[cfg(any(feature = "ssr", feature = "hydrate"))]
 pub mod access;
 pub mod adaptive_sheet;
 pub mod app_bar_menu_extras;
