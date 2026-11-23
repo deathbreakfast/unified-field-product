@@ -565,3 +565,57 @@ test.describe("help-spotlight", () => {
     await expect(page.locator('[data-testid="spotlight-footer"]:visible')).toHaveCount(0);
   });
 });
+
+test.describe("pw-notifications-sender", () => {
+  test("pw-notifications-sender-name-happy", async ({ page }) => {
+    await seedAuth(page, "authenticated_verified", {
+      notifications: [
+        { title: "SenderNameProbe", message: "sent by a person", sender_name: "Ada Sender" },
+      ],
+    });
+    await page.goto("/notifications", { waitUntil: "domcontentloaded" });
+    await waitForHydrated(page);
+    await expect(page.getByText("SenderNameProbe")).toBeVisible({ timeout: 60_000 });
+    const inbox = page.getByTestId("notifications-inbox-page");
+    await expect(inbox.getByTestId("notification-sender")).toHaveText("Ada Sender");
+
+    await openBellDropdown(page);
+    const bell = page.getByTestId("notification-bell-dropdown");
+    await expect(bell.getByTestId("notification-sender")).toHaveText("Ada Sender", {
+      timeout: 30_000,
+    });
+  });
+
+  test("pw-notifications-sender-fallback-sad", async ({ page }) => {
+    await seedAuth(page, "authenticated_verified", {
+      notifications: [{ title: "SystemSenderProbe", message: "no sender on this row" }],
+    });
+    await page.goto("/notifications", { waitUntil: "domcontentloaded" });
+    await waitForHydrated(page);
+    await expect(page.getByText("SystemSenderProbe")).toBeVisible({ timeout: 60_000 });
+    const inbox = page.getByTestId("notifications-inbox-page");
+    await expect(inbox.getByTestId("notification-sender")).toHaveText("Someone");
+  });
+
+  test("pw-notifications-sender-renamed-happy", async ({ page }) => {
+    await seedAuth(page, "authenticated_verified", {
+      notifications: [
+        { title: "RenameProbeFirst", message: "before rename", sender_name: "Old Name" },
+      ],
+    });
+    // Renaming the sender's profile changes the name on the earlier row too:
+    // the name is looked up when the page loads, never stored on the row.
+    await seedAuth(page, "authenticated_verified", {
+      append: true,
+      notifications: [
+        { title: "RenameProbeSecond", message: "after rename", sender_name: "New Name" },
+      ],
+    });
+    await page.goto("/notifications", { waitUntil: "domcontentloaded" });
+    await waitForHydrated(page);
+    await expect(page.getByText("RenameProbeFirst")).toBeVisible({ timeout: 60_000 });
+    const senders = page.getByTestId("notifications-inbox-page").getByTestId("notification-sender");
+    await expect(senders).toHaveCount(2);
+    await expect(senders).toHaveText(["New Name", "New Name"]);
+  });
+});

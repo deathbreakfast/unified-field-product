@@ -1,4 +1,4 @@
-use crate::server::NotificationDto;
+use crate::server::NotificationRow;
 use leptos::html::Div;
 use leptos::prelude::*;
 use orbital_core_components::ScrollArea;
@@ -10,7 +10,7 @@ use super::item::NotificationBellItem;
 #[component]
 pub fn NotificationBellDropdown(
     /// Two-way signal holding the list of items to render.
-    items: RwSignal<Vec<NotificationDto>>,
+    items: RwSignal<Vec<NotificationRow>>,
     /// Two-way signal controlling whether ever loaded is enabled.
     ever_loaded: RwSignal<bool>,
     /// Two-way signal controlling whether it is loading more.
@@ -64,7 +64,7 @@ pub fn NotificationBellDropdown(
                     view! {
                         <Flex vertical=true gap=FlexGap::Size(4) full_width=true>
                             {current_items.into_iter().map(|item| {
-                                view! { <NotificationBellItem notification=item items=items trigger=trigger /> }
+                                view! { <NotificationBellItem row=item items=items trigger=trigger /> }
                             }).collect_view()}
                         </Flex>
                     }.into_any()

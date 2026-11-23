@@ -577,7 +577,12 @@ async fn query_validator_ignores_other_tables_happy() {
     // Same source_id prefix, but `indexed_demo_item` has no validator registered.
     SearchDocumentWriter::upsert(
         &system_v,
-        draft_for("alice", "revoked-demo", "ProbeOtherTable", "/demo/revoked-demo"),
+        draft_for(
+            "alice",
+            "revoked-demo",
+            "ProbeOtherTable",
+            "/demo/revoked-demo",
+        ),
     )
     .await
     .expect("upsert");

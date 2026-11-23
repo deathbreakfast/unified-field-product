@@ -39,6 +39,7 @@ uuid = { version = "1", features = ["serde", "v4"] }
 chrono = { workspace = true, features = ["serde"] }
 
 valence = { workspace = true, optional = true }
+lepton-identity = { workspace = true, optional = true }
 
 inventory = { workspace = true }
 
@@ -66,5 +67,6 @@ ssr = [
     "uf-help/ssr",
     "uf-notifications-api/ssr",
     "dep:valence",
+    "dep:lepton-identity",
     "orbital-paging/ssr",
     "orbital-primitives/ssr"]

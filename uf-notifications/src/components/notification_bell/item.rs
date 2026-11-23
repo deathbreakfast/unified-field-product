@@ -1,5 +1,5 @@
 use crate::safe_url::safe_notification_nav_url;
-use crate::server::{mark_notification_read, NotificationDto};
+use crate::server::{mark_notification_read, NotificationRow};
 use leptos::prelude::*;
 use leptos::task::spawn_local_scoped;
 use leptos_router::hooks::use_navigate;
@@ -13,13 +13,17 @@ use uf_product::primitives::{
 
 #[component]
 pub fn NotificationBellItem(
-    /// Notification to render.
-    notification: NotificationDto,
+    /// Notification to render, with its sender's current display name.
+    row: NotificationRow,
     /// Two-way signal holding the list of items to render.
-    items: RwSignal<Vec<NotificationDto>>,
+    items: RwSignal<Vec<NotificationRow>>,
     /// Two-way signal holding the trigger element/state.
     trigger: RwSignal<u64>,
 ) -> impl IntoView {
+    let NotificationRow {
+        notification,
+        sender_name,
+    } = row;
     let notification_id = notification.notification_id;
     let url = notification.url.clone();
     let title = notification.title.clone();
@@ -27,7 +31,7 @@ pub fn NotificationBellItem(
     let created_at = notification.created_at.clone();
 
     let open = Callback::new(move |_: leptos::ev::MouseEvent| {
-        items.update(|list| list.retain(|n| n.notification_id != notification_id));
+        items.update(|list| list.retain(|r| r.notification.notification_id != notification_id));
 
         spawn_local_scoped(async move {
             if let Err(e) = mark_notification_read(notification_id).await {
@@ -101,7 +105,10 @@ pub fn NotificationBellItem(
                     <CardContent>
                         <Flex vertical=true gap=FlexGap::Size(4)>
                             <Body1 block=true class=class_names.message_text.to_string()>{message}</Body1>
-                            <Caption1>{created_at}</Caption1>
+                            <Flex gap=FlexGap::Small>
+                                <Caption1 attr:data-testid="notification-sender">{sender_name}</Caption1>
+                                <Caption1>{created_at}</Caption1>
+                            </Flex>
                         </Flex>
                     </CardContent>
                 </CardButtonArea>
