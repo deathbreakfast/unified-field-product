@@ -223,7 +223,8 @@
 //!
 //! - [`UnifiedFieldShellLayout`] — top-level shell composition.
 //! - [`UnifiedFieldAppBar`] — the app bar itself.
-//! - [`SearchSourcePicker`] — multi-source search combobox.
+//! - [`SearchSourcePicker`] — multi-source search combobox; [`SearchSourcePickerGroup`]
+//!   adds caller rows above the source groups.
 //! - `uf-product` — session, `RequireAuthenticated`, appearance preferences.
 //! - `uf-help` / `uf-apps` / `uf-appearance` — optional app-bar offerings.
 //! - `uf-search-core` — `SearchSourceKey` / provider registry.
@@ -256,7 +257,7 @@ pub use host_notification_bell::{
     ShellNotificationBellFactory,
 };
 pub use not_found_page::UnifiedFieldNotFoundPage;
-pub use search_source_picker::SearchSourcePicker;
+pub use search_source_picker::{SearchSourcePicker, SearchSourcePickerGroup};
 pub use shell_layout::{
     ShellAppBar, ShellFloatingActions, ShellLeftNav, ShellMounted, ShellSidebarToggle,
     UnifiedFieldShellLayout,

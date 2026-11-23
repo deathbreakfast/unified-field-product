@@ -139,12 +139,38 @@ pub fn authenticated_route_condition(
     }
 }
 
+/// Join the router pathname and search. Router `search` has no leading `?`.
 fn current_path_with_search(pathname: &str, search: &str) -> String {
     let mut path = pathname.to_owned();
     if !search.is_empty() {
+        if !search.starts_with('?') {
+            path.push('?');
+        }
         path.push_str(search);
     }
     path
+}
+
+#[cfg(test)]
+mod current_path_tests {
+    use super::current_path_with_search;
+
+    #[test]
+    fn current_path_adds_question_mark_happy_path() {
+        assert_eq!(
+            current_path_with_search("/tasks/1", "tab=history"),
+            "/tasks/1?tab=history"
+        );
+    }
+
+    #[test]
+    fn current_path_empty_or_prefixed_search_unchanged_sad() {
+        assert_eq!(current_path_with_search("/tasks/1", ""), "/tasks/1");
+        assert_eq!(
+            current_path_with_search("/tasks/1", "?tab=history"),
+            "/tasks/1?tab=history"
+        );
+    }
 }
 
 fn anonymous_gate(
@@ -297,6 +323,11 @@ fn permission_denied_gate(
 /// [`crate::routes::auth_signin_href`] / [`crate::routes::auth_signup_href`] so
 /// post-login can return via `?referer=`.
 ///
+/// When a server fn error reaches [`crate::SessionExpiry::report`] and the refreshed
+/// session is anonymous, the gate reopens sign-in by itself: the shell dialog when
+/// there is one, otherwise the sign-in page with the current path and query as
+/// `?referer=`. A deliberate sign-out does not report, so it never reopens sign-in.
+///
 /// Children stay mounted across auth refreshes (for example `trigger_refresh()` after
 /// an action) unless the user id, the signed-in state, the email-verified flag or the
 /// roles change, so local UI state in the page survives. A named permission is
@@ -358,6 +389,7 @@ pub fn RequireAuthenticated(
     let location_pathname = location.pathname;
     let location_search = location.search;
     let auth_dialog = crate::use_auth_dialog_controller();
+    let session_expiry = crate::use_session_expiry();
     let access_gate = super::access_gate::use_access_gate_active();
     let gate = Memo::new(move |_| gate_auth(&auth.get()));
     let permission_check = Resource::new(
@@ -371,6 +403,25 @@ pub fn RequireAuthenticated(
             }
         },
     );
+    // Session expired mid-request: reopen sign-in once the refresh lands anonymous.
+    if let Some(expiry) = session_expiry {
+        let navigate = navigate.clone();
+        Effect::new(move |_| {
+            if gate.get() != GateAuth::Anonymous || !expiry.expired().get() {
+                return;
+            }
+            expiry.expired().set(false);
+            if let Some(dialog) = auth_dialog {
+                dialog.open_signin();
+            } else {
+                let path = current_path_with_search(
+                    &location_pathname.get_untracked(),
+                    &location_search.get_untracked(),
+                );
+                navigate(&auth_signin_href(Some(&path)), NavigateOptions::default());
+            }
+        });
+    }
     on_cleanup(move || {
         if let Some(gate) = access_gate {
             gate.set(false);

@@ -392,16 +392,16 @@ const PRODUCT_BRAND_SEEDS: &[(&str, &str)] = &[
     ("database", "#5b5fc7"),
     ("permission", "#5b5fc7"),
     ("secrets", "#0b6a0b"),
-    ("tag", "#4a89dc"),
+    ("tag", "#286fcd"),
     ("counter", "#1a6f94"),
-    ("lepton-app", "#4a89dc"),
-    ("apps", "#4a89dc"),
-    ("auth", "#4a89dc"),
-    ("notifications", "#4a89dc"),
-    ("welcome", "#4a89dc"),
-    ("orbital", "#4a89dc"),
-    ("setup-wizard", "#4a89dc"),
-    ("marketing", "#4a89dc"),
+    ("lepton-app", "#286fcd"),
+    ("apps", "#286fcd"),
+    ("auth", "#286fcd"),
+    ("notifications", "#286fcd"),
+    ("welcome", "#286fcd"),
+    ("orbital", "#286fcd"),
+    ("setup-wizard", "#286fcd"),
+    ("marketing", "#286fcd"),
     ("shell", "#1a6f94"),
 ];
 
@@ -498,7 +498,7 @@ mod codegen_contract_tests {
             resolve_brand_seed_for_codegen("apps", Some("#112233")),
             "#112233"
         );
-        assert_eq!(resolve_brand_seed_for_codegen("apps", None), "#4a89dc");
+        assert_eq!(resolve_brand_seed_for_codegen("apps", None), "#286fcd");
     }
 
     #[test]

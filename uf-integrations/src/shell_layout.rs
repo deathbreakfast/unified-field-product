@@ -115,6 +115,8 @@ pub fn UnifiedFieldShellLayout(
     provide_permission_toast_bus(permission_toast_request.write_only());
     // Shared with AppBarUserMenu + RequireAuthenticated so Sign In opens the modal.
     let _auth_dialog = provide_auth_dialog_controller();
+    // RequireAuthenticated reopens sign-in when a server fn reports an expired session.
+    let _session_expiry = uf_product::provide_session_expiry();
     // Shared with RequireAuthenticated + HelpTourPlayer so tours skip the gate.
     let _access_gate = provide_access_gate_state();
     // Closed by default so Auto overlay mode does not open a drawer on first paint.
