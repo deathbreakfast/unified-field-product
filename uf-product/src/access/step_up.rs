@@ -2,9 +2,12 @@
 //!
 //! The first try runs straight away. When the server asks for a code, the shell's step-up
 //! dialog opens, and the write runs once more after the code is accepted. A host whose shell
-//! provides no step-up controller shows the server's message instead.
+//! provides no step-up controller, or a build with neither `ssr` nor `hydrate`, shows the
+//! server's message instead.
 
+#[cfg(any(feature = "ssr", feature = "hydrate"))]
 use lepton_auth::actions::step_up::verify_step_up_totp;
+#[cfg(any(feature = "ssr", feature = "hydrate"))]
 use lepton_auth_ui::{
     use_step_up_controller, StepUpController, StepUpFactors, StepUpPolicy, StepUpRequest,
 };
@@ -18,6 +21,7 @@ pub fn is_step_up_challenge(err: &impl std::fmt::Display) -> bool {
     text.contains("STEP_UP:step_up_required") || text.contains("STEP_UP:step_up_expired")
 }
 
+#[cfg(any(feature = "ssr", feature = "hydrate"))]
 fn window_request() -> StepUpRequest {
     StepUpRequest {
         title: "Confirm it's you".to_string(),
@@ -37,6 +41,7 @@ where
     F: Fn() -> Fut + Clone + Send + Sync + 'static,
     Fut: std::future::Future<Output = Result<(), ServerFnError>> + 'static,
 {
+    #[cfg(any(feature = "ssr", feature = "hydrate"))]
     let step_up = use_step_up_controller();
     spawn_local_scoped(async move {
         match action().await {
@@ -44,6 +49,7 @@ where
             Err(err) if is_step_up_challenge(&err) => {
                 // Shown if the dialog is closed without confirming.
                 error.set(Some(err.to_string()));
+                #[cfg(any(feature = "ssr", feature = "hydrate"))]
                 if let Some(ctrl) = step_up {
                     request_code_then_retry(ctrl, error, on_ok, action);
                 }
@@ -53,6 +59,7 @@ where
     });
 }
 
+#[cfg(any(feature = "ssr", feature = "hydrate"))]
 fn request_code_then_retry<F, Fut>(
     ctrl: StepUpController,
     error: RwSignal<Option<String>>,

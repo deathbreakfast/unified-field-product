@@ -48,8 +48,8 @@ chrono = { workspace = true, optional = true }
 valence = { workspace = true, optional = true }
 lepton-identity = { workspace = true, optional = true }
 lepton-host-adapter = { workspace = true, optional = true }
-lepton-auth = { workspace = true, default-features = false }
-lepton-auth-ui = { workspace = true, default-features = false }
+lepton-auth = { workspace = true, default-features = false, optional = true }
+lepton-auth-ui = { workspace = true, default-features = false, optional = true }
 icondata = { workspace = true }
 axum-login = { workspace = true, optional = true }
 tower-sessions = { workspace = true, optional = true }
@@ -75,7 +75,9 @@ spectra-telemetry = ["dep:spectra", "dep:spectra-core"]
 hydrate = [
     "orbital-zone-a/hydrate",
     "leptos/hydrate",
+    "dep:lepton-auth",
     "lepton-auth/hydrate",
+    "dep:lepton-auth-ui",
     "lepton-auth-ui/hydrate",
     "dep:serde_json"]
 ssr = [
@@ -93,7 +95,9 @@ ssr = [
     "dep:lepton-identity",
     "dep:lepton-host-adapter",
     "lepton-host-adapter/ssr",
+    "dep:lepton-auth",
     "lepton-auth/ssr",
+    "dep:lepton-auth-ui",
     "lepton-auth-ui/ssr",
     "db-sqlite",
     "dep:quark",
