@@ -44,12 +44,21 @@ pub fn write_local_visits(_visits: &[HelpVisitRecord]) {}
 /// Visits for a single pathname from local storage.
 ///
 /// Rows may store an inventory pattern (for example `"/apps/:app_name"`) while
-/// `pathname` is the live browser path (`"/apps/welcome"`).
+/// `pathname` is the live browser path (`"/apps/welcome"`). Rows saved under
+/// another route are included when their highlight is registered on `pathname`,
+/// since seen state is keyed by highlight.
 #[must_use]
 pub fn read_local_visits_for_route(pathname: &str) -> Vec<HelpVisitRecord> {
+    let highlights: Vec<&str> = crate::collect_help_steps_for_route(pathname)
+        .iter()
+        .map(|d| d.feature_highlight)
+        .collect();
     read_local_visits()
         .into_iter()
-        .filter(|v| crate::route_matches(&v.route, pathname))
+        .filter(|v| {
+            crate::route_matches(&v.route, pathname)
+                || highlights.contains(&v.feature_highlight.as_str())
+        })
         .collect()
 }
 
@@ -57,15 +66,18 @@ pub fn read_local_visits_for_route(pathname: &str) -> Vec<HelpVisitRecord> {
 pub fn local_mark_steps_seen(steps: &[super::visits::HelpStepKey]) {
     let mut visits = read_local_visits();
     for step in steps {
-        if let Some(existing) = visits
+        let mut found = false;
+        for existing in visits
             .iter_mut()
-            .find(|v| v.route == step.route && v.feature_highlight == step.feature_highlight)
+            .filter(|v| v.feature_highlight == step.feature_highlight)
         {
+            found = true;
             existing.replay = false;
             if step.spotlight.is_some() {
                 existing.spotlight = step.spotlight.clone();
             }
-        } else {
+        }
+        if !found {
             visits.push(HelpVisitRecord {
                 route: step.route.clone(),
                 feature_highlight: step.feature_highlight.clone(),
@@ -83,13 +95,19 @@ pub fn local_request_replay_for_route(pathname: &str) {
     let next = super::visits::apply_replay_for_route(&visits, pathname);
     // If there are no rows yet, invent placeholder rows from inventory so replay
     // still forces a tour of registered steps. Store the inventory route key
-    // (pattern or exact), not the live slug pathname.
+    // (pattern or exact), not the live slug pathname. Rows saved for the same
+    // highlight under another route are replayed too.
     let mut next = next;
     for step in crate::collect_help_steps_for_route(pathname) {
-        if !next
-            .iter()
-            .any(|v| v.route == step.route && v.feature_highlight == step.feature_highlight)
+        let mut found = false;
+        for existing in next
+            .iter_mut()
+            .filter(|v| v.feature_highlight == step.feature_highlight)
         {
+            found = true;
+            existing.replay = true;
+        }
+        if !found {
             next.push(HelpVisitRecord {
                 route: step.route.to_string(),
                 feature_highlight: step.feature_highlight.to_string(),

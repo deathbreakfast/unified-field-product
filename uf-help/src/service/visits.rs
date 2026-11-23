@@ -26,7 +26,10 @@ pub struct HelpStepKey {
     pub spotlight: Option<String>,
 }
 
-/// Pending = inventory step with no visit row, or visit with `replay == true`.
+/// Pending = inventory step with no visit row, or a visit with `replay == true`.
+///
+/// Visits match on `feature_highlight` alone, so a step seen on one route stays
+/// seen wherever the same highlight is registered.
 #[must_use]
 pub fn compute_pending<'a>(
     inventory: &[&'a crate::HelpStepDescriptor],
@@ -36,13 +39,11 @@ pub fn compute_pending<'a>(
         .iter()
         .copied()
         .filter(|step| {
-            match visits
+            let mut matching = visits
                 .iter()
-                .find(|v| v.route == step.route && v.feature_highlight == step.feature_highlight)
-            {
-                None => true,
-                Some(v) => v.replay,
-            }
+                .filter(|v| v.feature_highlight == step.feature_highlight)
+                .peekable();
+            matching.peek().is_none() || matching.any(|v| v.replay)
         })
         .collect()
 }
@@ -67,8 +68,8 @@ pub fn apply_replay_for_route(visits: &[HelpVisitRecord], pathname: &str) -> Vec
 
 /// Merge local anon visits into server visits for the same user.
 ///
-/// Existing server rows win on `(route, feature_highlight)`. Local-only rows are
-/// appended so first authenticated write does not drop device progress.
+/// Existing server rows win on `feature_highlight`, whatever route they were
+/// stored under. Local-only rows are appended so first authenticated write does not drop device progress.
 #[must_use]
 pub fn merge_local_into_server(
     server: &[HelpVisitRecord],
@@ -76,9 +77,9 @@ pub fn merge_local_into_server(
 ) -> Vec<HelpVisitRecord> {
     let mut out = server.to_vec();
     for local_row in local {
-        let exists = out.iter().any(|s| {
-            s.route == local_row.route && s.feature_highlight == local_row.feature_highlight
-        });
+        let exists = out
+            .iter()
+            .any(|s| s.feature_highlight == local_row.feature_highlight);
         if !exists {
             out.push(local_row.clone());
         }
@@ -199,5 +200,55 @@ mod tests {
         assert_eq!(merged.len(), 2);
         assert!(!merged[0].replay);
         assert_eq!(merged[1].feature_highlight, "b");
+    }
+
+    #[test]
+    fn seen_on_one_route_stays_seen_on_another() {
+        let step = desc("/welcome", "workspace-search", 1);
+        let visits = vec![HelpVisitRecord {
+            route: "/apps".into(),
+            feature_highlight: "workspace-search".into(),
+            spotlight: None,
+            replay: false,
+        }];
+        assert!(compute_pending(&[&step], &visits).is_empty());
+    }
+
+    #[test]
+    fn replay_on_any_duplicate_row_makes_step_pending() {
+        let step = desc("/welcome", "workspace-search", 1);
+        let visits = vec![
+            HelpVisitRecord {
+                route: "/apps".into(),
+                feature_highlight: "workspace-search".into(),
+                spotlight: None,
+                replay: false,
+            },
+            HelpVisitRecord {
+                route: "/welcome".into(),
+                feature_highlight: "workspace-search".into(),
+                spotlight: None,
+                replay: true,
+            },
+        ];
+        assert_eq!(compute_pending(&[&step], &visits).len(), 1);
+    }
+
+    #[test]
+    fn merge_dedupes_highlight_across_routes() {
+        let server = vec![HelpVisitRecord {
+            route: "/apps".into(),
+            feature_highlight: "a".into(),
+            spotlight: None,
+            replay: false,
+        }];
+        let local = vec![HelpVisitRecord {
+            route: "/welcome".into(),
+            feature_highlight: "a".into(),
+            spotlight: None,
+            replay: true,
+        }];
+        let merged = merge_local_into_server(&server, &local);
+        assert_eq!(merged, server);
     }
 }
