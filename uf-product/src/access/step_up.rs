@@ -37,14 +37,14 @@ where
     F: Fn() -> Fut + Clone + Send + Sync + 'static,
     Fut: std::future::Future<Output = Result<(), ServerFnError>> + 'static,
 {
-        let step_up = use_step_up_controller();
+    let step_up = use_step_up_controller();
     spawn_local_scoped(async move {
         match action().await {
             Ok(()) => on_ok.run(()),
             Err(err) if is_step_up_challenge(&err) => {
                 // Shown if the dialog is closed without confirming.
                 error.set(Some(err.to_string()));
-                                if let Some(ctrl) = step_up {
+                if let Some(ctrl) = step_up {
                     request_code_then_retry(ctrl, error, on_ok, action);
                 }
             }
