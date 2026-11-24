@@ -2,13 +2,20 @@
 
 use valence::{Actor, Valence};
 
-use super::{WorkspaceSearchError, WorkspaceSearchHit};
+use super::{SearchRelation, WorkspaceSearchError, WorkspaceSearchHit};
 
 const MAX_QUERY_CHARS: usize = 200;
 const DEFAULT_MAX_RESULTS: u32 = 20;
 const ABSOLUTE_MAX_RESULTS: u32 = 50;
 
+fn relation_of(row: &crate::generated::UnifiedFieldSearchDocument) -> SearchRelation {
+    row.relation()
+        .map_or(SearchRelation::Other, |r| SearchRelation::from_i64(*r))
+}
+
 /// Search the caller's index documents.
+///
+/// Hits are ordered by [`SearchRelation`] (owner first), then by the backend's text match.
 ///
 /// Each row passes through the [`super::WorkspaceSearchHitValidator`]s registered for
 /// its `(app_id, source_table)` first; rows a validator rejects are dropped and do not
@@ -82,6 +89,10 @@ pub async fn query(
         operation: "query",
         message: e.to_string(),
     })?;
+
+    // Stable sort: rows of one relation keep the backend's text-match order.
+    let mut rows = rows;
+    rows.sort_by_key(relation_of);
 
     let mut hits = Vec::new();
     for row in rows {

@@ -23,6 +23,19 @@ fn safe_app_link(link: &str) -> Option<&str> {
     }
 }
 
+/// Groups hits by `kind`, keeping hit order within a group and ordering groups by
+/// their first (best) hit.
+fn group_by_kind(hits: &[WorkspaceSearchHit]) -> Vec<(String, Vec<WorkspaceSearchHit>)> {
+    let mut groups: Vec<(String, Vec<WorkspaceSearchHit>)> = Vec::new();
+    for hit in hits {
+        match groups.iter_mut().find(|(kind, _)| *kind == hit.kind) {
+            Some((_, rows)) => rows.push(hit.clone()),
+            None => groups.push((hit.kind.clone(), vec![hit.clone()])),
+        }
+    }
+    groups
+}
+
 /// Desktop Combobox over the per-user workspace content index.
 #[component]
 pub fn WorkspaceSearch() -> impl IntoView {
@@ -241,34 +254,47 @@ pub fn WorkspaceSearchDialog(
                                             />
                                         }
                                         .into_any(),
-                                        Some(Ok(rows)) => view! {
-                                            <List>
+                                        Some(Ok(rows)) => {
+                                            let groups = group_by_kind(&rows);
+                                            view! {
                                                 <For
-                                                    each=move || rows.clone()
-                                                    key=|h| h.id.clone()
-                                                    let:hit
+                                                    each=move || groups.clone()
+                                                    key=|(kind, _)| kind.clone()
+                                                    let:group
                                                 >
                                                     {
-                                                        let title = hit.title.clone();
-                                                        let link = hit.link.clone();
-                                                        let kind = hit.kind.clone();
+                                                        let (kind, hits) = group;
                                                         view! {
-                                                            <button
-                                                                type="button"
-                                                                data-testid="workspace-search-hit"
-                                                                on:click=move |_| {
-                                                                    on_pick.run(link.clone());
-                                                                }
-                                                            >
-                                                                <Flex vertical=true gap=FlexGap::Small>
-                                                                    <Body1>{title}</Body1>
-                                                                    <Caption1>{kind}</Caption1>
-                                                                </Flex>
-                                                            </button>
+                                                            <div data-testid="workspace-search-group">
+                                                                <Caption1>{kind}</Caption1>
+                                                                <List>
+                                                                    <For
+                                                                        each=move || hits.clone()
+                                                                        key=|h| h.id.clone()
+                                                                        let:hit
+                                                                    >
+                                                                        {
+                                                                            let title = hit.title.clone();
+                                                                            let link = hit.link.clone();
+                                                                            view! {
+                                                                                <button
+                                                                                    type="button"
+                                                                                    data-testid="workspace-search-hit"
+                                                                                    on:click=move |_| {
+                                                                                        on_pick.run(link.clone());
+                                                                                    }
+                                                                                >
+                                                                                    <Body1>{title}</Body1>
+                                                                                </button>
+                                                                            }
+                                                                        }
+                                                                    </For>
+                                                                </List>
+                                                            </div>
                                                         }
                                                     }
                                                 </For>
-                                            </List>
+                                            }
                                         }
                                         .into_any(),
                                     }
@@ -279,5 +305,31 @@ pub fn WorkspaceSearchDialog(
                 </div>
             </DialogSurface>
         </Dialog>
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn hit(id: &str, kind: &str) -> WorkspaceSearchHit {
+        WorkspaceSearchHit {
+            id: id.into(),
+            title: id.into(),
+            description: None,
+            app_id: "demo".into(),
+            kind: kind.into(),
+            link: format!("/{id}"),
+        }
+    }
+
+    #[test]
+    fn groups_follow_best_hit_order() {
+        let hits = [hit("a", "team"), hit("b", "todo"), hit("c", "team")];
+        let groups = group_by_kind(&hits);
+        let kinds: Vec<_> = groups.iter().map(|(k, _)| k.as_str()).collect();
+        assert_eq!(kinds, ["team", "todo"]);
+        let team_ids: Vec<_> = groups[0].1.iter().map(|h| h.id.as_str()).collect();
+        assert_eq!(team_ids, ["a", "c"]);
     }
 }
