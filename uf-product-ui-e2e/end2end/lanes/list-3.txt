@@ -28,3 +28,6 @@ workspace_search.spec.ts › pw-workspace-search › pw-workspace-search-desktop
 workspace_search.spec.ts › pw-workspace-search › pw-workspace-search-mobile-select-happy
 workspace_search.spec.ts › pw-workspace-search › pw-workspace-search-mobile-no-match-sad
 workspace_search.spec.ts › pw-workspace-search › pw-workspace-search-unauth-sad
+welcome_admin.spec.ts › welcome-admin › welcome-admin-toast-undo-happy
+welcome_admin.spec.ts › welcome-admin › welcome-admin-conflict-two-sessions-sad
+welcome_admin.spec.ts › welcome-admin › welcome-admin-phone-stacks-preview-happy

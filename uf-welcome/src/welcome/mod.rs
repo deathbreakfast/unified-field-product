@@ -2,6 +2,8 @@
 
 /// Reusable cards shown on the welcome page.
 pub mod components;
+/// Plain-words descriptions of featured list changes.
+pub mod describe;
 /// Featured apps Valence catalog (SSR).
 #[cfg(feature = "ssr")]
 pub mod featured;

@@ -50,6 +50,39 @@ pub struct SeedNotification {
     pub sender_name: Option<String>,
 }
 
+/// Display name the featured admin page shows for the verified e2e user.
+const E2E_WELCOME_ADMIN_NAME: &str = "Ines Okoro";
+
+/// Write the verified e2e user's profile so featured history shows a real name.
+async fn seed_welcome_admin_profile() -> Result<(), StatusCode> {
+    let system = e2e_valence().with_actor(Actor::System {
+        operation: "e2e_seed_welcome_admin_profile".into(),
+    });
+    let (_, user_id) = E2E_VERIFIED_SESSION_USER
+        .split_once(':')
+        .ok_or(StatusCode::INTERNAL_SERVER_ERROR)?;
+    let now = Utc::now();
+    let profile = UserProfile::new(
+        RecordId::new("user", user_id),
+        E2E_WELCOME_ADMIN_NAME.to_string(),
+        E2E_WELCOME_ADMIN_NAME.to_string(),
+        now,
+        now,
+        None,
+    )
+    .map_err(|err| {
+        log::error!("e2e seed: build welcome admin profile failed: {err}");
+        StatusCode::BAD_REQUEST
+    })?;
+    UserProfile::upsert(user_id, profile, &system, valence::use_!(r"**Test:** Fixture **User Profile** save for `seed` so the featured admin suite can show who published a change. CI and developers running the suite only."))
+        .await
+        .map_err(|err| {
+            log::error!("e2e seed: upsert welcome admin profile failed: {err}");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+    Ok(())
+}
+
 /// Fixture user that sends notifications carrying a `sender`.
 const E2E_SENDER_USER_ID: &str = "e2e-sender";
 
@@ -416,6 +449,14 @@ pub async fn seed_data(
         if let Err(err) = clear_all(&valence).await {
             log::warn!("e2e seed: clear_all featured failed: {err}");
         }
+        if let Err(err) = uf_welcome::featured::clear_history(&valence).await {
+            log::warn!("e2e seed: clear featured history failed: {err}");
+        }
+    }
+
+    // Featured history names who published; give the verified e2e user a profile name.
+    if body.welcome_admin && matches!(kind, E2eAuthKind::AuthenticatedVerified) {
+        seed_welcome_admin_profile().await?;
     }
 
     // Seed IndexedDemoItem under the verified e2e user (SE writes workspace index).

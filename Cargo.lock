@@ -6268,6 +6268,7 @@ dependencies = [
  "icondata",
  "icondata_core",
  "inventory",
+ "lepton-identity",
  "leptos",
  "leptos_axum",
  "leptos_meta",
