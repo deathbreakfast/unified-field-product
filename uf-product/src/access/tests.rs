@@ -138,6 +138,10 @@ struct FakeBackend {
     allowed: Vec<&'static str>,
     check_error: bool,
     search: PrincipalResults,
+    /// Every resource's rows, as `(kind, id, rows)`, for `owned_by`.
+    resources: Vec<(&'static str, &'static str, Vec<AccessEntry>)>,
+    /// The groups and team groups each user is in, by user id.
+    memberships: Vec<(&'static str, Vec<PrincipalRef>)>,
 }
 
 impl FakeBackend {
@@ -234,6 +238,22 @@ impl ResourceAccessBackend for FakeBackend {
         }
         Ok(self.allowed.contains(&action))
     }
+
+    async fn owned_by(&self, actor: &PrincipalRef, kind: &str) -> Result<Vec<String>, AccessError> {
+        let mut principals = vec![actor.clone()];
+        principals.extend(
+            self.memberships
+                .iter()
+                .filter(|(user, _)| *user == actor.id)
+                .flat_map(|(_, groups)| groups.iter().cloned()),
+        );
+        let of_kind = self
+            .resources
+            .iter()
+            .filter(|(k, _, _)| *k == kind)
+            .map(|(_, id, rows)| (*id, rows));
+        Ok(owned_resource_ids(of_kind, &principals))
+    }
 }
 
 // ---- backend, require and roles ----------------------------------------------------------
@@ -253,6 +273,161 @@ fn unwired_backend_fails_closed() {
             Err(AccessError::Unwired)
         );
     });
+}
+
+// ---- owned_by ----------------------------------------------------------------------------
+
+fn sam() -> PrincipalRef {
+    principal(PrincipalKind::User, "u_sam", "Sam Okafor")
+}
+
+fn ines() -> PrincipalRef {
+    principal(PrincipalKind::User, "u_ines", "Ines Duarte")
+}
+
+fn default_owner(principal: PrincipalRef) -> AccessEntry {
+    AccessEntry {
+        default_owner: true,
+        ..entry(principal, Role::Owner)
+    }
+}
+
+/// Four jobs and a table: Noor owns one directly, the billing team edits one, the analysts
+/// run one, and the admin group owns everything code-declared. Sam is on the billing team,
+/// Ines is in the analysts group, and Noor is an admin.
+fn ownership_backend() -> FakeBackend {
+    let analysts = principal(PrincipalKind::Group, "billing_analysts", "Billing Analysts");
+    FakeBackend {
+        resources: vec![
+            (
+                "chronon_job",
+                "noor-export",
+                vec![default_owner(admins()), entry(noor(), Role::Owner)],
+            ),
+            (
+                "chronon_job",
+                "billing-rollup",
+                vec![default_owner(admins()), entry(billing_team(), Role::Edit)],
+            ),
+            (
+                "chronon_job",
+                "invoice-sync",
+                vec![default_owner(admins()), entry(analysts.clone(), Role::Run)],
+            ),
+            (
+                "chronon_job",
+                "nightly-vacuum",
+                vec![default_owner(admins())],
+            ),
+            (
+                "spectra_table",
+                "billing_events",
+                vec![entry(billing_team(), Role::Owner)],
+            ),
+        ],
+        memberships: vec![
+            ("u_noor", vec![admins()]),
+            ("u_sam", vec![billing_team()]),
+            ("u_ines", vec![analysts]),
+        ],
+        ..FakeBackend::default()
+    }
+}
+
+#[test]
+fn owned_by_includes_a_direct_owner_but_not_admin_default_ownership() {
+    let backend = ownership_backend();
+    let owned = block_on(backend.owned_by(&noor(), "chronon_job")).unwrap();
+    assert_eq!(owned, vec!["noor-export".to_string()]);
+}
+
+#[test]
+fn owned_by_includes_what_the_actors_team_can_edit() {
+    let backend = ownership_backend();
+    assert_eq!(
+        block_on(backend.owned_by(&sam(), "chronon_job")).unwrap(),
+        vec!["billing-rollup".to_string()]
+    );
+    assert_eq!(
+        block_on(backend.owned_by(&sam(), "spectra_table")).unwrap(),
+        vec!["billing_events".to_string()],
+        "only the asked kind comes back"
+    );
+}
+
+#[test]
+fn owned_by_leaves_out_can_run() {
+    let backend = ownership_backend();
+    assert!(block_on(backend.owned_by(&ines(), "chronon_job"))
+        .unwrap()
+        .is_empty());
+}
+
+#[test]
+fn owned_by_defaults_to_empty_and_the_unwired_backend_returns_empty() {
+    // FakeBackend with no resources behaves like the trait's default body.
+    assert_eq!(
+        block_on(FakeBackend::default().owned_by(&noor(), "chronon_job")),
+        Ok(Vec::new())
+    );
+    assert_eq!(
+        block_on(UnwiredBackend.owned_by(&noor(), "chronon_job")),
+        Ok(Vec::new())
+    );
+}
+
+#[test]
+fn trait_default_owned_by_returns_empty() {
+    struct Minimal;
+
+    #[async_trait::async_trait]
+    impl ResourceAccessBackend for Minimal {
+        async fn access(&self, _r: &ResourceRef) -> Result<AccessView, AccessError> {
+            Err(AccessError::Unwired)
+        }
+        async fn set_role(
+            &self,
+            _r: &ResourceRef,
+            _p: &PrincipalRef,
+            _role: Role,
+        ) -> Result<(), AccessError> {
+            Ok(())
+        }
+        async fn remove(&self, _r: &ResourceRef, _p: &PrincipalRef) -> Result<(), AccessError> {
+            Ok(())
+        }
+        async fn search_principals(&self, _q: &str) -> Result<PrincipalResults, AccessError> {
+            Ok(PrincipalResults::default())
+        }
+        async fn request(
+            &self,
+            _r: &ResourceRef,
+            _role: Role,
+            _reason: &str,
+        ) -> Result<RequestId, AccessError> {
+            Ok(RequestId("r".to_string()))
+        }
+        async fn can(&self, _r: &ResourceRef, _action: &str) -> Result<bool, AccessError> {
+            Ok(true)
+        }
+    }
+
+    assert_eq!(
+        block_on(Minimal.owned_by(&noor(), "chronon_job")),
+        Ok(Vec::new())
+    );
+}
+
+#[test]
+fn counts_as_owned_follows_the_role_and_skips_default_owner() {
+    assert!(entry(noor(), Role::Owner).counts_as_owned());
+    assert!(entry(noor(), Role::Edit).counts_as_owned());
+    assert!(entry(noor(), Role::Custom(vec!["View".into(), "Edit".into()])).counts_as_owned());
+    assert!(!entry(noor(), Role::Custom(vec!["View".into(), "Run".into()])).counts_as_owned());
+    assert!(!entry(noor(), Role::Run).counts_as_owned());
+    assert!(!entry(noor(), Role::View).counts_as_owned());
+    assert!(!entry(noor(), Role::ReadUnmasked).counts_as_owned());
+    assert!(!default_owner(admins()).counts_as_owned());
 }
 
 #[test]
