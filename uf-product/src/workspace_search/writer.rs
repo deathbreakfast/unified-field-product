@@ -4,7 +4,7 @@ use chrono::Utc;
 use valence::{Model, RecordId, Valence};
 
 use super::link::validate_relative_link;
-use super::{SearchDocumentDraft, WorkspaceSearchError};
+use super::{SearchDocumentDraft, SearchRelation, WorkspaceSearchError};
 
 /// Schema TTL window (90 days), matching `ttl.seconds` on the Valence schema.
 pub const SEARCH_DOCUMENT_TTL_SECS: u64 = 7_776_000;
@@ -66,6 +66,31 @@ impl SearchDocumentWriter {
         valence: &Valence,
         draft: SearchDocumentDraft,
     ) -> Result<(), WorkspaceSearchError> {
+        Self::upsert_with_relation(valence, draft, SearchRelation::Other).await
+    }
+
+    /// Like [`Self::upsert`], but records how close the hit is to the user so
+    /// [`super::query`] can list closer hits first.
+    ///
+    /// # Errors
+    ///
+    /// Same as [`Self::upsert`].
+    ///
+    /// # Examples
+    ///
+    /// ```rust,ignore
+    /// use uf_product::workspace_search::{SearchDocumentWriter, SearchRelation};
+    ///
+    /// # async fn demo(v: &valence::Valence, draft: uf_product::workspace_search::SearchDocumentDraft) -> Result<(), uf_product::workspace_search::WorkspaceSearchError> {
+    /// SearchDocumentWriter::upsert_with_relation(v, draft, SearchRelation::Owner).await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn upsert_with_relation(
+        valence: &Valence,
+        draft: SearchDocumentDraft,
+        relation: SearchRelation,
+    ) -> Result<(), WorkspaceSearchError> {
         validate_relative_link(&draft.link)?;
         if draft.user.table() != "user" {
             return Err(WorkspaceSearchError::Write {
@@ -102,6 +127,7 @@ impl SearchDocumentWriter {
             draft.searchable_text,
             draft.link,
             draft.kind,
+            Some(relation.as_i64()),
             Utc::now(),
         )
         .map_err(|e| WorkspaceSearchError::Write {

@@ -18,6 +18,12 @@
 //! Anonymous and System actors so a mistaken `system_valence()` call cannot dump every
 //! user's documents.
 //!
+//! ## Ordering
+//!
+//! [`query`] orders hits by [`SearchRelation`] (owner, assignee, collaborator, other), then by
+//! the backend's text match. Writers opt in with
+//! [`SearchDocumentWriter::upsert_with_relation`]; [`SearchDocumentWriter::upsert`] writes `Other`.
+//!
 //! ## Revocation at query time
 //!
 //! A row can outlive the access that produced it (a team you were removed from).
@@ -74,6 +80,8 @@ mod link;
 #[cfg(feature = "ssr")]
 mod query;
 #[cfg(feature = "ssr")]
+mod relation;
+#[cfg(feature = "ssr")]
 mod validator;
 #[cfg(feature = "ssr")]
 mod writer;
@@ -88,6 +96,8 @@ pub use draft::SearchDocumentDraft;
 pub use error::WorkspaceSearchError;
 #[cfg(feature = "ssr")]
 pub use query::query;
+#[cfg(feature = "ssr")]
+pub use relation::SearchRelation;
 #[cfg(feature = "ssr")]
 pub use validator::{HitValidatorFuture, WorkspaceSearchHitValidator};
 #[cfg(feature = "ssr")]

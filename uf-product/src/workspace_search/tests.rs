@@ -5,8 +5,8 @@ use std::sync::Arc;
 use valence::{Actor, InMemoryBackend, Model, RecordId, SchemaRegistry, Valence};
 
 use super::{
-    document_id, query, SearchDocumentDraft, SearchDocumentWriter, WorkspaceSearchError,
-    WorkspaceSearchHit, SEARCH_DOCUMENT_TTL_SECS,
+    document_id, query, SearchDocumentDraft, SearchDocumentWriter, SearchRelation,
+    WorkspaceSearchError, WorkspaceSearchHit, SEARCH_DOCUMENT_TTL_SECS,
 };
 use crate::generated::UnifiedFieldSearchDocument;
 
@@ -316,6 +316,7 @@ async fn privacy_cross_user_cud_denied_sad() {
         "Forge".into(),
         "/demo/13".into(),
         "demo".into(),
+        None,
         chrono::Utc::now(),
     )
     .expect("new");
@@ -589,4 +590,110 @@ async fn query_validator_ignores_other_tables_happy() {
     let alice_v = system_v.with_actor(alice());
     let hits = query(&alice_v, "ProbeOtherTable", 10).await.expect("query");
     assert_eq!(hits.len(), 1);
+}
+
+// ── Relation ordering ────────────────────────────────────────────────────────
+
+#[test]
+fn relation_round_trip_and_unknown_is_other_happy() {
+    for r in [
+        SearchRelation::Owner,
+        SearchRelation::Assignee,
+        SearchRelation::Collaborator,
+        SearchRelation::Other,
+    ] {
+        assert_eq!(SearchRelation::from_i64(r.as_i64()), r);
+    }
+    assert_eq!(SearchRelation::from_i64(99), SearchRelation::Other);
+    assert_eq!(SearchRelation::default(), SearchRelation::Other);
+}
+
+#[test]
+fn schema_has_relation_field_and_bumped_version_happy() {
+    let schema = include_str!("../../schemas/unified_field_search_document_valence_schema.rs");
+    assert!(schema.contains("relation: {"));
+    assert!(schema.contains("version: \"0.1.2\""));
+}
+
+async fn seed_relations(v: &Valence, text: &str, rels: &[(&str, SearchRelation)]) {
+    for (id, rel) in rels {
+        SearchDocumentWriter::upsert_with_relation(
+            v,
+            draft_for("alice", id, text, &format!("/demo/{id}")),
+            *rel,
+        )
+        .await
+        .expect("upsert");
+    }
+}
+
+#[tokio::test]
+async fn query_orders_owner_before_collaborator_happy() {
+    let system_v = mem_valence(system());
+    seed_relations(
+        &system_v,
+        "RelOrderSame",
+        &[
+            ("c", SearchRelation::Collaborator),
+            ("o", SearchRelation::Owner),
+            ("x", SearchRelation::Other),
+            ("a", SearchRelation::Assignee),
+        ],
+    )
+    .await;
+    let alice_v = system_v.with_actor(alice());
+    let hits = query(&alice_v, "RelOrderSame", 10).await.expect("query");
+    let links: Vec<_> = hits.iter().map(|h| h.link.as_str()).collect();
+    assert_eq!(links, ["/demo/o", "/demo/a", "/demo/c", "/demo/x"]);
+}
+
+#[tokio::test]
+async fn upsert_defaults_to_other_happy() {
+    let system_v = mem_valence(system());
+    SearchDocumentWriter::upsert(
+        &system_v,
+        draft_for("alice", "plain", "RelDefault", "/demo/plain"),
+    )
+    .await
+    .expect("upsert");
+    seed_relations(
+        &system_v,
+        "RelDefault",
+        &[("collab", SearchRelation::Collaborator)],
+    )
+    .await;
+    let alice_v = system_v.with_actor(alice());
+    let hits = query(&alice_v, "RelDefault", 10).await.expect("query");
+    assert_eq!(hits[0].link, "/demo/collab");
+    assert_eq!(hits[1].link, "/demo/plain");
+}
+
+#[tokio::test]
+async fn query_limit_keeps_closest_relation_happy() {
+    let system_v = mem_valence(system());
+    seed_relations(
+        &system_v,
+        "RelLimit",
+        &[
+            ("x1", SearchRelation::Other),
+            ("x2", SearchRelation::Other),
+            ("o1", SearchRelation::Owner),
+        ],
+    )
+    .await;
+    let alice_v = system_v.with_actor(alice());
+    let hits = query(&alice_v, "RelLimit", 1).await.expect("query");
+    assert_eq!(hits.len(), 1);
+    assert_eq!(hits[0].link, "/demo/o1");
+}
+
+#[tokio::test]
+async fn query_limit_clamps_to_at_least_one_happy() {
+    let system_v = mem_valence(system());
+    seed_relations(&system_v, "RelClamp", &[("a", SearchRelation::Owner)]).await;
+    let alice_v = system_v.with_actor(alice());
+    assert_eq!(
+        query(&alice_v, "RelClamp", 0).await.expect("query").len(),
+        1
+    );
 }

@@ -8,7 +8,7 @@ valence_schema! {
     UnifiedFieldSearchDocument {
         repository: "https://github.com/unified-field-dev/unified-field-product",
         table: "unified_field_search_document",
-        version: "0.1.1",
+        version: "0.1.2",
         database: crate::embedded_surreal::IDENTITY_DEFAULT_STORAGE,
         description: "Per-user denormalized workspace search index row",
 
@@ -85,6 +85,10 @@ valence_schema! {
             kind: {
                 r#type: FieldType::String,
                 required: true,
+            },
+            relation: {
+                r#type: FieldType::Integer,
+                required: false,
             },
             updated_at: {
                 r#type: FieldType::DateTime,
