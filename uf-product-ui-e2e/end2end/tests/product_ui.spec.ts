@@ -479,7 +479,6 @@ test.describe("pw-auth-gates", () => {
     await expect(page.getByTestId("welcome-page")).toBeVisible({ timeout: 60_000 });
     await expect(page.getByTestId("featured-apps-card")).toBeVisible();
     await expect(page.getByTestId("recent-apps-card")).toBeVisible();
-    await expect(page.getByTestId("my-most-used-card")).toBeVisible();
     await expect(page.getByTestId("popular-apps-card")).toBeVisible();
     await expect(
       page.getByTestId("featured-apps-card").getByTestId("app-links-empty"),
@@ -487,9 +486,6 @@ test.describe("pw-auth-gates", () => {
     await expect(
       page.getByTestId("recent-apps-card").getByTestId("app-links-empty"),
     ).toContainText("Nothing yet. Visit an app to see it here.");
-    await expect(
-      page.getByTestId("my-most-used-card").getByTestId("app-links-empty"),
-    ).toContainText("No usage yet. Open a few apps and check back.");
     // Popular is fleet-wide; do not assert empty here (other scenarios may have seeded).
     await expect(page.getByText("Useful links", { exact: true })).toHaveCount(0);
     await expect(page.getByText("Tips", { exact: true })).toHaveCount(0);
@@ -504,7 +500,7 @@ test.describe("pw-auth-gates", () => {
         { app_id: "apps", age_secs: 40 },
         { app_id: "welcome", age_secs: 20 },
         { app_id: "apps", age_secs: 10 },
-        // Other viewer — must not appear in Recent / My most used.
+        // Other viewer — must not appear in Recent.
         { app_id: "help", viewer_key: "other-user", age_secs: 5 },
       ],
     });
@@ -522,10 +518,6 @@ test.describe("pw-auth-gates", () => {
     await expect(recent.getByTestId("app-link-welcome")).toBeVisible();
     await expect(recent.getByTestId("app-link-apps")).toBeVisible();
     await expect(recent.getByTestId("app-link-help")).toHaveCount(0);
-
-    const mine = page.getByTestId("my-most-used-card");
-    await expect(mine.getByTestId("app-link-apps")).toBeVisible();
-    await expect(mine.getByTestId("app-link-help")).toHaveCount(0);
 
     const popular = page.getByTestId("popular-apps-card");
     await expect(popular.getByTestId("app-link-apps")).toBeVisible();
@@ -550,10 +542,6 @@ test.describe("pw-auth-gates", () => {
 
     const recent = page.getByTestId("recent-apps-card");
     await expect(recent.getByTestId("app-link-apps")).toBeVisible({
-      timeout: 60_000,
-    });
-    const mine = page.getByTestId("my-most-used-card");
-    await expect(mine.getByTestId("app-link-apps")).toBeVisible({
       timeout: 60_000,
     });
   });

@@ -3188,7 +3188,6 @@ dependencies = [
  "orbital-macros",
  "orbital-style",
  "orbital-theme",
- "send_wrapper",
  "wasm-bindgen",
  "web-sys",
 ]
@@ -6406,6 +6405,8 @@ dependencies = [
  "uf-help",
  "uf-help-macros",
  "uf-integrations",
+ "uf-notifications-api",
+ "uf-notifications-core",
  "uf-product",
  "uf-product-macros 0.1.0",
  "uf-quark",

@@ -104,6 +104,23 @@ fn AppBarBranding(
     }
 }
 
+/// Hand the last breadcrumb to the page-view tracker as this page's title.
+#[cfg(any(feature = "ssr", feature = "hydrate"))]
+fn publish_page_title(breadcrumbs: &[BreadcrumbLink]) {
+    use uf_product::telemetry::CurrentPageTitle;
+
+    let (Some(current), Some(last)) = (use_context::<CurrentPageTitle>(), breadcrumbs.last())
+    else {
+        return;
+    };
+    let title = last.title.clone();
+    Effect::new(move |_| {
+        if let Ok(path) = window().location().pathname() {
+            current.set(path, title.clone());
+        }
+    });
+}
+
 #[component]
 fn AppBarBreadcrumbs(
     /// List of breadcrumbs.
@@ -235,6 +252,8 @@ pub fn UnifiedFieldAppBar(
     });
     let homepage_url = homepage_url.unwrap_or_else(|| "/".to_string());
     let breadcrumbs = breadcrumbs.unwrap_or_default();
+    #[cfg(any(feature = "ssr", feature = "hydrate"))]
+    publish_page_title(&breadcrumbs);
     let show_sidebar_toggle = show_sidebar_toggle
         .or_else(|| use_context::<ShellSidebarToggle>().map(|ctx| ctx.0))
         .unwrap_or(false);

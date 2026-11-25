@@ -113,12 +113,6 @@ export async function seedAuth(
           },
           {
             route: "/welcome",
-            feature_highlight: "welcome-most-used",
-            spotlight: "welcome-most-used-card",
-            replay: false,
-          },
-          {
-            route: "/welcome",
             feature_highlight: "welcome-popular",
             spotlight: "welcome-popular-apps-card",
             replay: false,

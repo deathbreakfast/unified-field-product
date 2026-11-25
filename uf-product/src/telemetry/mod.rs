@@ -14,7 +14,9 @@
 //! | Keep theme mode/brand in sync on navigation | [`AppearanceThemeController`] |
 //! | SSR emit helper | `record_page_view_telemetry` (feature `ssr`) |
 //! | Aggregate page views for welcome cards | [`usage`] (feature `ssr`) |
-//! | Recent / most-used / popular from Spectra | [`usage::recent_apps_for_viewer`], [`usage::most_used_for_viewer`], [`usage::popular_apps`] |
+//! | Recent / popular from Spectra | [`usage::recent_apps_for_viewer`], [`usage::popular_apps`] |
+//! | Last page per app for Welcome (Valence, owner-only) | [`recent_pages`] (feature `ssr`) |
+//! | Page title the app bar shows | [`CurrentPageTitle`] |
 //!
 //! # Example
 //!
@@ -46,6 +48,9 @@ mod events;
 pub mod page_view_tracker;
 #[cfg(feature = "ssr")]
 mod page_views;
+/// Owner-only last page per app for Welcome recent pages.
+#[cfg(feature = "ssr")]
+pub mod recent_pages;
 /// Page-view usage aggregators for welcome / product shortcuts.
 #[cfg(feature = "ssr")]
 pub mod usage;
@@ -53,6 +58,8 @@ pub mod usage;
 #[cfg(any(feature = "ssr", feature = "hydrate"))]
 pub use appearance_controller::AppearanceThemeController;
 #[cfg(any(feature = "ssr", feature = "hydrate"))]
-pub use page_view_tracker::{resolve_app_for_path, PageViewTracker, UfAppRouteEntry};
+pub use page_view_tracker::{
+    resolve_app_for_path, CurrentPageTitle, PageViewTracker, UfAppRouteEntry,
+};
 #[cfg(feature = "ssr")]
 pub use page_views::record_page_view_telemetry;

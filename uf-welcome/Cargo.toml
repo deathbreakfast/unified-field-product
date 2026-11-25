@@ -41,6 +41,7 @@ quark = { workspace = true, optional = true }
 spectra = { workspace = true, optional = true }
 tower-sessions = { workspace = true, optional = true }
 lepton-identity = { workspace = true, optional = true }
+uf-notifications-api = { workspace = true, default-features = false }
 
 [build-dependencies]
 valence-codegen = { workspace = true }
@@ -80,11 +81,19 @@ ssr = [
     "dep:spectra",
     "dep:tower-sessions",
     "dep:lepton-identity",
+    "uf-notifications-api/ssr",
 ]
 [dev-dependencies]
 tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }
 valence = { workspace = true }
+chrono = { workspace = true }
+lepton-identity = { workspace = true }
+uf-notifications-core = { workspace = true }
 
 [[test]]
 name = "featured_service_integ"
 required-features = ["ssr", "admin-permissions"]
+
+[[test]]
+name = "welcome_owner_data_integ"
+required-features = ["ssr"]

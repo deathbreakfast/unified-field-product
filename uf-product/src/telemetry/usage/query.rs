@@ -9,8 +9,7 @@ use spectra_core::{
 };
 
 use super::aggregate::{
-    aggregate_most_used, aggregate_popular, aggregate_recent, RankedApp, VisitRow,
-    PAGE_VIEW_LOG_TABLE,
+    aggregate_popular, aggregate_recent, RankedApp, VisitRow, PAGE_VIEW_LOG_TABLE,
 };
 use super::error::UsageQueryError;
 use crate::routes::AppRegistry;
@@ -73,38 +72,6 @@ pub async fn recent_apps_for_viewer_on(
 ) -> Result<Vec<UsageAppLink>, UsageQueryError> {
     let rows = fetch_visits(router, Some(viewer_key), opts).await?;
     Ok(resolve_usage_links(&aggregate_recent(
-        &rows,
-        viewer_key,
-        opts.limit_apps,
-    )))
-}
-
-/// Most-used apps for `viewer_key`.
-///
-/// # Errors
-///
-/// Returns [`UsageQueryError`] from [`most_used_for_viewer_on`] when Spectra
-/// query fails ([`UsageQueryError::QueryFailed`]).
-pub async fn most_used_for_viewer(
-    spectra: &Spectra,
-    viewer_key: &str,
-    opts: &UsageQueryOptions,
-) -> Result<Vec<UsageAppLink>, UsageQueryError> {
-    most_used_for_viewer_on(spectra.router().as_ref(), viewer_key, opts).await
-}
-
-/// Most-used apps against an explicit Spectra router.
-///
-/// # Errors
-///
-/// Returns [`UsageQueryError::QueryFailed`] when the Spectra events query fails.
-pub async fn most_used_for_viewer_on(
-    router: &spectra_core::SpectraRouter,
-    viewer_key: &str,
-    opts: &UsageQueryOptions,
-) -> Result<Vec<UsageAppLink>, UsageQueryError> {
-    let rows = fetch_visits(router, Some(viewer_key), opts).await?;
-    Ok(resolve_usage_links(&aggregate_most_used(
         &rows,
         viewer_key,
         opts.limit_apps,
