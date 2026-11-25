@@ -293,6 +293,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d27c3610c36aee21ce8ac510e6224498de4228ad772a171ed65643a24693a5a8"
 
 [[package]]
+name = "base32"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "022dfe9eb35f19ebbcb51e0b40a5ab759f46ad60cadf7297e0bd085afb50e076"
+
+[[package]]
 name = "base64"
 version = "0.22.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -821,6 +827,12 @@ name = "const_str_slice_concat"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f67855af358fcb20fac58f9d714c94e2b228fe5694c1c9b4ead4a366343eda1b"
+
+[[package]]
+name = "constant_time_eq"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7c74b8349d32d297c9134b8c88677813a227df8f779daa29bfc29c183fe3dca6"
 
 [[package]]
 name = "convert_case"
@@ -1705,6 +1717,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "higgs-macros"
+version = "0.1.0"
+source = "git+https://github.com/unified-field-dev/higgs?branch=main#ac8927a3abf1205f5abec47ba696b89c66813f11"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.119",
+]
+
+[[package]]
 name = "hkdf"
 version = "0.12.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2207,6 +2229,70 @@ dependencies = [
 ]
 
 [[package]]
+name = "lepton-auth"
+version = "0.1.0"
+source = "git+https://github.com/unified-field-dev/lepton?branch=main#87014fa637c36732fc7a578dbf7a01f78d964847"
+dependencies = [
+ "anyhow",
+ "argon2",
+ "async-trait",
+ "axum",
+ "axum-login",
+ "base64 0.22.1",
+ "cfg-if",
+ "chacha20poly1305",
+ "chrono",
+ "futures",
+ "higgs",
+ "higgs-macros",
+ "http",
+ "js-sys",
+ "lepton-host-adapter",
+ "lepton-identity",
+ "lepton-sms",
+ "leptos",
+ "leptos_axum",
+ "leptos_router",
+ "password-hash",
+ "qrcode",
+ "rand_core 0.6.4",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "sha2",
+ "thiserror 2.0.21",
+ "tokio",
+ "totp-rs",
+ "tower-sessions",
+ "tracing",
+ "uf-photon",
+ "uf-valence",
+ "url",
+ "urlencoding",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
+]
+
+[[package]]
+name = "lepton-auth-ui"
+version = "0.1.0"
+source = "git+https://github.com/unified-field-dev/lepton?branch=main#87014fa637c36732fc7a578dbf7a01f78d964847"
+dependencies = [
+ "cfg-if",
+ "lepton-auth",
+ "leptos",
+ "leptos_router",
+ "orbital-base-components",
+ "orbital-core-components",
+ "orbital-motion",
+ "parcel_selectors",
+ "tracing",
+ "turf",
+ "wasm-bindgen-futures",
+]
+
+[[package]]
 name = "lepton-host-adapter"
 version = "0.1.0"
 source = "git+https://github.com/unified-field-dev/lepton?branch=main#87014fa637c36732fc7a578dbf7a01f78d964847"
@@ -2257,6 +2343,20 @@ dependencies = [
  "uf-valence",
  "uf-valence-codegen",
  "uuid",
+]
+
+[[package]]
+name = "lepton-sms"
+version = "0.1.0"
+source = "git+https://github.com/unified-field-dev/lepton?branch=main#87014fa637c36732fc7a578dbf7a01f78d964847"
+dependencies = [
+ "async-trait",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.21",
+ "tokio",
+ "tracing",
 ]
 
 [[package]]
@@ -3857,6 +3957,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "007d8adb5ddab6f8e3f491ac63566a7d5002cc7ed73901f72057943fa71ae1ae"
 
 [[package]]
+name = "qrcode"
+version = "0.14.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d68782463e408eb1e668cf6152704bd856c78c5b6417adaee3203d8f4c1fc9ec"
+
+[[package]]
 name = "quick_cache"
 version = "0.6.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5148,7 +5254,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "32497e9a4c7b38532efcdebeef879707aa9f794296a4f0244f6f69e9bc8574bd"
 dependencies = [
  "fastrand",
- "getrandom 0.4.3",
+ "getrandom 0.3.4",
  "once_cell",
  "rustix",
  "windows-sys 0.52.0",
@@ -5415,6 +5521,19 @@ name = "toml_write"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5d99f8c9a7727884afe522e9bd5edbfc91a3312b36a77b5fb8926e4c31a41801"
+
+[[package]]
+name = "totp-rs"
+version = "5.7.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "50e69a15e21b2ff22c415446983978bded3244195f17d59cb113551c1e806f91"
+dependencies = [
+ "base32",
+ "constant_time_eq",
+ "hmac",
+ "sha1",
+ "sha2",
+]
 
 [[package]]
 name = "tower"
@@ -5945,7 +6064,10 @@ dependencies = [
  "higgs",
  "higgs-host",
  "http-body-util",
+ "icondata",
  "inventory",
+ "lepton-auth",
+ "lepton-auth-ui",
  "lepton-host-adapter",
  "lepton-identity",
  "leptos",

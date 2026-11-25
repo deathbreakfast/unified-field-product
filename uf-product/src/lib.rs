@@ -22,6 +22,9 @@
 //! - **Step-up gate** — Assert a recent TOTP sudo window (or fresh-mode no-op) from product
 //!   server functions via [`permissions::require_step_up`]. Prefer the
 //!   `#[uf_product_macros::server(..., step_up)]` expansion. [Get started](#require-step-up)
+//! - **Resource access** — Show and change who can act on one resource (a job, a topic, a
+//!   table) with a shared Access card, principal picker and denied state, behind a backend
+//!   the host wires at boot. [Get started](access)
 //! - **Workspace content index** — Upsert per-user search rows for AppBar content search
 //!   (separate from picker sources in `uf-search-core`). [Get started](#workspace-content-search)
 //! - **Appearance preferences** — Load and save light/dark mode and brand colors per user.
@@ -495,6 +498,8 @@ pub use orbital_zone_a::context;
 pub use orbital_zone_a::models;
 pub use orbital_zone_a::primitives;
 
+#[cfg(any(feature = "ssr", feature = "hydrate"))]
+pub mod access;
 pub mod adaptive_sheet;
 pub mod app_bar_menu_extras;
 pub mod app_bar_utilities;
