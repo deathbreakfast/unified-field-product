@@ -7,8 +7,8 @@ use std::sync::Arc;
 
 use uf_product::AppRegistration;
 use uf_welcome::featured::{
-    add, clear_history, latest_change, list, list_changes, publish, record_change, remove, reorder,
-    replace_all, restore, FeaturedError, PublishOutcome,
+    add, latest_change, list, list_changes, publish, record_change, remove, reorder, replace_all,
+    restore, FeaturedError, PublishOutcome,
 };
 use valence::{
     register_noop_deletion_dispatcher_for_tests, router_key, Actor, InMemoryBackend, Valence,
@@ -278,14 +278,28 @@ async fn featured_restore_unknown_change_sad() {
     assert!(matches!(err, FeaturedError::NotFound { .. }));
 }
 
+#[cfg(feature = "e2e-seed")]
 #[tokio::test]
 async fn featured_clear_history_happy() {
+    use uf_welcome::featured::clear_history;
+
     let v = system_valence();
     publish(&v, None, &ids(&["welcome"]), None)
         .await
         .expect("publish");
     clear_history(&v).await.expect("clear");
     assert!(list_changes(&v).await.expect("history").is_empty());
+}
+
+#[cfg(feature = "e2e-seed")]
+#[tokio::test]
+async fn featured_clear_history_refuses_non_system_sad() {
+    use uf_welcome::featured::clear_history;
+
+    let err = clear_history(&alice_valence())
+        .await
+        .expect_err("only System may clear history");
+    assert!(matches!(err, FeaturedError::Service { .. }));
 }
 
 #[tokio::test]

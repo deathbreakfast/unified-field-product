@@ -105,9 +105,14 @@ pub async fn list_changes(v: &Valence) -> Result<Vec<FeaturedChangeRow>, Feature
 ///
 /// # Errors
 ///
-/// Returns [`FeaturedError::Service`] when the Valence list query fails.
+/// Returns [`FeaturedError::Service`] when the Valence query fails.
 pub async fn latest_change(v: &Valence) -> Result<Option<FeaturedChangeRow>, FeaturedError> {
-    Ok(list_changes(v).await?.into_iter().next())
+    let row = WelcomeFeaturedChange::query(v, valence::use_!(r"In **featured history**, we **read the newest change** to the Welcome featured list to get the published list's version and who published it last. Only Welcome admins can read the history."))
+        .order_by_created_at(valence::query::SortDirection::Desc)
+        .first()
+        .await
+        .map_err(|e| FeaturedError::service("latest change", e))?;
+    Ok(row.as_ref().map(to_row))
 }
 
 /// One change by id.
@@ -122,12 +127,23 @@ pub async fn get_change(v: &Valence, id: &str) -> Result<Option<FeaturedChangeRo
     Ok(row.as_ref().map(to_row))
 }
 
-/// Delete every change row (e2e seed isolation).
+/// Test-only: delete every change row so each e2e scenario starts with no history.
+///
+/// Compiled only with the `e2e-seed` feature, which only test hosts enable, and
+/// refused for any actor other than System. Real admin paths never wipe History.
 ///
 /// # Errors
 ///
-/// Returns [`FeaturedError::Service`] when a list or delete fails.
+/// Returns [`FeaturedError::Service`] when the actor isn't System, or a list or
+/// delete fails.
+#[cfg(feature = "e2e-seed")]
 pub async fn clear_history(v: &Valence) -> Result<(), FeaturedError> {
+    if !v.actor().is_system() {
+        return Err(FeaturedError::service(
+            "clear history",
+            anyhow::anyhow!("clearing featured history is a System-only test seed step"),
+        ));
+    }
     let table = WelcomeFeaturedChange::table_name();
     let backend = v
         .backend_for_table(table)

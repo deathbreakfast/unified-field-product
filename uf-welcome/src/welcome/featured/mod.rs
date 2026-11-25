@@ -9,8 +9,10 @@ mod history;
 mod service;
 
 pub use error::FeaturedError;
+#[cfg(feature = "e2e-seed")]
+pub use history::clear_history;
 pub use history::{
-    clear_history, current_app_ids, get_change, latest_change, list_changes, publish,
-    record_change, record_since, restore, FeaturedChangeRow, PublishOutcome,
+    current_app_ids, get_change, latest_change, list_changes, publish, record_change, record_since,
+    restore, FeaturedChangeRow, PublishOutcome,
 };
 pub use service::{add, app_name, clear_all, list, remove, reorder, replace_all, FeaturedAppRow};
