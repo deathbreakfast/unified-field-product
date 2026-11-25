@@ -6,10 +6,14 @@ spectra_schema! {
     UfAppsPageViewLog {
         store: "uf",
         table: "uf_apps_page_view_log",
-        version: "0.1.0",
+        version: "0.2.0",
         description: "Main-shell page view events across uf_app! products.",
         fields: [
             path: {
+                r#type: String,
+                classification: { pii: false, safe_for_console: true },
+            },
+            title: {
                 r#type: String,
                 classification: { pii: false, safe_for_console: true },
             },

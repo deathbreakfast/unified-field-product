@@ -3,7 +3,7 @@
 use leptos::prelude::*;
 use serde::{Deserialize, Serialize};
 
-/// App shortcut DTO shared by welcome usage and featured cards.
+/// App shortcut DTO shared by welcome usage, pinned and featured cards.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AppLinkDto {
     /// Registered app id when known.
@@ -12,6 +12,41 @@ pub struct AppLinkDto {
     pub label: String,
     /// Navigation href.
     pub link: String,
+    /// Icon from the app's registration (emoji or Orbital icon name); empty when
+    /// the app is not registered on this host.
+    pub icon: String,
+    /// Short description from the app's registration; empty when unregistered.
+    pub description: String,
+    /// The app's brand seed (`#RRGGBB`) when its registration sets one.
+    pub brand_seed: Option<String>,
+    /// Whether the viewer may open the app. `false` shows "No access" with a
+    /// Request access action. Registrations do not declare a route permission
+    /// yet, so this is `true` for every app today.
+    pub can_open: bool,
+}
+
+/// [`AppLinkDto`] filled from an app's registration.
+#[cfg(feature = "ssr")]
+pub(crate) fn app_link_from_registration(reg: &uf_product::AppRegistration) -> AppLinkDto {
+    AppLinkDto {
+        app_id: reg.id.to_string(),
+        label: reg.name.to_string(),
+        link: reg.route_path.to_string(),
+        icon: reg.icon.to_string(),
+        description: reg.description.to_string(),
+        brand_seed: reg.brand_seed.map(str::to_string),
+        can_open: true,
+    }
+}
+
+/// [`AppLinkDto`] for a registered `app_id`, or `None` when this host has no
+/// such app.
+#[cfg(feature = "ssr")]
+pub(crate) fn app_link_for_id(app_id: &str) -> Option<AppLinkDto> {
+    uf_product::AppRegistry::auto_discover()
+        .iter()
+        .find(|reg| reg.id == app_id)
+        .map(app_link_from_registration)
 }
 
 /// One selectable app for the featured admin picker.
@@ -39,20 +74,8 @@ fn map_featured_error(e: crate::welcome::featured::FeaturedError) -> ServerFnErr
 
 #[cfg(feature = "ssr")]
 fn rows_to_dtos(rows: Vec<crate::welcome::featured::FeaturedAppRow>) -> Vec<AppLinkDto> {
-    use uf_product::AppRegistry;
-
-    let registry = AppRegistry::auto_discover();
     rows.into_iter()
-        .filter_map(|row| {
-            registry
-                .iter()
-                .find(|r| r.id == row.app_id)
-                .map(|reg| AppLinkDto {
-                    app_id: row.app_id,
-                    label: reg.name.to_string(),
-                    link: reg.route_path.to_string(),
-                })
-        })
+        .filter_map(|row| app_link_for_id(&row.app_id))
         .collect()
 }
 
@@ -161,11 +184,13 @@ pub async fn can_manage_welcome_featured() -> Result<bool, ServerFnError> {
 
 /// Featured apps for the welcome page (authenticated Valence read).
 ///
+/// Anonymous viewers get an empty list.
+///
 /// # Errors
 ///
-/// Does not return [`ServerFnError`] for anonymous viewers, missing Valence, or
-/// catalog list failure; those paths degrade to `Ok([])`. Transport / extractor
-/// failures may still surface as [`ServerFnError`].
+/// Returns [`ServerFnError`] when the session Valence cannot be built or the
+/// catalog list query fails, so the page shows an error instead of an empty
+/// card. Transport / extractor failures also surface as [`ServerFnError`].
 #[uf_product_macros::server]
 pub async fn get_featured_apps() -> Result<Vec<AppLinkDto>, ServerFnError> {
     #[cfg(feature = "ssr")]
@@ -177,9 +202,10 @@ pub async fn get_featured_apps() -> Result<Vec<AppLinkDto>, ServerFnError> {
             || e2e_welcome_admin_from_session().await;
         if harness_ready {
             if let Some(valence) = harness_session_valence() {
-                if let Ok(rows) = crate::welcome::featured::list(&valence).await {
-                    return Ok(rows_to_dtos(rows));
-                }
+                let rows = crate::welcome::featured::list(&valence)
+                    .await
+                    .map_err(map_featured_error)?;
+                return Ok(rows_to_dtos(rows));
             }
         }
 
@@ -187,12 +213,10 @@ pub async fn get_featured_apps() -> Result<Vec<AppLinkDto>, ServerFnError> {
             if ctx.session_user_id().is_none() {
                 return Ok(Vec::new());
             }
-            let Ok(valence) = ctx.valence() else {
-                return Ok(Vec::new());
-            };
-            let Ok(rows) = crate::welcome::featured::list(&valence).await else {
-                return Ok(Vec::new());
-            };
+            let valence = uf_product::ssr::valence(&ctx)?;
+            let rows = crate::welcome::featured::list(&valence)
+                .await
+                .map_err(map_featured_error)?;
             return Ok(rows_to_dtos(rows));
         }
 
@@ -248,23 +272,13 @@ pub async fn list_manageable_apps() -> Result<Vec<ManageableAppDto>, ServerFnErr
 pub async fn add_featured_app(app_id: String, ordinal: i64) -> Result<AppLinkDto, ServerFnError> {
     #[cfg(feature = "ssr")]
     {
-        use uf_product::AppRegistry;
-
         let access = require_welcome_admin().await?;
         let valence = access.session_valence()?;
         let row = crate::welcome::featured::add(&valence, &app_id, ordinal)
             .await
             .map_err(map_featured_error)?;
-        let registry = AppRegistry::auto_discover();
-        let reg = registry
-            .iter()
-            .find(|r| r.id == row.app_id)
-            .ok_or_else(|| ServerFnError::new(format!("unknown app_id: {}", row.app_id)))?;
-        Ok(AppLinkDto {
-            app_id: row.app_id,
-            label: reg.name.to_string(),
-            link: reg.route_path.to_string(),
-        })
+        app_link_for_id(&row.app_id)
+            .ok_or_else(|| ServerFnError::new(format!("unknown app_id: {}", row.app_id)))
     }
     #[cfg(not(feature = "ssr"))]
     {

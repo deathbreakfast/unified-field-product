@@ -8,6 +8,7 @@ use super::events::page_view_log_fields;
 #[allow(clippy::too_many_arguments)]
 pub fn record_page_view_telemetry(
     path: &str,
+    title: &str,
     app_id: &str,
     app_name: &str,
     route_prefix: &str,
@@ -30,6 +31,7 @@ pub fn record_page_view_telemetry(
         "uf_apps_page_view_log",
         &page_view_log_fields(
             path,
+            title,
             app_id,
             app_name,
             route_prefix,

@@ -57,24 +57,6 @@ pub fn WelcomeRecentHelp() -> impl IntoView {
     }
 }
 
-/// Help step: most-used apps card.
-#[help_spotlight_step(
-    route = "/welcome",
-    feature_highlight = "welcome-most-used",
-    title = "Most used",
-    spotlight = "welcome-most-used-card",
-    position = "bottom",
-    order = 40
-)]
-#[component]
-pub fn WelcomeMostUsedHelp() -> impl IntoView {
-    view! {
-        <p data-testid="help-step-welcome-most-used">
-            "These are the apps you open most often."
-        </p>
-    }
-}
-
 /// Help step: popular apps card.
 #[help_spotlight_step(
     route = "/welcome",

@@ -1,8 +1,8 @@
 #![recursion_limit = "256"]
 //! Signed-in welcome landing page for Unified Field product hosts.
 //!
-//! Authenticated users land on `/welcome` and see featured apps plus recent /
-//! most-used / popular shortcuts from Spectra page views. Operators with
+//! Authenticated users land on `/welcome` and see featured apps plus recent and
+//! popular shortcuts from Spectra page views. Operators with
 //! `WelcomeAdmin` manage featured apps at `/welcome/admin`.
 //!
 //! Host session middleware and shell chrome live outside this crate. Page-view
@@ -12,7 +12,7 @@
 //!
 //! - **Welcome landing routes** — Nested `/welcome` and `/welcome/admin` pages with
 //!   usage cards backed by Spectra page views. Mount once in the host router and wire
-//!   [`uf_product::PageViewTracker`] so recent, popular, and most-used cards populate.
+//!   [`uf_product::PageViewTracker`] so the recent and popular cards populate.
 //!   [Get started](#getting-started)
 //! - **Featured apps admin** — Valence-backed catalog for the Featured card. Operators
 //!   with `WelcomeAdmin` add, remove, and reorder rows at `/welcome/admin`.
@@ -55,7 +55,7 @@
 //! }
 //! ```
 //!
-//! On success the host serves `/welcome` with featured, recent, most-used, and popular
+//! On success the host serves `/welcome` with featured, recent, and popular
 //! cards once page views flow into Spectra. Runnable reference:
 //! `cargo check -p shell-chrome-host --features ssr`.
 //!

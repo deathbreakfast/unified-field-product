@@ -1,7 +1,7 @@
 # uf-welcome
 
 Signed-in welcome landing for Unified Field product hosts. Mounted at `/welcome`
-for authenticated users: featured apps plus recent / most-used / popular shortcuts
+for authenticated users: featured apps plus recent and popular shortcuts
 from Spectra page views. Operators with `WelcomeAdmin` manage featured apps at
 `/welcome/admin`.
 
@@ -9,9 +9,10 @@ Routes and types: `cargo doc -p uf-welcome --open`.
 
 ## Features
 
-- Welcome page cards: Featured, Recent, My most used, Popular
-- Help spotlights on those four cards plus Featured "View all apps" (`help_steps`)
+- Welcome page cards: Featured, Recent, Popular
+- Help spotlights on those three cards plus Featured "View all apps" (`help_steps`)
 - Featured catalog (`WelcomeFeaturedApp`) + `/welcome/admin`
+- Owner-only Welcome data: pinned apps (`WelcomePinnedApp`), settings (`WelcomeSettings`), recent pages, Waiting on you
 - Permission manifest: `WelcomeAdmin`
 - Registers as the `"welcome"` app via `uf_app!` at `/welcome`
 

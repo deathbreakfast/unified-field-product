@@ -5,6 +5,7 @@ use serde_json::{json, Value};
 #[allow(clippy::too_many_arguments)]
 pub fn page_view_log_fields(
     path: &str,
+    title: &str,
     app_id: &str,
     app_name: &str,
     route_prefix: &str,
@@ -20,6 +21,7 @@ pub fn page_view_log_fields(
 ) -> Value {
     json!({
         "path": path,
+        "title": title,
         "app_id": app_id,
         "app_name": app_name,
         "route_prefix": route_prefix,
@@ -43,6 +45,7 @@ mod tests {
     fn page_view_log_fields_shape() {
         let v = page_view_log_fields(
             "/counter",
+            "Counter home",
             "counter",
             "Counter",
             "/counter",
@@ -57,6 +60,7 @@ mod tests {
             0,
         );
         assert_eq!(v["path"], "/counter");
+        assert_eq!(v["title"], "Counter home");
         assert_eq!(v["app_id"], "counter");
         assert_eq!(v["surface"], "main_shell");
         assert_eq!(v["auth"], "authenticated");

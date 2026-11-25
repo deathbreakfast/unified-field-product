@@ -30,7 +30,7 @@ pub struct RankedApp {
     pub app_name: String,
     /// Fallback link from events.
     pub route_prefix: String,
-    /// Visit count (most-used / popular) or `0` for recent-only.
+    /// Visit count (popular) or `0` for recent-only.
     pub count: u64,
     /// Latest visit time (recent ranking).
     pub last_ts: DateTime<Utc>,
@@ -72,11 +72,6 @@ pub fn aggregate_recent(rows: &[VisitRow], viewer_key: &str, limit: usize) -> Ve
     });
     ranked.truncate(limit);
     ranked
-}
-
-/// Most-used apps for a viewer: count visits, top-N by count then latest `ts`.
-pub fn aggregate_most_used(rows: &[VisitRow], viewer_key: &str, limit: usize) -> Vec<RankedApp> {
-    aggregate_counts(rows.iter().filter(|r| r.viewer_key == viewer_key), limit)
 }
 
 /// Fleet-wide popular apps: count all viewers, top-N by count then latest `ts`.
@@ -165,23 +160,6 @@ mod tests {
         assert!(aggregate_recent(&[], "u1", 8).is_empty());
         assert!(aggregate_recent(&[row("counter", "u1", 1)], "nobody", 8).is_empty());
         assert!(aggregate_recent(&[row("counter", "u1", 1)], "u1", 0).is_empty());
-    }
-
-    #[test]
-    fn most_used_counts_only_matching_rows() {
-        let rows = vec![
-            row("counter", "u1", 1),
-            row("counter", "u1", 2),
-            row("counter", "u2", 3),
-            row("valence", "u1", 4),
-            row("shell", "u1", 5),
-        ];
-        let got = aggregate_most_used(&rows, "u1", 8);
-        assert_eq!(got.len(), 2);
-        assert_eq!(got[0].app_id, "counter");
-        assert_eq!(got[0].count, 2);
-        assert_eq!(got[1].app_id, "valence");
-        assert_eq!(got[1].count, 1);
     }
 
     #[test]

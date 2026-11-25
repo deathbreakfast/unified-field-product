@@ -33,6 +33,36 @@ pub fn resolve_app_for_path(path: &str, table: &[UfAppRouteEntry]) -> UfAppRoute
     })
 }
 
+/// Title of the page on screen, keyed by its pathname.
+///
+/// [`PageViewTracker`] provides it; the product app bar writes its last
+/// breadcrumb here so each page view can carry the page's title. Leptos context
+/// reaches components rendered after the tracker, so mount the tracker before
+/// the routes. A title saved for another path is ignored.
+#[derive(Clone, Copy, Debug)]
+pub struct CurrentPageTitle(RwSignal<Option<(String, String)>>);
+
+impl CurrentPageTitle {
+    /// Record `title` as the title of the page at `path`.
+    pub fn set(&self, path: String, title: String) {
+        self.0.set(Some((path, title)));
+    }
+
+    /// Title saved for `path`, if the page at `path` set one.
+    #[must_use]
+    pub fn title_for(&self, path: &str) -> Option<String> {
+        self.0.with_untracked(|current| {
+            current
+                .as_ref()
+                .filter(|(p, _)| p == path)
+                .map(|(_, title)| title.clone())
+        })
+    }
+}
+
+/// How long a page view waits for the new page's app bar to set its title.
+const TITLE_SETTLE: std::time::Duration = std::time::Duration::from_millis(250);
+
 /// Tracks navigations under the main app router and emits Spectra page-view telemetry.
 ///
 /// # Examples
@@ -60,6 +90,11 @@ pub fn PageViewTracker(
 ) -> impl IntoView {
     let location = use_location();
     let (last_path, set_last_path) = signal(String::new());
+    let page_title = use_context::<CurrentPageTitle>().unwrap_or_else(|| {
+        let title = CurrentPageTitle(RwSignal::new(None));
+        provide_context(title);
+        title
+    });
 
     Effect::new(move |_| {
         let path = location.pathname.get();
@@ -79,30 +114,49 @@ pub fn PageViewTracker(
             surface.clone()
         };
 
-        leptos::task::spawn_local(async move {
-            if let Err(err) = record_page_view(
-                path,
-                entry.app_id.to_string(),
-                entry.app_name.to_string(),
-                entry.route_prefix.to_string(),
-                surface,
-                referrer,
-                "client_nav".to_string(),
-            )
-            .await
-            {
-                leptos::logging::warn!("page view telemetry failed: {err}");
-            }
-        });
+        // Wait for the new page's app bar to publish its breadcrumb title.
+        set_timeout(
+            move || {
+                let title = page_title.title_for(&path).unwrap_or_default();
+                leptos::task::spawn_local(send_page_view(path, title, entry, surface, referrer));
+            },
+            TITLE_SETTLE,
+        );
     });
 
     view! { <></> }
 }
 
+async fn send_page_view(
+    path: String,
+    title: String,
+    entry: UfAppRouteEntry,
+    surface: String,
+    referrer: String,
+) {
+    if let Err(err) = record_page_view(
+        path,
+        title,
+        entry.app_id.to_string(),
+        entry.app_name.to_string(),
+        entry.route_prefix.to_string(),
+        surface,
+        referrer,
+        "client_nav".to_string(),
+    )
+    .await
+    {
+        leptos::logging::warn!("page view telemetry failed: {err}");
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
 #[server(RecordPageView)]
 async fn record_page_view(
     /// Pathname that was navigated to.
     path: String,
+    /// Page title (last breadcrumb item); empty means use the app name.
+    title: String,
     /// Id of the app owning the viewed route.
     app_id: String,
     /// Display name of the app owning the viewed route.
@@ -123,6 +177,10 @@ async fn record_page_view(
         let path = truncate_telemetry_field(&path, MAX_TELEMETRY_FIELD_LEN);
         let app_id = truncate_telemetry_field(&app_id, MAX_TELEMETRY_FIELD_LEN);
         let app_name = truncate_telemetry_field(&app_name, MAX_TELEMETRY_FIELD_LEN);
+        let title = page_title_or_app_name(
+            &truncate_telemetry_field(&title, MAX_TELEMETRY_FIELD_LEN),
+            &app_name,
+        );
         let route_prefix = truncate_telemetry_field(&route_prefix, MAX_TELEMETRY_FIELD_LEN);
         let surface = truncate_telemetry_field(&surface, MAX_TELEMETRY_FIELD_LEN);
         let referrer_path = truncate_telemetry_field(&referrer_path, MAX_TELEMETRY_FIELD_LEN);
@@ -152,6 +210,7 @@ async fn record_page_view(
 
         record_page_view_telemetry(
             &path,
+            &title,
             &app_id,
             &app_name,
             &route_prefix,
@@ -168,12 +227,31 @@ async fn record_page_view(
         if let Some(spectra) = use_context::<std::sync::Arc<spectra::Spectra>>() {
             let _ = spectra.flush_persist().await;
         }
+
+        // Signed-in viewers also get this page saved as their last page in the app.
+        if let Ok(ctx) = crate::ssr::higgs().await {
+            if let Some(session_user) = ctx.session_user_id() {
+                let user = crate::ssr::session_user_record_id(session_user)?;
+                let valence = crate::ssr::valence(&ctx)?;
+                super::recent_pages::record_recent_page(
+                    &valence,
+                    &user,
+                    &app_id,
+                    &title,
+                    &path,
+                    chrono::Utc::now(),
+                )
+                .await
+                .map_err(|e| ServerFnError::new(e.to_string()))?;
+            }
+        }
         Ok(())
     }
     #[cfg(not(feature = "ssr"))]
     {
         let _ = (
             path,
+            title,
             app_id,
             app_name,
             route_prefix,
@@ -188,6 +266,17 @@ async fn record_page_view(
 /// Cap client-supplied Spectra label/field length (resource abuse / cardinality).
 #[cfg(feature = "ssr")]
 const MAX_TELEMETRY_FIELD_LEN: usize = 256;
+
+/// The page title, or `app_name` when the page set none.
+#[cfg(feature = "ssr")]
+fn page_title_or_app_name(title: &str, app_name: &str) -> String {
+    let title = title.trim();
+    if title.is_empty() {
+        app_name.to_string()
+    } else {
+        title.to_string()
+    }
+}
 
 #[cfg(feature = "ssr")]
 fn truncate_telemetry_field(value: &str, max_len: usize) -> String {
@@ -248,6 +337,23 @@ mod tests {
         let long = "a".repeat(300);
         let truncated = truncate_telemetry_field(&long, MAX_TELEMETRY_FIELD_LEN);
         assert_eq!(truncated.len(), MAX_TELEMETRY_FIELD_LEN);
+    }
+
+    #[test]
+    fn page_title_falls_back_to_app_name() {
+        assert_eq!(page_title_or_app_name("Task 42", "Magnon"), "Task 42");
+        assert_eq!(page_title_or_app_name("  ", "Magnon"), "Magnon");
+    }
+
+    #[test]
+    fn current_page_title_ignores_other_paths() {
+        let owner = Owner::new();
+        owner.set();
+        let title = CurrentPageTitle(RwSignal::new(None));
+        assert_eq!(title.title_for("/a"), None);
+        title.set("/a".into(), "Alpha".into());
+        assert_eq!(title.title_for("/a").as_deref(), Some("Alpha"));
+        assert_eq!(title.title_for("/b"), None);
     }
 
     #[test]
