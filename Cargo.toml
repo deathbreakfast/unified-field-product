@@ -285,3 +285,10 @@ orbital-charts = { git = "https://github.com/unified-field-dev/orbital", branch 
 orbital-tree = { git = "https://github.com/unified-field-dev/orbital", branch = "main" }
 orbital-scheduler = { git = "https://github.com/unified-field-dev/orbital", branch = "main" }
 orbital-motion = { git = "https://github.com/unified-field-dev/orbital", branch = "main" }
+
+# TEMPORARY: wel-notify-kinds (kind_id / kind_label / app_id / asks_action and
+# get_inbox_by_request) is on the fork's main until it reaches unified-field-dev.
+# Drop this section once uf-dev main has it.
+[patch."https://github.com/unified-field-dev/uf-notifications"]
+uf-notifications-api = { git = "https://github.com/deathbreakfast/uf-notifications", branch = "main" }
+uf-notifications-core = { git = "https://github.com/deathbreakfast/uf-notifications", branch = "main" }
