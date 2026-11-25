@@ -265,7 +265,7 @@ pub fn WorkspaceSearchDialog(
                                                     {
                                                         let (kind, hits) = group;
                                                         view! {
-                                                            <div data-testid="workspace-search-group">
+                                                            <Flex vertical=true gap=FlexGap::Small attr:data-testid="workspace-search-group">
                                                                 <Caption1>{kind}</Caption1>
                                                                 <List>
                                                                     <For
@@ -290,7 +290,7 @@ pub fn WorkspaceSearchDialog(
                                                                         }
                                                                     </For>
                                                                 </List>
-                                                            </div>
+                                                            </Flex>
                                                         }
                                                     }
                                                 </For>
