@@ -60,6 +60,29 @@ orbital-shell = { workspace = true, default-features = false }
 spectra = { workspace = true, optional = true, features = ["mem"] }
 spectra-core = { workspace = true, optional = true }
 turf = { workspace = true }
+web-sys = { workspace = true, optional = true, features = [
+    "Window",
+    "Document",
+    "Element",
+    "Location",
+    "Navigator",
+    "Storage",
+    "VisibilityState",
+    "Request",
+    "RequestInit",
+    "RequestCache",
+    "Response",
+    "ServiceWorker",
+    "ServiceWorkerContainer",
+    "ServiceWorkerRegistration",
+    "RegistrationOptions",
+    "MessageChannel",
+    "MessagePort",
+    "MessageEvent",
+] }
+js-sys = { version = "0.3.103", optional = true }
+wasm-bindgen = { workspace = true, optional = true }
+wasm-bindgen-futures = { version = "0.4.76", optional = true }
 
 [features]
 default = ["preview"]
@@ -72,7 +95,14 @@ spectra-telemetry = ["dep:spectra", "dep:spectra-core"]
 hydrate = [
     "orbital-zone-a/hydrate",
     "leptos/hydrate",
-    "dep:serde_json"]
+    "dep:serde_json",
+    "dep:web-sys",
+    "dep:js-sys",
+    "dep:wasm-bindgen",
+    "dep:wasm-bindgen-futures"]
+# Lets an e2e host pretend the open page runs an older build (see
+# `build_version::BuildOverride`). Never enable in a production host.
+e2e-build-override = []
 ssr = [
     "orbital-zone-a/ssr",
     "dep:leptos_axum",

@@ -499,6 +499,7 @@ pub mod adaptive_sheet;
 pub mod app_bar_menu_extras;
 pub mod app_bar_utilities;
 pub mod auth_dialog;
+pub mod build_version;
 pub mod components;
 pub mod detail_extensions;
 pub mod floating_actions;

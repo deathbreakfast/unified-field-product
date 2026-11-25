@@ -5946,6 +5946,7 @@ dependencies = [
  "higgs-host",
  "http-body-util",
  "inventory",
+ "js-sys",
  "lepton-host-adapter",
  "lepton-identity",
  "leptos",
@@ -5969,6 +5970,9 @@ dependencies = [
  "uf-valence",
  "uf-valence-codegen",
  "url",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
 ]
 
 [[package]]

@@ -3,6 +3,8 @@
 
 mod app;
 #[cfg(feature = "ssr")]
+pub mod build_version_fixture;
+#[cfg(feature = "ssr")]
 mod app_state;
 mod detail_extension_fixture;
 #[cfg(feature = "ssr")]

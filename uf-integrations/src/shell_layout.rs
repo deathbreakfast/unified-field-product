@@ -14,6 +14,7 @@
 //! | Fill app-bar / left-nav regions | [`ShellAppBar`], [`ShellLeftNav`] |
 //! | Tell the app bar to show the sidebar hamburger | [`ShellSidebarToggle`] |
 //! | Show a floating actions menu (FAB) of app-registered items | [`ShellFloatingActions`] |
+//! | Offer a reload when a new build is deployed | mounted by default; see [`uf_product::build_version`] |
 //!
 //! # Example
 //!
@@ -26,6 +27,9 @@
 //! the player by hand.
 use leptos::prelude::*;
 use orbital_core_components::{use_breakpoint_down, DEFAULT_SIDEBAR_OVERLAY_BREAKPOINT};
+use uf_product::build_version::{
+    provide_build_version_state, BuildVersionBar, BuildVersionWatcher,
+};
 use uf_product::components::{
     AppBarDensity, Layout, LayoutHeader, LayoutMain, LayoutSidebar, SidebarPresentation,
 };
@@ -130,6 +134,17 @@ pub fn UnifiedFieldShellLayout(
             sidebar_open.set(false);
         }
     });
+    // Stays empty until a host mounts `build_version_routes` and a new build lands.
+    let _build_version = provide_build_version_state();
+    // The new-version bar sits above the page as a sibling, so showing or
+    // hiding it never remounts the page.
+    let children: Children = Box::new(move || {
+        view! {
+            <BuildVersionBar />
+            {children()}
+        }
+        .into_any()
+    });
     let show_sidebar_toggle = shell_left_nav.is_some();
     provide_context(ShellSidebarToggle(show_sidebar_toggle));
     provide_context(ShellMounted);
@@ -137,6 +152,7 @@ pub fn UnifiedFieldShellLayout(
     view! {
         <ToasterProvider>
             <PermissionToastListener permission_toast_request />
+            <BuildVersionWatcher />
             {match (shell_app_bar, shell_left_nav) {
                 (Some(ShellAppBar { children: header_children }), Some(ShellLeftNav { children: sidebar_children })) => {
                     view! {

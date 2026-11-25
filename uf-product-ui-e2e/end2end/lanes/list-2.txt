@@ -18,3 +18,8 @@ help_spotlight.spec.ts › help-report › help-report-bug-intro-and-form
 help_spotlight.spec.ts › help-report › help-report-feature-intro-and-form
 help_spotlight.spec.ts › help-report › help-report-security-private-copy
 help_spotlight.spec.ts › help-report › help-report-missing-repository
+build_version.spec.ts › build-version › build-version-bar-not-now-returns-on-route-change
+build_version.spec.ts › build-version › build-version-reload-shows-updated-toast
+build_version.spec.ts › build-version › build-version-server-fn-failure-shows-dialog
+build_version.spec.ts › build-version › build-version-no-override-stays-quiet
+build_version.spec.ts › build-version › phone › build-version-bar-phone-wraps

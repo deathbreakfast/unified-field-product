@@ -12,6 +12,7 @@ use leptos_axum::{file_and_error_handler, generate_route_list, LeptosRoutes};
 use photon_axum::ws_router;
 use tower_http::services::ServeDir;
 use tower_sessions::{MemoryStore, SessionManagerLayer};
+use uf_product::build_version::build_version_routes;
 use uf_product_ui_e2e::seed::seed_data;
 use uf_product_ui_e2e::{
     build_photon, e2e_higgs_config, e2e_router, e2e_spectra, init_e2e_valence,
@@ -61,6 +62,11 @@ async fn serve() -> anyhow::Result<()> {
     let app = Router::new()
         .route("/health", get(|| async { axum::http::StatusCode::OK }))
         .route("/api/test/seed-data", post(seed_data))
+        .route(
+            "/api/test/build-override",
+            post(uf_product_ui_e2e::build_version_fixture::set_build_override),
+        )
+        .merge(build_version_routes(&leptos_options))
         .nest_service("/pkg", ServeDir::new(pkg_dir))
         .nest_service("/fonts", ServeDir::new(fonts_dir))
         .leptos_routes_with_context(
