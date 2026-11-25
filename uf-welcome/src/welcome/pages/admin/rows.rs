@@ -224,37 +224,40 @@ pub(super) fn AddAppField(state: AdminState) -> impl IntoView {
 /// The tiles members will see on Welcome once the draft is published.
 #[component]
 pub(super) fn FeaturedPreview(state: AdminState, loading: Signal<bool>) -> impl IntoView {
+    // Orbital Card doesn't forward `attr:` to its DOM, so the test id sits on a wrapper.
     view! {
-        <Card attr:data-testid="featured-admin-preview">
-            <CardHeader>
-                <Subtitle2>"Preview"</Subtitle2>
-            </CardHeader>
-            <CardContent>
-                {move || {
-                    if loading.get() {
-                        return view! {
-                            <Skeleton><SkeletonItem width="100%" height="64px" /></Skeleton>
-                        }.into_any();
-                    }
-                    if state.draft.with(Vec::is_empty) {
-                        return view! {
-                            <Body1>"The card is hidden while nothing is featured."</Body1>
-                        }.into_any();
-                    }
-                    view! {
-                        <AutoGrid min="200px">
-                            <For
-                                each=move || state.draft.get()
-                                key=|app_id| app_id.clone()
-                                let:app_id
-                            >
-                                <PreviewTile state=state app_id=app_id />
-                            </For>
-                        </AutoGrid>
-                    }.into_any()
-                }}
-            </CardContent>
-        </Card>
+        <div data-testid="featured-admin-preview">
+            <Card>
+                <CardHeader>
+                    <Subtitle2>"Preview"</Subtitle2>
+                </CardHeader>
+                <CardContent>
+                    {move || {
+                        if loading.get() {
+                            return view! {
+                                <Skeleton><SkeletonItem width="100%" height="64px" /></Skeleton>
+                            }.into_any();
+                        }
+                        if state.draft.with(Vec::is_empty) {
+                            return view! {
+                                <Body1>"The card is hidden while nothing is featured."</Body1>
+                            }.into_any();
+                        }
+                        view! {
+                            <AutoGrid min="200px">
+                                <For
+                                    each=move || state.draft.get()
+                                    key=|app_id| app_id.clone()
+                                    let:app_id
+                                >
+                                    <PreviewTile state=state app_id=app_id />
+                                </For>
+                            </AutoGrid>
+                        }.into_any()
+                    }}
+                </CardContent>
+            </Card>
+        </div>
     }
 }
 
@@ -268,16 +271,18 @@ fn PreviewTile(state: AdminState, app_id: String) -> impl IntoView {
     let testid = format!("featured-admin-preview-tile-{app_id}");
     let avatar = app_avatar(&app_id, &name, 40);
     view! {
-        <Card attr:data-testid=testid>
-            <CardContent>
-                <Flex align=FlexAlign::Center gap=FlexGap::Medium>
-                    {avatar}
-                    <Flex vertical=true gap=FlexGap::Size(2)>
-                        <Subtitle2>{name}</Subtitle2>
-                        <Caption1>{description}</Caption1>
+        <div data-testid=testid>
+            <Card>
+                <CardContent>
+                    <Flex align=FlexAlign::Center gap=FlexGap::Medium>
+                        {avatar}
+                        <Flex vertical=true gap=FlexGap::Size(2)>
+                            <Subtitle2>{name}</Subtitle2>
+                            <Caption1>{description}</Caption1>
+                        </Flex>
                     </Flex>
-                </Flex>
-            </CardContent>
-        </Card>
+                </CardContent>
+            </Card>
+        </div>
     }
 }
