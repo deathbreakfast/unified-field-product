@@ -557,12 +557,17 @@ test.describe("pw-notifications-inbox", () => {
       inboxRow(page, "AlignShort").getByRole("button", { name: "Mark unread", exact: true }),
     ).toBeVisible({ timeout: 30_000 });
 
-    const inbox = page.getByTestId("notifications-inbox-page");
-    const open = inbox.getByTestId("notification-open");
-    const more = inbox.getByTestId("notification-more");
-    await expect(open).toHaveCount(2);
-    const [o1, o2] = [await open.nth(0).boundingBox(), await open.nth(1).boundingBox()];
-    const [m1, m2] = [await more.nth(0).boundingBox(), await more.nth(1).boundingBox()];
+    // Measure the buttons themselves (by role) in each row.
+    const rows = ["AlignShort", "AlignLongTitleThatWrapsFurtherThanTheOther"].map((t) =>
+      inboxRow(page, t),
+    );
+    const openButtons = rows.map((r) => r.getByRole("button", { name: "Open", exact: true }));
+    const moreButtons = rows.map((r) => r.getByRole("button", { name: "More actions" }));
+    for (const b of [...openButtons, ...moreButtons]) {
+      await expect(b).toBeVisible({ timeout: 30_000 });
+    }
+    const [o1, o2] = await Promise.all(openButtons.map((b) => b.boundingBox()));
+    const [m1, m2] = await Promise.all(moreButtons.map((b) => b.boundingBox()));
     expect(Math.abs(o1!.x - o2!.x)).toBeLessThanOrEqual(1);
     expect(Math.abs(m1!.x - m2!.x)).toBeLessThanOrEqual(1);
   });
