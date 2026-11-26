@@ -30,7 +30,6 @@ async function openFixture(page: Page) {
 }
 
 test.describe("build-version", () => {
-  test.describe.configure({ mode: "serial" });
 
   test.afterEach(async ({ page }) => {
     await setOverride(page, null);

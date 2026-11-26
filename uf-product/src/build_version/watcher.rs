@@ -35,8 +35,7 @@ pub(super) fn start(state: BuildVersionState, running_override: Option<String>) 
     let Some(running) = running_override.or_else(running_build_from_document) else {
         return;
     };
-    state.running.set_value(Some(running.clone()));
-    let toaster = use_context::<ToasterInjection>();
+    state.running.set_value(Some(running));
     let pathname = leptos_router::hooks::use_location().pathname;
     let last_check = StoredValue::new(None::<f64>);
 
@@ -45,7 +44,6 @@ pub(super) fn start(state: BuildVersionState, running_override: Option<String>) 
         if started.is_some() {
             return;
         }
-        show_updated_toast(toaster, &running);
         register_service_worker();
         check(state, last_check, CheckTrigger::Hydrate);
 
@@ -156,18 +154,43 @@ fn check(state: BuildVersionState, last_check: StoredValue<Option<f64>>, trigger
     });
 }
 
+/// After Reload now lands, show the Updated toast. Runs on every hydrate,
+/// watching or not: the reloaded page may serve a build the shell doesn't
+/// watch (e2e clears its override before the reload).
+pub(super) fn announce_update(running_override: Option<String>) {
+    let toaster = use_context::<ToasterInjection>();
+    Effect::new(move |done: Option<()>| {
+        if done.is_some() {
+            return;
+        }
+        let running = running_override.clone().or_else(|| {
+            match parse_build_id(&module_url_from_document()?) {
+                RunningBuild::Stamped(id) => Some(id),
+                RunningBuild::Unstamped => Some("pkg".to_string()),
+                RunningBuild::Missing => None,
+            }
+        });
+        if let Some(running) = running {
+            show_updated_toast(toaster, &running);
+        }
+    });
+}
+
 fn running_build_from_document() -> Option<String> {
+    match parse_build_id(&module_url_from_document()?) {
+        RunningBuild::Stamped(id) => Some(id),
+        RunningBuild::Unstamped | RunningBuild::Missing => None,
+    }
+}
+
+fn module_url_from_document() -> Option<String> {
     let document = web_sys::window()?.document()?;
-    let url = ["link[rel=modulepreload]", "script[type=module][src]"]
+    ["link[rel=modulepreload]", "script[type=module][src]"]
         .iter()
         .find_map(|selector| {
             let el = document.query_selector(selector).ok()??;
             el.get_attribute("href").or_else(|| el.get_attribute("src"))
-        })?;
-    match parse_build_id(&url) {
-        RunningBuild::Stamped(id) => Some(id),
-        RunningBuild::Unstamped | RunningBuild::Missing => None,
-    }
+        })
 }
 
 fn show_updated_toast(toaster: Option<ToasterInjection>, running: &str) {

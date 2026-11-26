@@ -352,8 +352,11 @@ pub fn BuildVersionWatcher() -> impl IntoView {
     let marker = watch_marker();
 
     #[cfg(all(feature = "hydrate", not(feature = "ssr")))]
-    if let Some(running_override) = marker.clone() {
-        watcher::start(state, running_override);
+    {
+        watcher::announce_update(marker.clone().flatten());
+        if let Some(running_override) = marker.clone() {
+            watcher::start(state, running_override);
+        }
     }
 
     let dialog_open = state.dialog_open;
