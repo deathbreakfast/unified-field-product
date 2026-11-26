@@ -13,11 +13,13 @@ pub mod pages;
 pub mod server;
 
 pub use components::{
-    FeaturedAppsCard, FeaturedAppsCardBody, MyMostUsedCard, MyMostUsedCardBody, PopularAppsCard,
-    PopularAppsCardBody, RecentAppsCard, RecentAppsCardBody, WelcomeCard,
+    FeaturedAppsCard, FeaturedAppsCardBody, PopularAppsCard, PopularAppsCardBody, RecentAppsCard,
+    RecentAppsCardBody, WelcomeCard,
 };
 pub use layout::WelcomeLayout;
 pub use pages::{WelcomeAdminPage, WelcomePage};
 pub use server::{
-    get_featured_apps, get_my_most_used, get_popular_apps, get_recent_apps, AppLinkDto, RecentApp,
+    clear_my_history, get_featured_apps, get_pinned_apps, get_popular_apps, get_recent_apps,
+    get_recent_pages, get_waiting_on_me, get_welcome_settings, pin_app, reorder_pinned_apps,
+    set_start_here_hidden, unpin_app, AppLinkDto, RecentApp, RecentPageDto, WelcomeSettingsDto,
 };

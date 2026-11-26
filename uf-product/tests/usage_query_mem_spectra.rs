@@ -10,8 +10,7 @@ use serde_json::json;
 use spectra::{try_log_event_at, MemEventsBackend, MemMetricsBackend, Spectra};
 use spectra_core::{EventStorageBackend, MetricsStorageBackend};
 use uf_product::telemetry::usage::{
-    most_used_for_viewer, popular_apps, recent_apps_for_viewer, UsageQueryError, UsageQueryOptions,
-    PAGE_VIEW_LOG_TABLE,
+    popular_apps, recent_apps_for_viewer, UsageQueryError, UsageQueryOptions, PAGE_VIEW_LOG_TABLE,
 };
 
 async fn mem_spectra() -> Arc<Spectra> {
@@ -33,6 +32,7 @@ fn seed_page_view(app_id: &str, viewer: &str, secs: i64) {
         PAGE_VIEW_LOG_TABLE,
         &json!({
             "path": format!("/{app_id}"),
+            "title": app_id,
             "app_id": app_id,
             "app_name": app_id,
             "route_prefix": format!("/{app_id}"),
@@ -80,15 +80,6 @@ async fn usage_query_mem_spectra_roundtrip() {
     assert!(
         !recent.iter().any(|a| a.app_id == "chronon"),
         "recent must not include other users' apps: {recent:?}"
-    );
-
-    let mine = most_used_for_viewer(spectra.as_ref(), "user-a", &opts)
-        .await
-        .expect("most used");
-    assert_eq!(mine[0].app_id, "counter");
-    assert!(
-        !mine.iter().any(|a| a.app_id == "chronon"),
-        "most-used must exclude other viewers"
     );
 
     let popular = popular_apps(spectra.as_ref(), &opts)

@@ -6,12 +6,18 @@ spectra_schema! {
     UfAppsPageViewLog {
         store: "uf",
         table: "uf_apps_page_view_log",
-        version: "0.1.0",
+        version: "0.2.0",
         description: "Main-shell page view events across uf_app! products.",
         fields: [
             path: {
                 r#type: String,
                 classification: { pii: false, safe_for_console: true },
+            },
+            // Breadcrumb from the client; often a record name (a task, a
+            // document, a person), so treat it as possibly personal.
+            title: {
+                r#type: String,
+                classification: { pii: true, safe_for_console: false },
             },
             app_id: {
                 r#type: String,

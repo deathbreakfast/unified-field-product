@@ -16,6 +16,8 @@
 use crate::privacy_policies::WELCOME_ADMIN_GATE;
 #[cfg(feature = "ssr")]
 use valence::privacy_policies::common::{AUTHENTICATED, SYSTEM_ONLY};
+#[cfg(feature = "ssr")]
+use valence::privacy_policies::owner::OWNER_BY_USER_FIELD;
 
 #[cfg(feature = "ssr")]
 include!(concat!(env!("OUT_DIR"), "/generated_models.rs"));

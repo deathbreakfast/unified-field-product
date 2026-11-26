@@ -1,8 +1,6 @@
 //! The signed-in welcome page: featured and Spectra usage cards.
 
-use crate::welcome::components::{
-    FeaturedAppsCard, MyMostUsedCard, PopularAppsCard, RecentAppsCard,
-};
+use crate::welcome::components::{FeaturedAppsCard, PopularAppsCard, RecentAppsCard};
 use leptos::prelude::*;
 use turf::inline_style_sheet_values;
 use uf_product::components::ContentContainer;
@@ -33,7 +31,6 @@ pub fn WelcomePage() -> impl IntoView {
             <div class=class_names.welcome_grid>
                 <FeaturedAppsCard />
                 <RecentAppsCard />
-                <MyMostUsedCard />
                 <PopularAppsCard />
             </div>
         </ContentContainer>
