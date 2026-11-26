@@ -289,13 +289,30 @@ pub fn provide_build_version_state() -> BuildVersionState {
         prefetched: StoredValue::new(false),
     };
     provide_context(state);
+    #[cfg(all(feature = "hydrate", not(feature = "ssr")))]
+    CLIENT_STATE.with(|cell| cell.set(Some(state)));
     state
 }
 
-/// Read the new-version state from context, if a shell provided it.
+// The browser has one shell per page. Server-fn errors are often reported from
+// `spawn_local` blocks with no reactive owner, where context lookups fail, so
+// the client keeps the shell's state here too. Never set during SSR, where
+// requests share the process.
+#[cfg(all(feature = "hydrate", not(feature = "ssr")))]
+thread_local! {
+    static CLIENT_STATE: std::cell::Cell<Option<BuildVersionState>> =
+        const { std::cell::Cell::new(None) };
+}
+
+/// Read the new-version state from context, if a shell provided it. In the
+/// browser this also works outside the shell's reactive owner (for example
+/// in a `spawn_local` block).
 #[must_use]
 pub fn use_build_version_state() -> Option<BuildVersionState> {
-    use_context::<BuildVersionState>()
+    let state = use_context::<BuildVersionState>();
+    #[cfg(all(feature = "hydrate", not(feature = "ssr")))]
+    let state = state.or_else(|| CLIENT_STATE.with(std::cell::Cell::get));
+    state
 }
 
 /// Ask for a build check when `error` looks like a client/server build
@@ -315,8 +332,8 @@ pub(crate) fn report_build_version_message(message: &str) -> bool {
     let Some(state) = use_build_version_state() else {
         return false;
     };
-    state.server_fn_failures.update(|n| *n += 1);
-    true
+    // `None` when the shell that set the state has since unmounted.
+    state.server_fn_failures.try_update(|n| *n += 1).is_some()
 }
 
 /// What the server-rendered marker says: `None` when the shell should stay
