@@ -122,8 +122,12 @@ pub fn parse_permission_server_error(message: &str) -> Option<PermissionServerEr
 
 /// Report a server-fn error to the toast bus when it encodes a permission failure.
 ///
+/// A deserialisation or version-mismatch error also asks the shell for a build
+/// check (see [`crate::build_version::report_build_version_error`]).
+///
 /// Returns `true` when the message was recognized and a toast was emitted.
 pub fn report_server_fn_error(error: &ServerFnError) -> bool {
+    crate::build_version::report_build_version_error(error);
     report_server_fn_error_with_bus(use_permission_toast_bus(), error)
 }
 

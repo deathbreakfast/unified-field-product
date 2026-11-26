@@ -3,6 +3,7 @@
 
 mod adaptive_sheet;
 mod auth;
+mod build_version_fixture;
 mod coming_soon;
 mod gates;
 mod help_fixture;
@@ -14,6 +15,7 @@ mod workspace_search_hit;
 
 pub use adaptive_sheet::AdaptiveSheetPage;
 pub use auth::AuthSignInPage;
+pub use build_version_fixture::BuildVersionFixturePage;
 pub use coming_soon::ComingSoonDemoPage;
 pub use gates::{GateEmailPage, GatePermissionAllowPage, GatePermissionPage};
 pub use help_fixture::HelpFixtureDeferredPage;

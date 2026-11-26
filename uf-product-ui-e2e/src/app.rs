@@ -19,9 +19,9 @@ use uf_welcome::UfWelcomeRoutes;
 use crate::gate_demos::E2eAuthProvider;
 use crate::harness_auth_menu::HarnessAuthMenu;
 use crate::pages::{
-    AdaptiveSheetPage, AuthSignInPage, ComingSoonDemoPage, GateEmailPage, GatePermissionAllowPage,
-    GatePermissionPage, HelpFixtureDeferredPage, HomePage, NotFoundDemoPage, ScrollChromePage,
-    UtilitiesOverridePage, WorkspaceSearchHitPage,
+    AdaptiveSheetPage, AuthSignInPage, BuildVersionFixturePage, ComingSoonDemoPage, GateEmailPage,
+    GatePermissionAllowPage, GatePermissionPage, HelpFixtureDeferredPage, HomePage,
+    NotFoundDemoPage, ScrollChromePage, UtilitiesOverridePage, WorkspaceSearchHitPage,
 };
 use uf_product::telemetry::{PageViewTracker, UfAppRouteEntry};
 
@@ -87,6 +87,7 @@ pub fn App() -> impl IntoView {
                             <Route path=path!("gate/permission") view=GatePermissionPage />
                             <Route path=path!("gate/permission-allow") view=GatePermissionAllowPage />
                             <Route path=path!("help-fixture/deferred") view=HelpFixtureDeferredPage />
+                            <Route path=path!("build-version-fixture") view=BuildVersionFixturePage />
                             <UfAppsRoutes />
                             <UfWelcomeRoutes />
                             <NotificationsRoutes />

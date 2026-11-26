@@ -76,6 +76,7 @@ ssr = [
     "leptos_meta/ssr",
     "leptos_router/ssr",
     "uf-product/ssr",
+    "uf-product/e2e-build-override",
     "uf-integrations/ssr",
     "uf-integrations/full",
     "uf-help/ssr",
