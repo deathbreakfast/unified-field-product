@@ -13,9 +13,11 @@ spectra_schema! {
                 r#type: String,
                 classification: { pii: false, safe_for_console: true },
             },
+            // Breadcrumb from the client; often a record name (a task, a
+            // document, a person), so treat it as possibly personal.
             title: {
                 r#type: String,
-                classification: { pii: false, safe_for_console: true },
+                classification: { pii: true, safe_for_console: false },
             },
             app_id: {
                 r#type: String,

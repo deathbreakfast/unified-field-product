@@ -95,7 +95,8 @@ fn sanitize_id_part(part: &str) -> String {
 ///
 /// Replaces the user's row for that app. The old row is removed first so the
 /// schema TTL restarts on create (sliding 30-day retention). The shell
-/// pseudo-app and empty app ids are skipped.
+/// pseudo-app, empty app ids, and routes that are not a same-site path
+/// (see [`is_site_path`]) are skipped.
 ///
 /// # Errors
 ///
@@ -109,7 +110,7 @@ pub async fn record_recent_page(
     route: &str,
     viewed_at: DateTime<Utc>,
 ) -> Result<(), RecentPagesError> {
-    if app_id.is_empty() || app_id == "shell" {
+    if app_id.is_empty() || app_id == "shell" || !is_site_path(route) {
         return Ok(());
     }
     let id = recent_page_id(user, app_id);
@@ -126,6 +127,14 @@ pub async fn record_recent_page(
         .await
         .map_err(|e| RecentPagesError::new("record", e))?;
     Ok(())
+}
+
+/// Whether `route` is a path on this site: it starts with one `/`. The route
+/// comes from the client and Welcome renders it as a link, so `javascript:`,
+/// absolute URLs and protocol-relative `//host` values are never saved.
+#[must_use]
+pub fn is_site_path(route: &str) -> bool {
+    route.starts_with('/') && !route.starts_with("//") && !route.starts_with("/\\")
 }
 
 /// Last page `user` opened in each app, newest first, at most `limit`, from
@@ -330,7 +339,27 @@ mod tests {
         let v = mem_valence("alice");
         record(&v, "alice", "shell", "/", Duration::minutes(1)).await;
         record(&v, "alice", "magnon", "/magnon", Duration::days(31)).await;
+        record(
+            &v,
+            "alice",
+            "notes",
+            "javascript:alert(1)",
+            Duration::minutes(1),
+        )
+        .await;
+        record(&v, "alice", "docs", "//evil.example", Duration::minutes(1)).await;
         assert!(list(&v, "alice").await.is_empty());
+    }
+
+    #[test]
+    fn is_site_path_accepts_only_same_site_paths() {
+        assert!(is_site_path("/magnon/tasks/42"));
+        assert!(is_site_path("/"));
+        assert!(!is_site_path("javascript:alert(1)"));
+        assert!(!is_site_path("https://evil.example"));
+        assert!(!is_site_path("//evil.example"));
+        assert!(!is_site_path("/\\evil.example"));
+        assert!(!is_site_path(""));
     }
 
     #[tokio::test]

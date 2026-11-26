@@ -146,6 +146,10 @@ mod store {
             .map(|r| r.id().to_string())
             .filter(|id| !id.is_empty())
             .ok_or_else(|| PinnedError::service("unpin", "pinned row has no record id"))?;
+        // Delete now through the backend instead of `Model::delete`: that only
+        // marks the row `pending_deletion`, which would block re-pinning the
+        // same app until a deletion worker runs. The row came from the
+        // owner-only query above, so skipping privacy here is safe.
         let table = WelcomePinnedApp::table_name();
         let backend = v
             .backend_for_table(table)
