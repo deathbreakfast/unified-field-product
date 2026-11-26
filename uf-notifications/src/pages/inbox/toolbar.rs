@@ -12,6 +12,9 @@ pub fn NotificationToolbar(
     search_query: RwSignal<String>,
     /// Two-way signal holding the selected app id; empty for all apps.
     app: RwSignal<String>,
+    /// `true` once hydrated; the app options load only then, since reading a
+    /// LocalResource during SSR outside a Suspense panics.
+    hydrated: Signal<bool>,
 ) -> impl IntoView {
     // Client-only, like the tab counts: the options fill in after hydration.
     let apps = LocalResource::new(get_inbox_apps);
@@ -28,7 +31,10 @@ pub fn NotificationToolbar(
             }>
                 <option value="">"All apps"</option>
                 {move || {
-                    apps.get()
+                    hydrated
+                        .get()
+                        .then(|| apps.get())
+                        .flatten()
                         .and_then(Result::ok)
                         .unwrap_or_default()
                         .into_iter()

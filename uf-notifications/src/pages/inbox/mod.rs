@@ -113,8 +113,14 @@ pub fn NotificationsInboxPage() -> impl IntoView {
         let _ = counts_refresh.get();
         get_inbox_counts()
     });
-    let count_of =
-        move |pick: fn(&InboxCounts) -> usize| counts.get().and_then(Result::ok).map(|c| pick(&c));
+    // Read only after hydration: a LocalResource read during SSR outside a
+    // Suspense panics, and the bare labels are what the server renders anyway.
+    let count_of = move |pick: fn(&InboxCounts) -> usize| {
+        if !local.get() {
+            return None;
+        }
+        counts.get().and_then(Result::ok).map(|c| pick(&c))
+    };
 
     let toaster = use_context::<ToasterInjection>();
     let on_mark_all_read = Callback::new(move |()| {
@@ -179,7 +185,7 @@ pub fn NotificationsInboxPage() -> impl IntoView {
                         </Tab>
                     </TabList>
 
-                    <NotificationToolbar search_query=search_query app=app />
+                    <NotificationToolbar search_query=search_query app=app hydrated=local />
 
                     <NotificationList
                         tab=tab.read_only()

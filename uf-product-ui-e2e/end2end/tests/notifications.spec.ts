@@ -516,7 +516,10 @@ test.describe("pw-notifications-inbox", () => {
     await page.route(/\/api\/get_inbox_rows_page/, (route) =>
       route.fulfill({ status: 500, body: "stubbed failure" }),
     );
-    await page.getByTestId("nav-notifications-inbox").click();
+    await openBellDropdown(page);
+    // The bell's own list hits the same stub and says so.
+    await expect(page.getByTestId("notification-bell-error")).toBeVisible({ timeout: 30_000 });
+    await page.getByRole("menuitem", { name: "Open inbox" }).click();
     await expect(page.getByTestId("notifications-load-error")).toBeVisible({ timeout: 60_000 });
     await expect(
       page.getByText(
