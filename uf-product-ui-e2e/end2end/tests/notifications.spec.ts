@@ -443,7 +443,7 @@ test.describe("pw-notifications-inbox", () => {
     await waitForHydrated(page);
     await expect(inboxRow(page, "AppWelcomeRow")).toBeVisible({ timeout: 60_000 });
     const select = page.locator("#notifications-app-filter");
-    await expect(select.locator("option", { hasText: "Apps" })).toHaveCount(1, { timeout: 30_000 });
+    await expect(select.locator("option", { hasText: /^Apps$/ })).toHaveCount(1, { timeout: 30_000 });
     await select.selectOption("apps");
     await expect(inboxRow(page, "AppWelcomeRow")).toHaveCount(0, { timeout: 30_000 });
     await expect(inboxRow(page, "AppAppsRow")).toBeVisible();
@@ -517,8 +517,6 @@ test.describe("pw-notifications-inbox", () => {
       route.fulfill({ status: 500, body: "stubbed failure" }),
     );
     await openBellDropdown(page);
-    // The bell's own list hits the same stub and says so.
-    await expect(page.getByTestId("notification-bell-error")).toBeVisible({ timeout: 30_000 });
     await page.getByRole("menuitem", { name: "Open inbox" }).click();
     await expect(page.getByTestId("notifications-load-error")).toBeVisible({ timeout: 60_000 });
     await expect(

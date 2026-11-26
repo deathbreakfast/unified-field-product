@@ -267,7 +267,7 @@ fn DayGroupSection(
                     <List>
                         <For
                             each=move || rows.get()
-                            key=|row| row.notification.notification_id
+                            key=|row| (row.notification.notification_id, row.notification.is_read)
                             let:row
                         >
                             {
