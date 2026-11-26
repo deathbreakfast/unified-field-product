@@ -23,8 +23,17 @@ function stampedBuildOf(pathname) {
   return segment.startsWith("pkg-") && BUILD_RE.test(segment) ? segment : null;
 }
 
+// Build files only: a host fallback can answer an unknown `/pkg-…` path with
+// a 200 HTML page (possibly showing the signed-in user), which must never be
+// cached.
 function cacheable(response) {
-  return response.ok && response.status === 200 && response.type === "basic";
+  const contentType = response.headers.get("content-type") || "";
+  return (
+    response.ok &&
+    response.status === 200 &&
+    response.type === "basic" &&
+    !contentType.toLowerCase().startsWith("text/html")
+  );
 }
 
 self.addEventListener("fetch", (event) => {
