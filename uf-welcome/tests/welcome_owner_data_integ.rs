@@ -54,7 +54,18 @@ fn user(id: &str) -> RecordId {
     RecordId::new("user", id)
 }
 
+/// Valence reads this once, on the first ownership check in the process. The
+/// sqlite backend behind the notification store has no unified ownership
+/// fetch, so every fixture turns it off before anything reads it (as the
+/// uf-notifications suites do).
+fn disable_unified_ownership_fetch() {
+    if std::env::var_os("VALENCE_OWNERSHIP_UNIFIED_FETCH").is_none() {
+        std::env::set_var("VALENCE_OWNERSHIP_UNIFIED_FETCH", "0");
+    }
+}
+
 fn mem_valence(owner: &str) -> Valence {
+    disable_unified_ownership_fetch();
     register_noop_deletion_dispatcher_for_tests();
     Valence::builder()
         .add_backend("default", Arc::new(InMemoryBackend::new()))
@@ -230,6 +241,7 @@ mod waiting {
 
     /// **Test:** sqlite-mem Valence as System for fixture setup only.
     async fn system_valence() -> Valence {
+        disable_unified_ownership_fetch();
         register_noop_deletion_dispatcher_for_tests();
         let backend: Arc<dyn DatabaseBackend> = Arc::new(
             SqliteBackend::connect_memory()
