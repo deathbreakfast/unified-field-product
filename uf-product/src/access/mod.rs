@@ -17,6 +17,7 @@
 //! | Who holds what | [`AccessView`], [`AccessEntry`], [`PrincipalRef`] |
 //! | Host implementation | [`ResourceAccessBackend`], [`provide_resource_access_backend`] |
 //! | Gate a server function | [`require`] |
+//! | Put the reader's teams' resources first | [`ResourceAccessBackend::owned_by`], [`owned_resource_ids`] |
 //! | Show and change access | [`AccessCard`] |
 //! | Pick a team, group or person | [`PrincipalPicker`] |
 //! | Stand in for what the reader can't use | [`AccessDenied`], [`DeniedActionButton`] |
@@ -55,6 +56,10 @@
 //!     }
 //!     async fn can(&self, r: &ResourceRef, action: &str) -> Result<bool, AccessError> {
 //!         todo!()
+//!     }
+//!     // Optional: without it, `owned_by` returns an empty list.
+//!     async fn owned_by(&self, actor: &PrincipalRef, kind: &str) -> Result<Vec<String>, AccessError> {
+//!         todo!("read kind's rows and the actor's groups, then call owned_resource_ids")
 //!     }
 //! }
 //!
@@ -118,9 +123,9 @@ pub use access_denied::{
 };
 pub use add_access_dialog::{default_role, AddAccessDialog};
 pub use backend::{
-    is_last_owner, AccessEntry, AccessError, AccessLoad, AccessRequestReceipt, AccessView,
-    PrincipalKind, PrincipalRef, PrincipalResults, RequestId, ResourceRef, Role, DENIED_PREFIX,
-    LAST_OWNER_PREFIX, UNWIRED_PREFIX,
+    is_last_owner, owned_resource_ids, AccessEntry, AccessError, AccessLoad, AccessRequestReceipt,
+    AccessView, PrincipalKind, PrincipalRef, PrincipalResults, RequestId, ResourceRef, Role,
+    DENIED_PREFIX, LAST_OWNER_PREFIX, UNWIRED_PREFIX,
 };
 #[cfg(feature = "ssr")]
 pub use backend::{

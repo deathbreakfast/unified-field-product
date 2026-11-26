@@ -287,6 +287,48 @@ pub struct AccessEntry {
     pub umbrella: bool,
 }
 
+impl AccessEntry {
+    /// True when this row makes its principal one of the resource's owners for "yours first"
+    /// lists: Owner or Can edit (or a custom set that includes Edit), and not the app admin
+    /// group's default ownership.
+    #[must_use]
+    pub fn counts_as_owned(&self) -> bool {
+        if self.default_owner {
+            return false;
+        }
+        match &self.role {
+            Role::Owner | Role::Edit => true,
+            Role::Custom(actions) => actions.iter().any(|a| a == "Edit"),
+            Role::View | Role::Run | Role::ReadUnmasked => false,
+        }
+    }
+}
+
+/// Ids of the resources where one of `principals` holds a row that
+/// [counts as owned](AccessEntry::counts_as_owned).
+///
+/// `principals` is the actor plus every group and managed team group they're in. Backends
+/// implementing [`ResourceAccessBackend::owned_by`] read each resource's rows and pass them
+/// here, so every host applies the same rule. Ids come back in input order.
+#[must_use]
+pub fn owned_resource_ids<'a, I, E>(resources: I, principals: &[PrincipalRef]) -> Vec<String>
+where
+    I: IntoIterator<Item = (&'a str, E)>,
+    E: IntoIterator<Item = &'a AccessEntry>,
+{
+    let keys: std::collections::HashSet<String> =
+        principals.iter().map(PrincipalRef::key).collect();
+    resources
+        .into_iter()
+        .filter_map(|(id, entries)| {
+            entries
+                .into_iter()
+                .any(|e| e.counts_as_owned() && keys.contains(&e.principal.key()))
+                .then(|| id.to_string())
+        })
+        .collect()
+}
+
 /// Who can act on one resource, as the reader sees it.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AccessView {
@@ -470,6 +512,17 @@ pub trait ResourceAccessBackend: Send + Sync {
     ) -> Result<RequestId, AccessError>;
     /// Whether the actor holds `action` (such as `"Run"`) on `resource`.
     async fn can(&self, resource: &ResourceRef, action: &str) -> Result<bool, AccessError>;
+    /// Ids of the resources of `kind` that `actor`, or a group or managed team group they're
+    /// in, holds Owner or Can edit on, for "yours first" lists.
+    ///
+    /// Can run and Can view don't count, and neither does the app admin group's default
+    /// ownership ([`AccessEntry::default_owner`]), so an admin still sees their own team's
+    /// work first. [`owned_resource_ids`] applies that rule to rows the backend has read. The
+    /// default body returns an empty list, which leaves lists in their usual order.
+    async fn owned_by(&self, actor: &PrincipalRef, kind: &str) -> Result<Vec<String>, AccessError> {
+        let _ = (actor, kind);
+        Ok(Vec::new())
+    }
 }
 
 /// Install the resource-access backend for this Leptos runtime (host bootstrap).
@@ -533,6 +586,14 @@ impl ResourceAccessBackend for UnwiredBackend {
 
     async fn can(&self, _resource: &ResourceRef, _action: &str) -> Result<bool, AccessError> {
         Ok(false)
+    }
+
+    async fn owned_by(
+        &self,
+        _actor: &PrincipalRef,
+        _kind: &str,
+    ) -> Result<Vec<String>, AccessError> {
+        Ok(Vec::new())
     }
 }
 
