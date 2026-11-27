@@ -52,6 +52,8 @@ jobs:
           --all-targets -- -D warnings
       - name: cargo clippy (uf-apps, ssr)
         run: cargo clippy -p uf-apps --features ssr --all-targets -- -D warnings
+      - name: cargo clippy (uf-welcome, ssr + admin-permissions)
+        run: cargo clippy -p uf-welcome --features ssr,admin-permissions --all-targets -- -D warnings
 
   # Lighter packages share one runner (same Layer 1 commands as VERIFICATION.md).
   test:
