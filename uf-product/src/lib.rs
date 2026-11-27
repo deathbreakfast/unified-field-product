@@ -103,6 +103,11 @@
 //! After sign-in or sign-out, call [`AuthContext::trigger_refresh`] so
 //! [`init_auth_resource`] re-runs [`get_session`].
 //!
+//! When a server fn finds the session gone partway through, return
+//! [`unauthenticated_error`] from it and pass the error to [`SessionExpiry::report`]
+//! from [`use_session_expiry`]. The shell refreshes the session and
+//! [`routes::RequireAuthenticated`] reopens sign-in on the same path and query.
+//!
 //! ## Session context at boot
 //!
 //! Once at host boot, before routed pages mount, install shared session signals so every
@@ -516,6 +521,7 @@ pub mod services;
 /// Host session → [`AuthSession`] bridge (`get_session` / `init_auth_resource`).
 #[cfg(any(feature = "hydrate", feature = "ssr"))]
 pub mod session;
+pub mod session_expiry;
 pub mod theme;
 #[cfg(any(feature = "ssr", feature = "hydrate"))]
 pub mod workspace_search;
@@ -561,6 +567,10 @@ pub use detail_extensions::{
 pub use floating_actions::{
     collect_floating_actions, default_floating_actions_config, register_floating_action,
     FloatingActionContribution, RegisteredFloatingActions, DEFAULT_FLOATING_ACTIONS_LABEL,
+};
+pub use session_expiry::{
+    is_unauthenticated_error, provide_session_expiry, unauthenticated_error, use_session_expiry,
+    SessionExpiry, UNAUTHENTICATED_ERROR,
 };
 
 /// Insert [`AuthContext`] into Leptos context. Call once near the host `Router`.

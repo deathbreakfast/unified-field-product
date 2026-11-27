@@ -4,7 +4,7 @@
 pub const SHELL_BRAND_SEED: &str = "#1a6f94";
 
 /// Platform shell / utility apps share the Orbital blue accent.
-pub const UF_SHELL_BRAND_SEED: &str = "#4a89dc";
+pub const UF_SHELL_BRAND_SEED: &str = "#286fcd";
 
 /// `(app_id, brand_seed_hex)` — aligned with physics-family anchors in `orb_aliases.rs`.
 const PRODUCT_BRAND_SEEDS: &[(&str, &str)] = &[
@@ -72,6 +72,28 @@ mod tests {
         assert_eq!(brand_seed_for_app_id("chronon"), "#eaa300");
         assert_eq!(brand_seed_for_app_id("valence"), "#4f6bed");
         assert_eq!(brand_seed_for_app_id("unknown-app"), SHELL_BRAND_SEED);
+    }
+
+    /// WCAG contrast of white text on `hex`.
+    fn white_contrast(hex: &str) -> f64 {
+        let channel = |i: usize| {
+            let c = f64::from(u8::from_str_radix(&hex[i..i + 2], 16).unwrap()) / 255.0;
+            if c <= 0.04045 {
+                c / 12.92
+            } else {
+                ((c + 0.055) / 1.055).powf(2.4)
+            }
+        };
+        let luminance = 0.2126 * channel(1) + 0.7152 * channel(3) + 0.0722 * channel(5);
+        1.05 / (luminance + 0.05)
+    }
+
+    #[test]
+    fn shell_seed_meets_white_text_contrast() {
+        // The seed is the light brand background and the dark hover; the rest of
+        // the ramp the buttons use is darker.
+        assert!(white_contrast(UF_SHELL_BRAND_SEED) >= 4.5);
+        assert!(white_contrast("#4a89dc") < 4.5, "old seed failed 4.5:1");
     }
 
     #[test]

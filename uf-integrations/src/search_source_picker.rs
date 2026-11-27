@@ -23,47 +23,73 @@ use orbital_primitives::{
 use uf_product::components::{Body1, Caption1};
 use uf_search_core::{SearchSourceItem, SearchSourceKey};
 
-type SearchSourceGroup = (String, String, Vec<SearchSourceItem>);
+/// A caller-supplied group of rows, shown above the search source groups.
+///
+/// Use it for rows the sources don't return, such as recent picks.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct SearchSourcePickerGroup {
+    /// Stable group id, unique among the picker's groups.
+    pub id: String,
+    /// Group header text.
+    pub label: String,
+    /// Rows in this group.
+    pub items: Vec<SearchSourceItem>,
+}
 
-fn group_signature(group: &SearchSourceGroup) -> String {
-    let (source_id, _, items) = group;
-    let item_signature = items
+fn group_signature(group: &SearchSourcePickerGroup) -> String {
+    let item_signature = group
+        .items
         .iter()
-        .map(|item| format!("{}:{}", item.source_id, item.id))
+        .map(option_key)
         .collect::<Vec<_>>()
         .join("|");
-    format!("{source_id}|{item_signature}")
+    format!("{}|{item_signature}", group.id)
 }
 
 fn option_key(item: &SearchSourceItem) -> String {
     format!("{}:{}", item.source_id, item.id)
 }
 
+/// Caller groups first, then one group per source, then an "Other" group for rows
+/// whose source was not requested. Empty groups are kept only with `keep_empty`.
 fn group_options(
+    caller_groups: Vec<SearchSourcePickerGroup>,
     sources: Vec<SearchSourceKey>,
     rows: Vec<SearchSourceItem>,
-) -> Vec<SearchSourceGroup> {
-    let mut groups = Vec::<SearchSourceGroup>::new();
+    keep_empty: bool,
+) -> Vec<SearchSourcePickerGroup> {
+    let mut groups = caller_groups
+        .into_iter()
+        .filter(|group| keep_empty || !group.items.is_empty())
+        .collect::<Vec<_>>();
 
+    let source_ids = sources.iter().map(|s| s.id.clone()).collect::<Vec<_>>();
     for source in sources {
-        let source_id = source.id;
-        let source_rows = rows
+        let items = rows
             .iter()
-            .filter(|item| item.source_id == source_id)
+            .filter(|item| item.source_id == source.id)
             .cloned()
             .collect::<Vec<_>>();
-        if !source_rows.is_empty() {
-            groups.push((source_id, source.label, source_rows));
+        if keep_empty || !items.is_empty() {
+            groups.push(SearchSourcePickerGroup {
+                id: source.id,
+                label: source.label,
+                items,
+            });
         }
     }
 
     let mut other_rows = rows
         .into_iter()
-        .filter(|item| !groups.iter().any(|(id, _, _)| *id == item.source_id))
+        .filter(|item| !source_ids.contains(&item.source_id))
         .collect::<Vec<_>>();
     if !other_rows.is_empty() {
         other_rows.sort_by(|a, b| a.source_id.cmp(&b.source_id).then(a.title.cmp(&b.title)));
-        groups.push(("other".to_string(), "Other".to_string(), other_rows));
+        groups.push(SearchSourcePickerGroup {
+            id: "other".to_string(),
+            label: "Other".to_string(),
+            items: other_rows,
+        });
     }
 
     groups
@@ -94,12 +120,13 @@ fn resolve_selected(
 fn SearchSourceOptionRow(
     item: SearchSourceItem,
     option_view: Option<Callback<SearchSourceItem, AnyView>>,
+    disabled: Signal<bool>,
 ) -> impl IntoView {
     if let Some(render) = option_view {
         let key = option_key(&item);
         let text = item.title.clone();
         return view! {
-            <ComboboxOption text=text value=key>
+            <ComboboxOption text=text value=key disabled=disabled>
                 {render.run(item)}
             </ComboboxOption>
         }
@@ -113,7 +140,7 @@ fn SearchSourceOptionRow(
         .clone()
         .unwrap_or_else(|| item.source_id.clone());
     view! {
-        <ComboboxOption text=title.clone() value=key>
+        <ComboboxOption text=title.clone() value=key disabled=disabled>
             <Flex vertical=true gap=FlexGap::Small>
                 <Body1>{title}</Body1>
                 <Caption1>{format!("{kind} • {description}")}</Caption1>
@@ -136,6 +163,11 @@ fn SearchSourceOptionRow(
 ///
 /// Rows are shown as the server returned them; set `local_filter` to also
 /// filter by title on the client.
+///
+/// Set `groups` to add rows the sources don't return (recent picks, say) above the
+/// source groups, `option_disabled` to show some rows but block picking them
+/// (existing members, say), and `show_empty_groups` to keep a header with a
+/// "No results" row for every group the search left empty.
 ///
 /// Set `option_view` to draw each option yourself (an avatar row, say) instead of
 /// the default title and description. Selection, grouping and keyboard behavior
@@ -210,7 +242,29 @@ pub fn SearchSourcePicker(
     /// Custom view for each selected item, shown in a row under the input.
     #[prop(optional)]
     value_view: Option<Callback<SearchSourceItem, AnyView>>,
+    /// Caller-supplied groups shown above the source groups. Their rows can be
+    /// selected like source rows.
+    #[prop(optional, into)]
+    groups: Signal<Vec<SearchSourcePickerGroup>>,
+    /// Rows for which this returns `true` are shown but can't be selected.
+    #[prop(optional)]
+    option_disabled: Option<Callback<SearchSourceItem, bool>>,
+    /// Keep a header and a "No results" row for each requested source and caller
+    /// group that has no rows. Defaults to `false`, which drops empty groups.
+    #[prop(default = false)]
+    show_empty_groups: bool,
 ) -> impl IntoView {
+    // Every selectable row: caller groups first, then the source rows.
+    let all_rows = move || {
+        let mut rows = groups.with(|groups| {
+            groups
+                .iter()
+                .flat_map(|group| group.items.iter().cloned())
+                .collect::<Vec<_>>()
+        });
+        rows.extend(options.get());
+        rows
+    };
     let query = RwSignal::new(String::new());
     let selected_options = RwSignal::new(Vec::<String>::new());
     let last_emitted_selection = RwSignal::new(None::<String>);
@@ -263,7 +317,7 @@ pub fn SearchSourcePicker(
         if last_emitted_selection.get_untracked().as_ref() == Some(&selected_key) {
             return;
         }
-        let rows = options.get_untracked();
+        let rows = untrack(all_rows);
         if let Some(item) = rows
             .into_iter()
             .find(|item| option_key(item) == selected_key)
@@ -279,7 +333,7 @@ pub fn SearchSourcePicker(
     // the memo's previous value stands in for rows that are no longer listed.
     let selected_items = Memo::new(move |prev: Option<&Vec<SearchSourceItem>>| {
         let keys = selected_options.get();
-        let rows = options.get();
+        let rows = all_rows();
         value.with(|v| {
             resolve_selected(
                 &keys,
@@ -297,7 +351,14 @@ pub fn SearchSourcePicker(
             .unwrap_or_else(|| "Search users or groups".to_string())
     };
 
-    let grouped_options = Memo::new(move |_| group_options(search_sources.get(), options.get()));
+    let grouped_options = Memo::new(move |_| {
+        group_options(
+            groups.get(),
+            search_sources.get(),
+            options.get(),
+            show_empty_groups,
+        )
+    });
 
     let appearance = ComboboxAppearance {
         placeholder: MaybeProp::from(Signal::derive(placeholder_text)),
@@ -322,7 +383,8 @@ pub fn SearchSourcePicker(
                     let:group
                 >
                     {
-                        let (_, label, items) = group;
+                        let SearchSourcePickerGroup { id, label, items } = group;
+                        let is_empty = items.is_empty();
                         view! {
                             <ComboboxOptionGroup label=label>
                                 <For
@@ -330,8 +392,31 @@ pub fn SearchSourcePicker(
                                     key=|item| option_key(item)
                                     let:item
                                 >
-                                    <SearchSourceOptionRow item=item option_view=option_view />
+                                    {
+                                        // Derived so a caller signal read inside the
+                                        // callback re-enables or disables the row.
+                                        let row = item.clone();
+                                        let disabled = Signal::derive(move || {
+                                            option_disabled.is_some_and(|cb| cb.run(row.clone()))
+                                        });
+                                        view! {
+                                            <SearchSourceOptionRow
+                                                item=item
+                                                option_view=option_view
+                                                disabled=disabled
+                                            />
+                                        }
+                                    }
                                 </For>
+                                {is_empty.then(|| view! {
+                                    <ComboboxOption
+                                        text="No results"
+                                        value=format!("__empty__:{id}")
+                                        disabled=Signal::from(true)
+                                    >
+                                        <Caption1>"No results"</Caption1>
+                                    </ComboboxOption>
+                                })}
                             </ComboboxOptionGroup>
                         }
                     }
@@ -378,6 +463,63 @@ mod tests {
         let got = resolve_selected(&keys, &[item("a")], &[item("b")], Some(&item("c")));
         let ids: Vec<_> = got.iter().map(|i| i.id.as_str()).collect();
         assert_eq!(ids, ["a", "b", "c"]);
+    }
+
+    fn source(id: &str) -> SearchSourceKey {
+        SearchSourceKey::new(id, id)
+    }
+
+    fn caller_group(id: &str, items: Vec<SearchSourceItem>) -> SearchSourcePickerGroup {
+        SearchSourcePickerGroup {
+            id: id.into(),
+            label: id.into(),
+            items,
+        }
+    }
+
+    #[test]
+    fn group_options_puts_caller_groups_first_happy_path() {
+        let groups = group_options(
+            vec![caller_group("recent", vec![item("r")])],
+            vec![source("s")],
+            vec![item("a")],
+            false,
+        );
+        let ids: Vec<_> = groups.iter().map(|g| g.id.as_str()).collect();
+        assert_eq!(ids, ["recent", "s"]);
+    }
+
+    #[test]
+    fn group_options_keeps_empty_groups_only_when_asked_happy_path() {
+        let build = |keep| {
+            group_options(
+                vec![caller_group("recent", vec![])],
+                vec![source("s"), source("t")],
+                vec![item("a")],
+                keep,
+            )
+            .into_iter()
+            .map(|g| (g.id, g.items.len()))
+            .collect::<Vec<_>>()
+        };
+        assert_eq!(build(false), [("s".to_string(), 1)]);
+        assert_eq!(
+            build(true),
+            [
+                ("recent".to_string(), 0),
+                ("s".to_string(), 1),
+                ("t".to_string(), 0)
+            ]
+        );
+    }
+
+    #[test]
+    fn group_options_unrequested_source_goes_to_other_sad_path() {
+        let mut stray = item("x");
+        stray.source_id = "unknown".into();
+        let groups = group_options(vec![], vec![source("s")], vec![stray], false);
+        let ids: Vec<_> = groups.iter().map(|g| g.id.as_str()).collect();
+        assert_eq!(ids, ["other"]);
     }
 
     #[test]
