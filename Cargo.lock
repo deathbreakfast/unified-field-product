@@ -5990,7 +5990,7 @@ dependencies = [
 [[package]]
 name = "uf-notifications-api"
 version = "0.3.0"
-source = "git+https://github.com/unified-field-dev/uf-notifications?branch=main#b664de06e64d88382970b15cce834c03320ebb65"
+source = "git+https://github.com/deathbreakfast/uf-notifications?branch=main#382e1c998e45aef67a9030b8ee5e8fc37d1dd770"
 dependencies = [
  "axum",
  "chrono",
@@ -6013,11 +6013,12 @@ dependencies = [
 [[package]]
 name = "uf-notifications-core"
 version = "0.3.0"
-source = "git+https://github.com/unified-field-dev/uf-notifications?branch=main#b664de06e64d88382970b15cce834c03320ebb65"
+source = "git+https://github.com/deathbreakfast/uf-notifications?branch=main#382e1c998e45aef67a9030b8ee5e8fc37d1dd770"
 dependencies = [
  "async-trait",
  "chrono",
  "futures",
+ "inventory",
  "lepton-identity",
  "serde",
  "serde_json",
