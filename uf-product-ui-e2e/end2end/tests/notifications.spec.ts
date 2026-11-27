@@ -6,7 +6,31 @@ import {
   readBellBadgeCount,
   openBellDropdown,
   measureBellDropdownWidth,
+  type SeedNotification,
 } from "./fixtures";
+import type { Page } from "@playwright/test";
+
+/** Seed row with an age, for day groups and time labels. */
+type AgedNotification = SeedNotification & { age_secs?: number };
+
+/** Fixture kinds registered by the e2e host (`seed.rs`). */
+const KIND_ASSIGNED = "welcome.e2e_assigned"; // Welcome · Assigned to you · asks for action
+const KIND_DIGEST = "apps.e2e_digest"; // Apps · Weekly digest
+
+/** One inbox row by title. */
+function inboxRow(page: Page, title: string) {
+  return page
+    .getByTestId("notifications-inbox-page")
+    .getByTestId("notification-item")
+    .filter({ hasText: title });
+}
+
+/** An inbox tab by its leading label ("All", "Unread", "Waiting on you"). */
+function inboxTab(page: Page, label: string) {
+  return page
+    .getByTestId("notifications-inbox-page")
+    .getByRole("tab", { name: new RegExp(`^${label}`) });
+}
 
 test.describe("pw-notifications-gate", () => {
   test("pw-notifications-unauth-gated-sad", async ({ page }) => {
@@ -29,7 +53,7 @@ test.describe("pw-notifications-bell", () => {
       timeout: 60_000,
     });
     await openBellDropdown(page);
-    await expect(page.getByText("No unread notifications.")).toBeVisible({
+    await expect(page.getByText("You're all caught up")).toBeVisible({
       timeout: 30_000,
     });
   });
@@ -261,20 +285,25 @@ test.describe("pw-notifications-inbox", () => {
     expect(box!.width).toBeGreaterThanOrEqual(360);
   });
 
-  test("pw-notifications-stats-grid-happy", async ({ page }) => {
+  test("pw-notifications-tab-counts-happy", async ({ page }) => {
     await seedAuth(page, "authenticated_verified", {
       notifications: [
-        { title: "StatOne", message: "a" },
-        { title: "StatTwo", message: "b" },
+        { title: "CountAsk", message: "a", kind: KIND_ASSIGNED },
+        { title: "CountDigest", message: "b", kind: KIND_DIGEST },
+        { title: "CountPlain", message: "c" },
       ],
     });
     await page.goto("/notifications", { waitUntil: "domcontentloaded" });
     await waitForHydrated(page);
-    await expect(page.getByText("StatOne")).toBeVisible({ timeout: 60_000 });
-    await expect(page.locator("span").filter({ hasText: /^Unread$/ })).toBeVisible();
-    await expect(page.locator("span").filter({ hasText: /^Total$/ })).toBeVisible();
-    await expect(page.locator("span").filter({ hasText: /^Today$/ })).toBeVisible();
-    await expect(page.getByText("2").first()).toBeVisible({ timeout: 30_000 });
+    await expect(inboxRow(page, "CountAsk")).toBeVisible({ timeout: 60_000 });
+    await expect(inboxTab(page, "All")).toHaveText("All (3)", { timeout: 30_000 });
+    await expect(inboxTab(page, "Unread")).toHaveText("Unread (3)");
+    await expect(inboxTab(page, "Waiting on you")).toHaveText("Waiting on you (1)");
+
+    // A single Mark read updates the Unread count without reloading the list.
+    await inboxRow(page, "CountPlain").getByRole("button", { name: "Mark read", exact: true }).click();
+    await expect(inboxTab(page, "Unread")).toHaveText("Unread (2)", { timeout: 30_000 });
+    await expect(inboxTab(page, "All")).toHaveText("All (3)");
   });
 
   test("pw-notifications-mark-read-happy", async ({ page }) => {
@@ -326,8 +355,9 @@ test.describe("pw-notifications-inbox", () => {
     await expect(page.getByRole("button", { name: "Mark unread", exact: true }).first()).toBeVisible({
       timeout: 30_000,
     });
-    await page.getByRole("button", { name: "Unread", exact: true }).click();
-    await expect(page.getByText("No notifications")).toBeVisible({ timeout: 30_000 });
+    await inboxTab(page, "Unread").click();
+    await expect(page.getByText("You're all caught up")).toBeVisible({ timeout: 30_000 });
+    await expect(inboxTab(page, "Unread")).toHaveText("Unread (0)");
   });
 
   test("pw-notifications-mark-all-when-none-sad", async ({ page }) => {
@@ -338,13 +368,13 @@ test.describe("pw-notifications-inbox", () => {
     await waitForHydrated(page);
     await expect(page.getByText("OnlyThenRead")).toBeVisible({ timeout: 60_000 });
     await page.getByRole("button", { name: "Mark all read", exact: true }).click();
-    await page.getByRole("button", { name: "Unread", exact: true }).click();
+    await inboxTab(page, "Unread").click();
     await expect(page.getByText("You're all caught up")).toBeVisible({ timeout: 30_000 });
     await page.getByRole("button", { name: "Mark all read", exact: true }).click();
     await expect(page.getByText("You're all caught up")).toBeVisible({ timeout: 30_000 });
   });
 
-  test("pw-notifications-filter-all-unread-read-happy", async ({ page }) => {
+  test("pw-notifications-tabs-all-unread-happy", async ({ page }) => {
     await seedAuth(page, "authenticated_verified", {
       notifications: [
         { title: "FilterKeep", message: "unread" },
@@ -353,29 +383,73 @@ test.describe("pw-notifications-inbox", () => {
     });
     await page.goto("/notifications", { waitUntil: "domcontentloaded" });
     await waitForHydrated(page);
-    await expect(page.getByText("FilterKeep")).toBeVisible({ timeout: 60_000 });
+    await expect(inboxRow(page, "FilterKeep")).toBeVisible({ timeout: 60_000 });
+    const tabList = await page.getByTestId("notifications-inbox-page").getByRole("tablist").elementHandle();
 
-    await page
-      .locator("div")
-      .filter({ hasText: /^FilterMark/ })
-      .getByRole("button", { name: "Mark read", exact: true })
-      .first()
-      .click();
-    await expect(page.getByRole("button", { name: "Mark unread", exact: true }).first()).toBeVisible({
-      timeout: 30_000,
+    await inboxRow(page, "FilterMark").getByRole("button", { name: "Mark read", exact: true }).click();
+    await expect(
+      inboxRow(page, "FilterMark").getByRole("button", { name: "Mark unread", exact: true }),
+    ).toBeVisible({ timeout: 30_000 });
+
+    await inboxTab(page, "Unread").click();
+    await expect(inboxTab(page, "Unread")).toHaveAttribute("aria-selected", "true");
+    await expect(inboxRow(page, "FilterKeep")).toBeVisible({ timeout: 30_000 });
+    await expect(inboxRow(page, "FilterMark")).toHaveCount(0);
+
+    await inboxTab(page, "All").click();
+    await expect(inboxRow(page, "FilterKeep")).toBeVisible({ timeout: 30_000 });
+    await expect(inboxRow(page, "FilterMark")).toBeVisible();
+
+    // Switching tabs reloads only the list: the tab list is the same element.
+    expect(await tabList!.evaluate((el) => el.isConnected)).toBe(true);
+  });
+
+  test("pw-notifications-waiting-on-you-happy", async ({ page }) => {
+    await seedAuth(page, "authenticated_verified", {
+      notifications: [
+        { title: "WaitAsk", message: "please review", kind: KIND_ASSIGNED },
+        { title: "WaitDigest", message: "fyi", kind: KIND_DIGEST },
+        { title: "WaitPlain", message: "unregistered kind" },
+      ],
     });
+    await page.goto("/notifications", { waitUntil: "domcontentloaded" });
+    await waitForHydrated(page);
+    await expect(inboxRow(page, "WaitDigest")).toBeVisible({ timeout: 60_000 });
+    await inboxTab(page, "Waiting on you").click();
+    await expect(inboxRow(page, "WaitAsk")).toBeVisible({ timeout: 30_000 });
+    await expect(inboxRow(page, "WaitDigest")).toHaveCount(0);
+    await expect(inboxRow(page, "WaitPlain")).toHaveCount(0);
+  });
 
-    await page.getByRole("button", { name: "Unread", exact: true }).click();
-    await expect(page.getByText("FilterKeep")).toBeVisible({ timeout: 30_000 });
-    await expect(page.getByText("FilterMark")).toHaveCount(0);
+  test("pw-notifications-waiting-on-you-empty-sad", async ({ page }) => {
+    await seedAuth(page, "authenticated_verified", {
+      notifications: [{ title: "OnlyDigest", message: "fyi", kind: KIND_DIGEST }],
+    });
+    await page.goto("/notifications", { waitUntil: "domcontentloaded" });
+    await waitForHydrated(page);
+    await expect(inboxRow(page, "OnlyDigest")).toBeVisible({ timeout: 60_000 });
+    await inboxTab(page, "Waiting on you").click();
+    await expect(page.getByText("Nothing is waiting on you")).toBeVisible({ timeout: 30_000 });
+  });
 
-    await page.getByRole("button", { name: "Read", exact: true }).click();
-    await expect(page.getByText("FilterMark")).toBeVisible({ timeout: 30_000 });
-    await expect(page.getByText("FilterKeep")).toHaveCount(0);
+  test("pw-notifications-app-filter-happy", async ({ page }) => {
+    await seedAuth(page, "authenticated_verified", {
+      notifications: [
+        { title: "AppWelcomeRow", message: "from welcome", kind: KIND_ASSIGNED },
+        { title: "AppAppsRow", message: "from apps", kind: KIND_DIGEST },
+      ],
+    });
+    await page.goto("/notifications", { waitUntil: "domcontentloaded" });
+    await waitForHydrated(page);
+    await expect(inboxRow(page, "AppWelcomeRow")).toBeVisible({ timeout: 60_000 });
+    const select = page.getByLabel("Filter by app");
+    await expect(select.locator("option", { hasText: /^Apps$/ })).toHaveCount(1, { timeout: 30_000 });
+    await select.selectOption("apps");
+    await expect(inboxRow(page, "AppWelcomeRow")).toHaveCount(0, { timeout: 30_000 });
+    await expect(inboxRow(page, "AppAppsRow")).toBeVisible();
 
-    await page.getByRole("button", { name: "All", exact: true }).click();
-    await expect(page.getByText("FilterKeep")).toBeVisible({ timeout: 30_000 });
-    await expect(page.getByText("FilterMark")).toBeVisible();
+    await select.selectOption("");
+    await expect(inboxRow(page, "AppWelcomeRow")).toBeVisible({ timeout: 30_000 });
   });
 
   test("pw-notifications-filter-search-happy", async ({ page }) => {
@@ -387,17 +461,148 @@ test.describe("pw-notifications-inbox", () => {
     });
     await page.goto("/notifications", { waitUntil: "domcontentloaded" });
     await waitForHydrated(page);
-    await expect(page.getByText("AlphaPing")).toBeVisible({ timeout: 60_000 });
-    await expect(page.getByText("BetaPing")).toBeVisible();
+    await expect(inboxRow(page, "AlphaPing")).toBeVisible({ timeout: 60_000 });
+    await expect(inboxRow(page, "BetaPing")).toBeVisible();
 
-    await page.getByPlaceholder("Search notifications...").fill("AlphaPing");
-    await expect(page.getByText("AlphaPing")).toBeVisible({ timeout: 30_000 });
-    await expect(page.getByText("BetaPing")).toHaveCount(0);
+    const search = page.getByPlaceholder("Search notifications");
+    await search.fill("AlphaPing");
+    await expect(inboxRow(page, "AlphaPing")).toBeVisible({ timeout: 30_000 });
+    await expect(inboxRow(page, "BetaPing")).toHaveCount(0);
 
-    await page.getByPlaceholder("Search notifications...").fill("zz-no-match");
-    await expect(page.getByText("No notifications")).toBeVisible({
+    await search.fill("zz-no-match");
+    await expect(page.getByText("No notifications match")).toBeVisible({ timeout: 30_000 });
+    await page.getByRole("button", { name: "Clear filters", exact: true }).click();
+    await expect(search).toHaveValue("");
+    await expect(inboxRow(page, "BetaPing")).toBeVisible({ timeout: 30_000 });
+  });
+
+  test("pw-notifications-mark-read-failure-toast-sad", async ({ page }) => {
+    const title = `FailRead-${Date.now()}`;
+    await seedAuth(page, "authenticated_verified", {
+      notifications: [{ title, message: "server says no" }],
+    });
+    await page.goto("/notifications", { waitUntil: "domcontentloaded" });
+    await waitForHydrated(page);
+    await expect(inboxRow(page, title)).toBeVisible({ timeout: 60_000 });
+
+    await page.route(/\/api\/mark_notification_read/, (route) =>
+      route.fulfill({ status: 500, body: "stubbed failure" }),
+    );
+    await inboxRow(page, title).getByRole("button", { name: "Mark read", exact: true }).click();
+    await expect(page.getByText(`Couldn't mark “${title}” as read`)).toBeVisible({
       timeout: 30_000,
     });
+    await expect(page.getByText("It's still unread.")).toBeVisible();
+    // The row flips back.
+    await expect(
+      inboxRow(page, title).getByRole("button", { name: "Mark read", exact: true }),
+    ).toBeVisible({ timeout: 30_000 });
+    await expect(inboxRow(page, title)).toHaveAttribute("data-read", "false");
+
+    await page.unroute(/\/api\/mark_notification_read/);
+    await page.getByRole("button", { name: "Try again", exact: true }).click();
+    await expect(
+      inboxRow(page, title).getByRole("button", { name: "Mark unread", exact: true }),
+    ).toBeVisible({ timeout: 30_000 });
+  });
+
+  test("pw-notifications-load-error-sad", async ({ page }) => {
+    await seedAuth(page, "authenticated_verified", {
+      notifications: [{ title: "LoadErrorProbe", message: "comes back" }],
+    });
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    await waitForHydrated(page);
+    // Navigate client-side so the list loads from the browser, where the stub applies.
+    await page.route(/\/api\/get_inbox_rows_page/, (route) =>
+      route.fulfill({ status: 500, body: "stubbed failure" }),
+    );
+    await openBellDropdown(page);
+    await page.getByRole("menuitem", { name: "Open inbox" }).click();
+    await expect(page.getByTestId("notifications-load-error")).toBeVisible({ timeout: 60_000 });
+    await expect(
+      page.getByText(
+        "Couldn't load your notifications. Nothing was lost; this is a problem on our side.",
+      ),
+    ).toBeVisible();
+    await expect(page.getByTestId("notifications-end")).toHaveCount(0);
+
+    await page.unroute(/\/api\/get_inbox_rows_page/);
+    await page
+      .getByTestId("notifications-load-error")
+      .getByRole("button", { name: "Try again", exact: true })
+      .click();
+    await expect(inboxRow(page, "LoadErrorProbe")).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByTestId("notifications-load-error")).toHaveCount(0);
+  });
+
+  test("pw-notifications-row-actions-aligned-happy", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await seedAuth(page, "authenticated_verified", {
+      notifications: [
+        { title: "AlignShort", message: "x", url: "/", kind: KIND_DIGEST },
+        {
+          title: "AlignLongTitleThatWrapsFurtherThanTheOther",
+          message: "a longer message to make this row taller than the first one",
+          url: "/",
+          kind: KIND_ASSIGNED,
+        },
+      ],
+    });
+    await page.goto("/notifications", { waitUntil: "domcontentloaded" });
+    await waitForHydrated(page);
+    await expect(inboxRow(page, "AlignShort")).toBeVisible({ timeout: 60_000 });
+    // Different labels on the first button ("Mark unread" vs "Mark read").
+    await inboxRow(page, "AlignShort").getByRole("button", { name: "Mark read", exact: true }).click();
+    await expect(
+      inboxRow(page, "AlignShort").getByRole("button", { name: "Mark unread", exact: true }),
+    ).toBeVisible({ timeout: 30_000 });
+
+    // Measure the buttons themselves (by role) in each row.
+    const rows = ["AlignShort", "AlignLongTitleThatWrapsFurtherThanTheOther"].map((t) =>
+      inboxRow(page, t),
+    );
+    const openButtons = rows.map((r) => r.getByRole("button", { name: "Open", exact: true }));
+    const moreButtons = rows.map((r) => r.getByRole("button", { name: "More actions" }));
+    for (const b of [...openButtons, ...moreButtons]) {
+      await expect(b).toBeVisible({ timeout: 30_000 });
+    }
+    const [o1, o2] = await Promise.all(openButtons.map((b) => b.boundingBox()));
+    const [m1, m2] = await Promise.all(moreButtons.map((b) => b.boundingBox()));
+    expect(Math.abs(o1!.x - o2!.x)).toBeLessThanOrEqual(1);
+    expect(Math.abs(m1!.x - m2!.x)).toBeLessThanOrEqual(1);
+  });
+
+  test("pw-notifications-row-menu-happy", async ({ page }) => {
+    await seedAuth(page, "authenticated_verified", {
+      notifications: [{ title: "MenuRow", message: "menu", kind: KIND_ASSIGNED }],
+    });
+    await page.goto("/notifications", { waitUntil: "domcontentloaded" });
+    await waitForHydrated(page);
+    await expect(inboxRow(page, "MenuRow")).toBeVisible({ timeout: 60_000 });
+    await inboxRow(page, "MenuRow").getByTestId("notification-more").click();
+    await expect(
+      page.getByRole("menuitem", { name: "Change how I get “Assigned to you”" }),
+    ).toBeVisible({ timeout: 30_000 });
+    await page.getByRole("menuitem", { name: "Mark read" }).click();
+    await expect(inboxRow(page, "MenuRow")).toHaveAttribute("data-read", "true", {
+      timeout: 30_000,
+    });
+  });
+
+  test("pw-notifications-phone-menu-only-happy", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await seedAuth(page, "authenticated_verified", {
+      notifications: [{ title: "PhoneRow", message: "tap me", url: "/" }],
+    });
+    await page.goto("/notifications", { waitUntil: "domcontentloaded" });
+    await waitForHydrated(page);
+    const row = inboxRow(page, "PhoneRow");
+    await expect(row).toBeVisible({ timeout: 60_000 });
+    await expect(row.getByTestId("notification-more")).toBeVisible();
+    await expect(row.getByTestId("notification-open")).toHaveCount(0);
+    await expect(row.getByRole("button", { name: "Mark read", exact: true })).toHaveCount(0);
+    await row.getByText("PhoneRow", { exact: true }).click();
+    await expect(page).toHaveURL(/\/$/, { timeout: 30_000 });
   });
 
   test("pw-notifications-safe-url-nav-happy", async ({ page }) => {
@@ -482,6 +687,88 @@ test.describe("pw-notifications-inbox", () => {
       await page.waitForTimeout(500);
     }
     await expect.poll(countInboxPageTitles, { timeout: 90_000 }).toBe(25);
+  });
+});
+
+test.describe("pw-notifications-kinds-and-times", () => {
+  test.use({ timezoneId: "America/Los_Angeles" });
+
+  test("pw-notifications-bell-caption-happy", async ({ page }) => {
+    await seedAuth(page, "authenticated_verified", {
+      notifications: [
+        {
+          title: "BellKindRow",
+          message: "with app, kind, sender and time",
+          kind: KIND_ASSIGNED,
+          sender_name: "Ada Sender",
+        },
+      ],
+    });
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    await waitForHydrated(page);
+    await openBellDropdown(page);
+    const bell = page.getByTestId("notification-bell-dropdown");
+    await expect(bell.getByText("BellKindRow")).toBeVisible({ timeout: 30_000 });
+    await expect(bell.getByTestId("notification-meta")).toHaveText(
+      /^Ada Sender · Welcome · Assigned to you · (Just now|\d+ min ago)$/,
+    );
+    await expect(bell.locator("time")).toHaveAttribute("datetime", /Z$/);
+    await expect(page.getByRole("menuitem", { name: "Open inbox" })).toBeVisible();
+  });
+
+  test("pw-notifications-bell-tabs-happy", async ({ page }) => {
+    await seedAuth(page, "authenticated_verified", {
+      notifications: [
+        { title: "BellTabOne", message: "1", url: "/" },
+        { title: "BellTabTwo", message: "2", url: "/" },
+      ],
+    });
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    await waitForHydrated(page);
+    await openBellDropdown(page);
+    const bell = page.getByTestId("notification-bell-dropdown");
+    await expect(bell.getByRole("tab", { name: /^Unread/ })).toHaveText("Unread (2)", {
+      timeout: 30_000,
+    });
+    await expect(bell.getByText("BellTabOne")).toBeVisible();
+
+    await bell.getByRole("button", { name: "Mark all read", exact: true }).click();
+    await expect(bell.getByText("You're all caught up")).toBeVisible({ timeout: 30_000 });
+
+    await bell.getByRole("tab", { name: "All" }).click();
+    await expect(bell.getByText("BellTabOne")).toBeVisible({ timeout: 30_000 });
+    await expect(bell.getByText("BellTabTwo")).toBeVisible();
+  });
+
+  test("pw-notifications-day-groups-happy", async ({ page }) => {
+    const rows: AgedNotification[] = [
+      { title: "DayToday", message: "now", age_secs: 0 },
+      { title: "DayYesterday", message: "a day ago", age_secs: 86_400 },
+      { title: "DayEarlier", message: "four days ago", age_secs: 4 * 86_400 },
+    ];
+    await seedAuth(page, "authenticated_verified", { notifications: rows });
+    await page.goto("/notifications", { waitUntil: "domcontentloaded" });
+    await waitForHydrated(page);
+    await expect(inboxRow(page, "DayEarlier")).toBeVisible({ timeout: 60_000 });
+
+    const groups = page.getByTestId("notifications-day-group");
+    await expect(groups).toHaveCount(3, { timeout: 30_000 });
+    await expect(groups.nth(0)).toHaveAttribute("data-group", "Today");
+    await expect(groups.nth(1)).toHaveAttribute("data-group", "Yesterday");
+    await expect(groups.nth(2)).toHaveAttribute("data-group", "Earlier");
+    await expect(groups.nth(0).getByText("DayToday")).toBeVisible();
+    await expect(groups.nth(1).getByText("DayYesterday")).toBeVisible();
+    await expect(groups.nth(2).getByText("DayEarlier")).toBeVisible();
+
+    await expect(inboxRow(page, "DayYesterday").locator("time")).toHaveText(
+      /^Yesterday, \d{1,2}:\d{2} (AM|PM)$/,
+    );
+    await expect(inboxRow(page, "DayEarlier").locator("time")).toHaveText(
+      /^[A-Z][a-z]{2} \d{1,2}(, \d{4})?, \d{1,2}:\d{2} (AM|PM) P[SD]T$/,
+    );
+    await expect(page.getByTestId("notifications-end")).toHaveText(
+      "That's everything from the last 90 days.",
+    );
   });
 });
 

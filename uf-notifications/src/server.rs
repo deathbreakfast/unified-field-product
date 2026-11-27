@@ -5,14 +5,16 @@
 //! a direct `uf-notifications-api` dependency in every module.
 
 pub use uf_notifications_api::{
-    get_notification_count, get_notifications_page, get_today_count, get_unread_count,
-    get_unread_notifications_page, get_unread_notifications_preview, list_notifications,
-    mark_all_notifications_read, mark_notification_read, mark_notification_unread,
-    subscribe_get_unread_count, NotificationDto, NotificationReadFilter, Page,
+    get_inbox_by_request, get_notification_count, get_notifications_page, get_today_count,
+    get_unread_count, get_unread_notifications_page, get_unread_notifications_preview,
+    list_notification_kinds, list_notifications, mark_all_notifications_read,
+    mark_notification_read, mark_notification_unread, subscribe_get_unread_count, NotificationDto,
+    NotificationInboxFilter, NotificationReadFilter, Page, PageRequest,
 };
 
 pub use crate::sender::{
-    get_notification_rows_page, get_unread_notification_rows_page, sender_label, NotificationRow,
+    get_inbox_apps, get_inbox_counts, get_inbox_rows_page, get_notification_rows_page,
+    get_unread_notification_rows_page, sender_label, InboxApp, InboxCounts, NotificationRow,
     UNKNOWN_SENDER,
 };
 
