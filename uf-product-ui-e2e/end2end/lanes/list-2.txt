@@ -18,3 +18,7 @@ help_spotlight.spec.ts › help-report › help-report-bug-intro-and-form
 help_spotlight.spec.ts › help-report › help-report-feature-intro-and-form
 help_spotlight.spec.ts › help-report › help-report-security-private-copy
 help_spotlight.spec.ts › help-report › help-report-missing-repository
+welcome_admin.spec.ts › welcome-admin › welcome-admin-denied-no-controls-sad
+welcome_admin.spec.ts › welcome-admin › welcome-admin-add-draft-publish-toast-happy
+welcome_admin.spec.ts › welcome-admin › welcome-admin-move-remove-discard-happy
+welcome_admin.spec.ts › welcome-admin › welcome-admin-history-restore-happy

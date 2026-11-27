@@ -20,8 +20,6 @@ product_ui.spec.ts › pw-auth-gates › pw-welcome-authenticated-happy
 product_ui.spec.ts › pw-auth-gates › pw-welcome-usage-seeded-happy
 product_ui.spec.ts › pw-auth-gates › pw-welcome-usage-emit-fetch-happy
 product_ui.spec.ts › pw-auth-gates › pw-welcome-admin-unauthenticated-sad
-product_ui.spec.ts › pw-auth-gates › pw-welcome-admin-denied-sad
-product_ui.spec.ts › pw-auth-gates › pw-welcome-admin-featured-crud-happy
 product_ui.spec.ts › pw-auth-gates › pw-auth-gate-unverified-email-sad
 product_ui.spec.ts › pw-auth-gates › pw-auth-gate-permission-denied-sad
 product_ui.spec.ts › pw-auth-gates › pw-auth-gate-permission-allow-happy
