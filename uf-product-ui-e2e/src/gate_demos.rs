@@ -123,6 +123,8 @@ pub fn E2eAuthProvider(children: ChildrenFn) -> impl IntoView {
                     .unwrap_or(E2eAuthKind::Anonymous);
                 let _auth = provide_auth_context(kind.to_session());
                 let _auth_dialog = provide_auth_dialog_controller();
+                // RequireAuthenticated reopens sign-in when a server fn reports an expired session.
+                let _session_expiry = uf_product::provide_session_expiry();
                 view! {
                     <div
                         data-testid="e2e-auth-bootstrap"

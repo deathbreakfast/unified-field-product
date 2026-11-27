@@ -33,7 +33,7 @@ impl PlatformFamilyBrand {
             Self::Phonon => "#038387",
             Self::Polaron => "#ca5010",
             Self::Magnon => "#498205",
-            Self::Orbital => "#4a89dc",
+            Self::Orbital => "#286fcd",
         }
     }
 
