@@ -44,6 +44,8 @@ async function rowOrder(page: Page): Promise<string[]> {
 
 test.describe("welcome-admin", () => {
   test.describe.configure({ timeout: 180_000 });
+  // Orbital Timestamp draws in the browser's zone; pin it so labels match in every lane.
+  test.use({ timezoneId: "UTC" });
 
   test("welcome-admin-denied-no-controls-sad", async ({ page }) => {
     await openAdmin(page, { admin: false });

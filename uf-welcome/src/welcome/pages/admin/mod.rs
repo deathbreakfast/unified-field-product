@@ -23,7 +23,7 @@ use uf_product::components::{
 use uf_product::primitives::{
     Breadcrumb, BreadcrumbButton, BreadcrumbDivider, BreadcrumbItem, Button, ButtonAppearance,
     Flex, FlexAlign, FlexGap, Link, MessageBar, MessageBarIntent, Skeleton, SkeletonItem,
-    ToastIntent, ToasterInjection,
+    Timestamp, ToastIntent, ToasterInjection,
 };
 use uf_product::services::{parse_permission_server_error, PermissionServerError};
 
@@ -276,11 +276,7 @@ fn LastPublished(state: AdminState, history_open: RwSignal<bool>) -> impl IntoVi
                 || view! { <Caption1>"Not published yet"</Caption1> }.into_any(),
                 |change| view! {
                     <Caption1>{format!("Last published by {} ·", change.actor_name)}</Caption1>
-                    // TODO(orbital Timestamp): swap for Orbital `Timestamp` once
-                    // feat/orbital-wave2 lands in the pinned Orbital.
-                    <Caption1>
-                        <time datetime=change.created_at.clone()>{change.created_label.clone()}</time>
-                    </Caption1>
+                    <Caption1><Timestamp value=change.created_at.clone() /></Caption1>
                 }.into_any(),
             )}
             <Link inline=true attr:data-testid="featured-admin-history-link" on:click=move |_| history_open.set(true)>

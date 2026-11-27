@@ -45,10 +45,8 @@ pub struct FeaturedChangeDto {
     pub actor_name: String,
     /// What changed, in words.
     pub summary: String,
-    /// RFC 3339 instant for `<time datetime>`.
+    /// RFC 3339 instant, shown with Orbital `Timestamp`.
     pub created_at: String,
-    /// Short label such as "Nov 18, 10:04 PM UTC".
-    pub created_label: String,
 }
 
 /// Everything the featured admin page needs on load.
@@ -606,10 +604,6 @@ fn change_dto_without_name(
         actor_name: String::new(),
         summary: change.summary.clone(),
         created_at: change.created_at.to_rfc3339(),
-        created_label: change
-            .created_at
-            .format("%b %-d, %-I:%M %p UTC")
-            .to_string(),
     }
 }
 

@@ -166,9 +166,8 @@ pub async fn remove(v: &Valence, app_id_or_id: &str) -> Result<(), FeaturedError
                 "remove",
                 anyhow::anyhow!("featured row missing record id for key {key}"),
             ));
-        } else {
-            extracted
         }
+        extracted
     };
     let _ = existing;
     let backend = v

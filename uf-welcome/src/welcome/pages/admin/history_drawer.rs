@@ -7,7 +7,7 @@ use uf_product::components::{
 use uf_product::primitives::{
     Button, ButtonAppearance, ButtonSize, DrawerBody, DrawerHeader, DrawerHeaderTitle,
     DrawerPosition, DrawerSize, Flex, FlexAlign, FlexGap, FlexJustify, MessageBar,
-    MessageBarIntent, OverlayDrawer, Skeleton, SkeletonItem,
+    MessageBarIntent, OverlayDrawer, Skeleton, SkeletonItem, Timestamp,
 };
 
 use crate::welcome::server::{list_featured_history, FeaturedChangeDto};
@@ -100,11 +100,7 @@ fn HistoryItem(state: AdminState, change: FeaturedChangeDto) -> impl IntoView {
                 <PersonaSecondaryText slot>{change.summary.clone()}</PersonaSecondaryText>
             </Persona>
             <Flex align=FlexAlign::Center gap=FlexGap::Small>
-                // TODO(orbital Timestamp): swap for Orbital `Timestamp` once
-                // feat/orbital-wave2 lands in the pinned Orbital.
-                <Caption1>
-                    <time datetime=change.created_at.clone()>{change.created_label.clone()}</time>
-                </Caption1>
+                <Caption1><Timestamp value=change.created_at.clone() /></Caption1>
                 <Button
                     appearance=ButtonAppearance::Subtle
                     size=ButtonSize::Small
