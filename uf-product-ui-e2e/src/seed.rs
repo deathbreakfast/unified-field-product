@@ -8,7 +8,9 @@ use serde::Deserialize;
 use serde_json::json;
 use spectra::try_log_event_at;
 use tower_sessions::Session;
-use uf_notifications_core::{send_notification, Notification, SendNotification};
+use uf_notifications_core::{
+    send_notification, Channels, Notification, NotificationKind, SendNotification,
+};
 use uf_product::generated::HelpTourStepVisit;
 use uf_product::telemetry::usage::{E2E_USAGE_VIEWER_SESSION_KEY, PAGE_VIEW_LOG_TABLE};
 use uf_product::workspace_search::{SearchDocumentDraft, SearchDocumentWriter};
@@ -48,6 +50,38 @@ pub struct SeedNotification {
     /// display name is (re)written to this value before the row is minted.
     #[serde(default)]
     pub sender_name: Option<String>,
+    /// Seconds before now for the row's `created_at` (day groups, time labels).
+    #[serde(default)]
+    pub age_secs: Option<i64>,
+}
+
+/// Fixture kind that asks the reader to act (Waiting on you), sent by Welcome.
+pub const E2E_KIND_ASSIGNED: &str = "welcome.e2e_assigned";
+/// Informational fixture kind, sent by Apps.
+pub const E2E_KIND_DIGEST: &str = "apps.e2e_digest";
+
+uf_notifications_core::inventory::submit! {
+    NotificationKind {
+        id: E2E_KIND_ASSIGNED,
+        app: "welcome",
+        label: "Assigned to you",
+        description: "Someone gives you something to do (e2e fixture).",
+        defaults: Channels::IN_APP_ONLY,
+        asks_action: true,
+        urgent: false,
+    }
+}
+
+uf_notifications_core::inventory::submit! {
+    NotificationKind {
+        id: E2E_KIND_DIGEST,
+        app: "apps",
+        label: "Weekly digest",
+        description: "A summary of what changed this week (e2e fixture).",
+        defaults: Channels::IN_APP_ONLY,
+        asks_action: false,
+        urgent: false,
+    }
 }
 
 /// Display name the featured admin page shows for the verified e2e user.
@@ -86,15 +120,8 @@ async fn seed_welcome_admin_profile() -> Result<(), StatusCode> {
 /// Fixture user that sends notifications carrying a `sender`.
 const E2E_SENDER_USER_ID: &str = "e2e-sender";
 
-/// Mint a notification whose `sender` is the fixture sender user, after writing that
-/// user's profile display name. `send_notification` always records the acting actor as
-/// sender (none for System), so the row is built directly here.
-async fn mint_sent_notification(
-    system: &valence::Valence,
-    recipient: RecordId,
-    row: &SeedNotification,
-    sender_name: &str,
-) -> Result<String, StatusCode> {
+/// Write the fixture sender user's profile display name and return its record id.
+async fn seed_sender(system: &valence::Valence, sender_name: &str) -> Result<RecordId, StatusCode> {
     seed_user(E2E_SENDER_USER_ID, system).await;
     let sender = RecordId::new("user", E2E_SENDER_USER_ID);
     let now = Utc::now();
@@ -116,6 +143,23 @@ async fn mint_sent_notification(
             log::error!("e2e seed: upsert sender profile failed: {err}");
             StatusCode::INTERNAL_SERVER_ERROR
         })?;
+    Ok(sender)
+}
+
+/// Mint a notification directly: with the fixture sender when `sender_name` is set
+/// (after writing that user's display name), and `age_secs` before now.
+/// `send_notification` always records the acting actor as sender (none for System)
+/// and stamps now, so these rows are built here.
+async fn mint_notification(
+    system: &valence::Valence,
+    recipient: RecordId,
+    row: &SeedNotification,
+) -> Result<String, StatusCode> {
+    let sender = match &row.sender_name {
+        Some(name) => Some(seed_sender(system, name).await?),
+        None => None,
+    };
+    let created_at = Utc::now() - chrono::Duration::seconds(row.age_secs.unwrap_or(0));
 
     let id = uuid::Uuid::new_v4().to_string();
     let notification = Notification::new(
@@ -126,8 +170,8 @@ async fn mint_sent_notification(
         row.url.clone(),
         None,
         None,
-        now,
-        Some(sender),
+        created_at,
+        sender,
         None,
     )
     .map_err(|err| {
@@ -574,8 +618,8 @@ pub async fn seed_data(
 
     let mut minted = Vec::with_capacity(body.notifications.len());
     for row in &body.notifications {
-        if let Some(sender_name) = &row.sender_name {
-            let id = mint_sent_notification(&system, recipient.clone(), row, sender_name).await?;
+        if row.sender_name.is_some() || row.age_secs.is_some() {
+            let id = mint_notification(&system, recipient.clone(), row).await?;
             minted.push(id);
             continue;
         }
