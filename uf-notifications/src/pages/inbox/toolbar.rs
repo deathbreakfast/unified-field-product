@@ -1,52 +1,50 @@
 use leptos::prelude::*;
 
 use uf_product::components::{SearchBox, SearchBoxAppearance, SearchBoxBind};
-use uf_product::primitives::{Button, ButtonAppearance, Flex, FlexAlign, FlexGap, FlexWrap};
+use uf_product::primitives::{Flex, FlexAlign, FlexGap, FlexWrap, Select, SelectBind};
 
-use crate::server::NotificationReadFilter;
+use crate::server::get_inbox_apps;
 
-/// Search box, read-status filter buttons, and a "Mark all read" action.
+/// Search box and an app filter (`""` means all apps).
 #[component]
 pub fn NotificationToolbar(
     /// Two-way signal holding the search query.
     search_query: RwSignal<String>,
-    /// Two-way signal holding the filter value to apply.
-    filter: RwSignal<NotificationReadFilter>,
-    /// Callback invoked when mark all read occurs.
-    on_mark_all_read: impl Fn(leptos::ev::MouseEvent) + Send + Sync + 'static,
+    /// Two-way signal holding the selected app id; empty for all apps.
+    app: RwSignal<String>,
+    /// `true` once hydrated; the app options load only then, since reading a
+    /// LocalResource during SSR outside a Suspense panics.
+    hydrated: Signal<bool>,
 ) -> impl IntoView {
+    // Client-only, like the tab counts: the options fill in after hydration.
+    let apps = LocalResource::new(get_inbox_apps);
+
     view! {
-        <Flex gap=FlexGap::Medium align=FlexAlign::Center wrap=FlexWrap::Wrap full_width=true>
+        <Flex gap=FlexGap::Small align=FlexAlign::Center wrap=FlexWrap::Wrap full_width=true>
             <SearchBox
                 bind=SearchBoxBind::from(search_query)
-                appearance=SearchBoxAppearance::with_placeholder("Search notifications...")
+                appearance=SearchBoxAppearance::with_placeholder("Search notifications")
             />
-            <Flex gap=FlexGap::Small>
-                <Button
-                    appearance=ButtonAppearance::Subtle
-                    on_click=Callback::new(move |_| filter.set(NotificationReadFilter::All))
-                >
-                    "All"
-                </Button>
-                <Button
-                    appearance=ButtonAppearance::Subtle
-                    on_click=Callback::new(move |_| filter.set(NotificationReadFilter::Unread))
-                >
-                    "Unread"
-                </Button>
-                <Button
-                    appearance=ButtonAppearance::Subtle
-                    on_click=Callback::new(move |_| filter.set(NotificationReadFilter::Read))
-                >
-                    "Read"
-                </Button>
-            </Flex>
-            <Button
-                appearance=ButtonAppearance::Secondary
-                on_click=Callback::new(on_mark_all_read)
-            >
-                "Mark all read"
-            </Button>
+            // Orbital's Select takes no aria-label; a visually hidden label (the
+            // theme ships `sr-only`) names it for screen readers.
+            <label for="notifications-app-filter" class="sr-only">"Filter by app"</label>
+            <Select bind=SelectBind {
+                id: "notifications-app-filter".to_string().into(),
+                ..SelectBind::new(app)
+            }>
+                <option value="">"All apps"</option>
+                {move || {
+                    hydrated
+                        .get()
+                        .then(|| apps.get())
+                        .flatten()
+                        .and_then(Result::ok)
+                        .unwrap_or_default()
+                        .into_iter()
+                        .map(|a| view! { <option value=a.id>{a.name}</option> })
+                        .collect_view()
+                }}
+            </Select>
         </Flex>
     }
 }
