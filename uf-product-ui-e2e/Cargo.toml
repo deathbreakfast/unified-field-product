@@ -83,6 +83,7 @@ ssr = [
     "uf-search-core/ssr",
     "uf-apps/ssr",
     "uf-welcome/ssr",
+    "uf-welcome/e2e-seed",
     "uf-notifications/ssr",
     "dep:axum",
     "dep:leptos_axum",

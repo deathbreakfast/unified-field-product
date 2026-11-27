@@ -15,7 +15,8 @@
 //!   [`uf_product::PageViewTracker`] so recent, popular, and most-used cards populate.
 //!   [Get started](#getting-started)
 //! - **Featured apps admin** — Valence-backed catalog for the Featured card. Operators
-//!   with `WelcomeAdmin` add, remove, and reorder rows at `/welcome/admin`.
+//!   with `WelcomeAdmin` edit a draft at `/welcome/admin`, publish it with a confirm,
+//!   and restore earlier lists from its history.
 //!   [Get started](#featured-admin)
 //! - **Welcome shell layout** — [`WelcomeLayout`] wraps shell chrome and requires sign-in
 //!   before child routes render.

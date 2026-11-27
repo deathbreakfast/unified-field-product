@@ -40,6 +40,7 @@ async-trait = { workspace = true, optional = true }
 quark = { workspace = true, optional = true }
 spectra = { workspace = true, optional = true }
 tower-sessions = { workspace = true, optional = true }
+lepton-identity = { workspace = true, optional = true }
 
 [build-dependencies]
 valence-codegen = { workspace = true }
@@ -55,6 +56,8 @@ hydrate = ["leptos/hydrate", "uf-integrations/hydrate", "uf-product/hydrate", "u
 # Host wired Gauge PermissionBackend; enables WelcomeAdmin Valence gate (raw walks).
 # Opt-in separately from `ssr` so e2e / teaching hosts can use the session harness.
 admin-permissions = ["dep:gauge", "gauge/ssr"]
+# Test hosts only: exposes `featured::clear_history` for e2e seed isolation.
+e2e-seed = ["ssr"]
 ssr = [
     "leptos/ssr",
     "leptos_meta/ssr",
@@ -76,6 +79,7 @@ ssr = [
     "dep:quark",
     "dep:spectra",
     "dep:tower-sessions",
+    "dep:lepton-identity",
 ]
 [dev-dependencies]
 tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }

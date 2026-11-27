@@ -211,3 +211,41 @@ pub async fn reorder(v: &Valence, app_ids: &[String]) -> Result<(), FeaturedErro
     }
     Ok(())
 }
+
+/// Make the featured catalog exactly `app_ids`, in that order.
+///
+/// Removes rows not in the list, adds missing apps, then renumbers ordinals `0..n`.
+///
+/// # Errors
+///
+/// Returns [`FeaturedError::UnknownApp`] for an id missing from [`AppRegistry`],
+/// [`FeaturedError::Duplicate`] when `app_ids` repeats an id, or propagates
+/// [`list`] / [`add`] / [`remove`] / [`reorder`] failures.
+pub async fn replace_all(v: &Valence, app_ids: &[String]) -> Result<(), FeaturedError> {
+    for (idx, app_id) in app_ids.iter().enumerate() {
+        ensure_known_app(app_id)?;
+        if app_ids[..idx].contains(app_id) {
+            return Err(FeaturedError::duplicate(app_id.clone()));
+        }
+    }
+    let current = list(v).await?;
+    for row in &current {
+        if !app_ids.contains(&row.app_id) {
+            remove(v, &row.app_id).await?;
+        }
+    }
+    for (ordinal, app_id) in app_ids.iter().enumerate() {
+        if !current.iter().any(|row| &row.app_id == app_id) {
+            add(v, app_id, ordinal as i64).await?;
+        }
+    }
+    reorder(v, app_ids).await
+}
+
+/// Display name for a registered app id (the id itself when unregistered).
+pub fn app_name(app_id: &str) -> String {
+    AppRegistry::auto_discover()
+        .iter()
+        .find(|reg| reg.id == app_id)
+        .map_or_else(|| app_id.to_string(), |reg| reg.name.to_string())
+}
