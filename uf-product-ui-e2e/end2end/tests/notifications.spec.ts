@@ -442,7 +442,7 @@ test.describe("pw-notifications-inbox", () => {
     await page.goto("/notifications", { waitUntil: "domcontentloaded" });
     await waitForHydrated(page);
     await expect(inboxRow(page, "AppWelcomeRow")).toBeVisible({ timeout: 60_000 });
-    const select = page.locator("#notifications-app-filter");
+    const select = page.getByLabel("Filter by app");
     await expect(select.locator("option", { hasText: /^Apps$/ })).toHaveCount(1, { timeout: 30_000 });
     await select.selectOption("apps");
     await expect(inboxRow(page, "AppWelcomeRow")).toHaveCount(0, { timeout: 30_000 });

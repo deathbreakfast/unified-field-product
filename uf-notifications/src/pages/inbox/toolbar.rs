@@ -25,6 +25,9 @@ pub fn NotificationToolbar(
                 bind=SearchBoxBind::from(search_query)
                 appearance=SearchBoxAppearance::with_placeholder("Search notifications")
             />
+            // Orbital's Select takes no aria-label; a visually hidden label (the
+            // theme ships `sr-only`) names it for screen readers.
+            <label for="notifications-app-filter" class="sr-only">"Filter by app"</label>
             <Select bind=SelectBind {
                 id: "notifications-app-filter".to_string().into(),
                 ..SelectBind::new(app)
